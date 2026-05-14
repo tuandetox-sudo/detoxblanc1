@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { LayoutDashboard, CalendarCheck, BarChart3, Users, RefreshCw, AlertCircle, Wifi, WifiOff, Menu, X, Settings as SettingsIcon, LogOut, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck, BarChart3, Users, RefreshCw, AlertCircle, Wifi, WifiOff, Menu, X, Settings as SettingsIcon, LogOut, ChevronDown, Database } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import BookingTable from './components/BookingTable';
 import StaffReport from './components/StaffReport';
 import KOLManager from './components/KOLManager';
 import Settings from './components/Settings';
 import Login from './components/Login';
-import { useGoogleSheets } from './hooks/useGoogleSheets';
+import { useGoogleSheetsDB } from './hooks/useGoogleSheetsDB';
 import { useAuth } from './hooks/useAuth';
 import { useSettings } from './hooks/useSettings';
 
@@ -23,7 +23,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { bookings, setBookings, loading, error, usingMock } = useGoogleSheets();
+  const { bookings, loading, saving, error, usingMock, refresh, addBooking, updateBooking, deleteBooking } = useGoogleSheetsDB(settings.scriptUrl);
 
   if (!user) return <Login onLogin={login} />;
 
@@ -64,10 +64,10 @@ export default function App() {
             </nav>
 
             <div className="flex items-center gap-3">
-              {loading && (
+              {(loading || saving) && (
                 <div className="flex items-center gap-1.5 text-xs text-gray-400">
                   <RefreshCw size={13} className="animate-spin" />
-                  <span className="hidden sm:inline">Đang tải...</span>
+                  <span className="hidden sm:inline">{saving ? 'Đang lưu...' : 'Đang tải...'}</span>
                 </div>
               )}
               {usingMock && !loading && (
@@ -77,10 +77,10 @@ export default function App() {
                 </div>
               )}
               {!usingMock && !loading && (
-                <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
-                  <Wifi size={13} />
+                <button onClick={refresh} className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition-colors">
+                  <Database size={13} />
                   <span className="hidden sm:inline">Google Sheets</span>
-                </div>
+                </button>
               )}
 
               <div className="relative hidden md:block">
@@ -172,7 +172,7 @@ export default function App() {
         )}
 
         {activeTab === 'dashboard' && <Dashboard bookings={bookings} />}
-        {activeTab === 'bookings' && <BookingTable bookings={bookings} setBookings={setBookings} />}
+        {activeTab === 'bookings' && <BookingTable bookings={bookings} addBooking={addBooking} updateBooking={updateBooking} deleteBooking={deleteBooking} saving={saving} />}
         {activeTab === 'staff' && <StaffReport bookings={bookings} />}
         {activeTab === 'kol' && <KOLManager bookings={bookings} />}
         {activeTab === 'settings' && <Settings settings={settings} user={user} />}
@@ -181,7 +181,7 @@ export default function App() {
       <footer className="border-t border-pink-100 bg-white mt-auto">
         <div className="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between text-xs text-gray-400 flex-wrap gap-2">
           <span>© 2025 {settings.companyName} · Booking Management System</span>
-          <span>{usingMock ? 'Chế độ demo — Vào Cài đặt để kết nối dữ liệu thực' : 'Kết nối Google Sheets · Tự động làm mới mỗi 5 phút'}</span>
+          <span>{usingMock ? 'Chế độ demo — Vào Cài đặt → Google Sheets để kết nối dữ liệu thực' : 'Kết nối Google Sheets · Tự động làm mới mỗi 5 phút'}</span>
         </div>
       </footer>
     </div>

@@ -7,7 +7,7 @@ import {
   getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table';
-import { Search, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Plus, X, SlidersHorizontal } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Plus, X, SlidersHorizontal, Trash2, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDate, getStatusColor } from '../utils/formatters';
 import { STATUSES, SOURCES, STAFF, PRODUCTS } from '../data/mockData';
 
@@ -23,8 +23,9 @@ function StatusBadge({ status }) {
   );
 }
 
-function EditModal({ booking, onClose, onSave }) {
+function EditModal({ booking, onClose, onSave, onDelete, saving }) {
   const [form, setForm] = useState({ ...booking });
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   return (
@@ -93,21 +94,37 @@ function EditModal({ booking, onClose, onSave }) {
             </div>
           </div>
         </div>
-        <div className="sticky bottom-0 bg-white border-t border-pink-100 px-6 py-4 flex gap-3 justify-end rounded-b-2xl">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-            Hủy
-          </button>
-          <button onClick={() => onSave({ ...form, totalValue: form.qty * form.unitPrice })}
-            className="px-4 py-2 text-sm text-white bg-pink-500 rounded-xl hover:bg-pink-600 transition-colors font-medium">
-            Lưu thay đổi
-          </button>
+        <div className="sticky bottom-0 bg-white border-t border-pink-100 px-6 py-4 rounded-b-2xl">
+          {confirmDelete ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-red-600 flex-1">Xác nhận xóa booking này?</span>
+              <button onClick={() => setConfirmDelete(false)} className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">Không</button>
+              <button onClick={() => onDelete(booking)} disabled={saving}
+                className="px-3 py-2 text-sm text-white bg-red-500 rounded-xl hover:bg-red-600 font-medium flex items-center gap-2 disabled:opacity-60">
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Xóa
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3 justify-between">
+              <button onClick={() => setConfirmDelete(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+                <Trash2 size={14} /> Xóa
+              </button>
+              <div className="flex gap-3">
+                <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Hủy</button>
+                <button onClick={() => onSave({ ...form, totalValue: form.qty * form.unitPrice })} disabled={saving}
+                  className="px-4 py-2 text-sm text-white bg-pink-500 rounded-xl hover:bg-pink-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-60">
+                  {saving && <Loader2 size={14} className="animate-spin" />} Lưu thay đổi
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function AddModal({ onClose, onAdd }) {
+function AddModal({ onClose, onAdd, saving }) {
   const [form, setForm] = useState({
     customerName: '', phone: '', product: PRODUCTS[0], qty: 1,
     unitPrice: 500000, staffName: STAFF[0].name, source: SOURCES[0],
@@ -184,8 +201,8 @@ function AddModal({ onClose, onAdd }) {
           <button onClick={() => {
             if (!form.customerName.trim()) return;
             onAdd({ ...form, totalValue: form.qty * form.unitPrice });
-          }} className="px-4 py-2 text-sm text-white bg-pink-500 rounded-xl hover:bg-pink-600 transition-colors font-medium">
-            Thêm booking
+          }} disabled={saving} className="px-4 py-2 text-sm text-white bg-pink-500 rounded-xl hover:bg-pink-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-60">
+            {saving && <Loader2 size={14} className="animate-spin" />} Thêm booking
           </button>
         </div>
       </div>
@@ -193,7 +210,7 @@ function AddModal({ onClose, onAdd }) {
   );
 }
 
-export default function BookingTable({ bookings, setBookings }) {
+export default function BookingTable({ bookings, addBooking, updateBooking, deleteBooking, saving }) {
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
@@ -298,24 +315,41 @@ export default function BookingTable({ bookings, setBookings }) {
     },
   });
 
-  const handleSave = useCallback((updated) => {
-    setBookings(prev => prev.map(b => b.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : b));
-    setEditingRow(null);
-  }, [setBookings]);
+  const handleSave = useCallback(async (updated) => {
+    try {
+      await updateBooking({ ...updated, updatedAt: new Date().toISOString() });
+      setEditingRow(null);
+    } catch (err) {
+      alert('Lỗi khi lưu: ' + err.message);
+    }
+  }, [updateBooking]);
 
-  const handleAdd = useCallback((form) => {
+  const handleDelete = useCallback(async (booking) => {
+    try {
+      await deleteBooking(booking);
+      setEditingRow(null);
+    } catch (err) {
+      alert('Lỗi khi xóa: ' + err.message);
+    }
+  }, [deleteBooking]);
+
+  const handleAdd = useCallback(async (form) => {
     const newBooking = {
       ...form,
-      id: `BK${String(Date.now()).slice(-4)}`,
+      id: `BK${String(Date.now()).slice(-6)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       staffId: STAFF.find(s => s.name === form.staffName)?.id || '',
       kolId: null,
       kolName: null,
     };
-    setBookings(prev => [newBooking, ...prev]);
-    setShowAdd(false);
-  }, [setBookings]);
+    try {
+      await addBooking(newBooking);
+      setShowAdd(false);
+    } catch (err) {
+      alert('Lỗi khi thêm: ' + err.message);
+    }
+  }, [addBooking]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
@@ -452,8 +486,8 @@ export default function BookingTable({ bookings, setBookings }) {
         </div>
       </div>
 
-      {editingRow && <EditModal booking={editingRow} onClose={() => setEditingRow(null)} onSave={handleSave} />}
-      {showAdd && <AddModal onClose={() => setShowAdd(false)} onAdd={handleAdd} />}
+      {editingRow && <EditModal booking={editingRow} onClose={() => setEditingRow(null)} onSave={handleSave} onDelete={handleDelete} saving={saving} />}
+      {showAdd && <AddModal onClose={() => setShowAdd(false)} onAdd={handleAdd} saving={saving} />}
     </div>
   );
 }

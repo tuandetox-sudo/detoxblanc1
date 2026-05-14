@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Save, Eye, EyeOff, RefreshCw, Building2, Users, Package, Star, Globe, Lock, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, EyeOff, RefreshCw, Building2, Users, Package, Star, Globe, Lock, CheckCircle, ChevronDown, ChevronUp, Copy, ExternalLink } from 'lucide-react';
 import { getAccounts, saveAccounts } from '../hooks/useAuth';
 
 const PLATFORMS = ['TikTok', 'Instagram', 'YouTube', 'Facebook'];
@@ -26,59 +26,153 @@ function SectionCard({ title, children }) {
   );
 }
 
+const APPS_SCRIPT_CODE = `// =====================================================
+// DetoxBlanc Booking - Google Apps Script Backend
+// Hướng dẫn: Paste toàn bộ code này vào Google Apps Script,
+// sau đó Deploy → Web app → Anyone → Deploy
+// =====================================================
+
+const SHEET_NAME = 'Bookings'; // Tên sheet trong Google Sheets của bạn
+
+function doGet(e) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return out({ status: 'ok', data: [] });
+    const rows = data.slice(1).map((row, i) => ({
+      _rowIndex: i + 2,
+      id: String(row[0] || ''),
+      createdAt: row[1] ? String(row[1]) : '',
+      customerName: String(row[2] || ''),
+      phone: String(row[3] || ''),
+      product: String(row[4] || ''),
+      qty: Number(row[5]) || 1,
+      unitPrice: Number(row[6]) || 0,
+      totalValue: Number(row[7]) || 0,
+      staffName: String(row[8] || ''),
+      source: String(row[9] || ''),
+      kolName: row[10] || null,
+      status: String(row[11] || 'Mới'),
+      note: String(row[12] || ''),
+    }));
+    return out({ status: 'ok', data: rows });
+  } catch(e) { return out({ status: 'error', message: e.toString() }); }
+}
+
+function doPost(e) {
+  try {
+    const body = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const r = body.row;
+    const rowArr = [r.id, r.createdAt, r.customerName, r.phone, r.product, r.qty, r.unitPrice, r.totalValue, r.staffName, r.source, r.kolName||'', r.status, r.note||''];
+
+    if (body.action === 'insert') {
+      sheet.appendRow(rowArr);
+      return out({ status: 'ok', rowIndex: sheet.getLastRow() });
+    }
+    if (body.action === 'update') {
+      sheet.getRange(body.rowIndex, 1, 1, 13).setValues([rowArr]);
+      return out({ status: 'ok' });
+    }
+    if (body.action === 'delete') {
+      sheet.deleteRow(body.rowIndex);
+      return out({ status: 'ok' });
+    }
+    return out({ status: 'error', message: 'Unknown action' });
+  } catch(e) { return out({ status: 'error', message: e.toString() }); }
+}
+
+function out(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
 // ─── TAB: Công ty ───────────────────────────────────────────────────────────
-function CompanyTab({ companyName, setCompanyName, sheetsApiKey, setSheetsApiKey }) {
+function CompanyTab({ companyName, setCompanyName, sheetsApiKey, setSheetsApiKey, scriptUrl, setScriptUrl }) {
   const [name, setName] = useState(companyName);
-  const [key, setKey] = useState(sheetsApiKey);
-  const [showKey, setShowKey] = useState(false);
+  const [url, setUrl] = useState(scriptUrl);
+  const [showScript, setShowScript] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState('');
 
   const save = () => {
     setCompanyName(name);
-    setSheetsApiKey(key);
+    setScriptUrl(url.trim());
     setToast('Đã lưu cài đặt!');
     setTimeout(() => setToast(''), 2500);
+  };
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   return (
     <div className="space-y-4">
       <Toast msg={toast} />
       <SectionCard title="Thông tin công ty">
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Tên công ty</label>
-            <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
-              value={name} onChange={e => setName(e.target.value)} />
-          </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Tên công ty</label>
+          <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
+            value={name} onChange={e => setName(e.target.value)} />
         </div>
       </SectionCard>
 
-      <SectionCard title="Kết nối Google Sheets">
-        <div className="space-y-3">
-          <p className="text-xs text-gray-500">Nhập Google Sheets API Key để đọc dữ liệu thực từ Google Sheets của bạn.</p>
+      <SectionCard title="Kết nối Google Sheets (Đọc & Ghi)">
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700 space-y-1">
+            <p className="font-semibold">Cách kết nối Google Sheets để lưu dữ liệu thực:</p>
+            <ol className="list-decimal list-inside space-y-0.5 text-blue-600">
+              <li>Mở Google Sheet của bạn → <strong>Extensions → Apps Script</strong></li>
+              <li>Xóa code cũ, paste code bên dưới vào (nhấn nút Copy Code)</li>
+              <li>Nhấn <strong>Deploy → New deployment → Web app</strong></li>
+              <li>Execute as: <strong>Me</strong> · Who has access: <strong>Anyone</strong></li>
+              <li>Nhấn Deploy, copy URL → paste vào ô Script URL bên dưới</li>
+            </ol>
+          </div>
+
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">API Key</label>
-            <div className="relative">
-              <input
-                type={showKey ? 'text' : 'password'}
-                placeholder="AIza..."
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 pr-10 text-sm focus:outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 font-mono"
-                value={key} onChange={e => setKey(e.target.value)}
-              />
-              <button type="button" onClick={() => setShowKey(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-gray-500">Apps Script Code</label>
+              <div className="flex gap-2">
+                <button onClick={copyCode}
+                  className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-colors ${copied ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600'}`}>
+                  <Copy size={12} />{copied ? 'Đã copy!' : 'Copy Code'}
+                </button>
+                <button onClick={() => setShowScript(v => !v)}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">
+                  {showScript ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  {showScript ? 'Ẩn' : 'Xem code'}
+                </button>
+              </div>
             </div>
+            {showScript && (
+              <pre className="bg-gray-900 text-green-300 text-xs rounded-xl p-4 overflow-x-auto max-h-64 overflow-y-auto leading-relaxed">
+                {APPS_SCRIPT_CODE}
+              </pre>
+            )}
           </div>
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700">
-            <strong>Hướng dẫn:</strong> Vào console.cloud.google.com → tạo project → enable Google Sheets API → tạo API Key → paste vào đây.<br />
-            Đảm bảo Google Sheet đã được chia sẻ công khai (Anyone with the link → Viewer).
-          </div>
+
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Sheet ID (từ URL Google Sheets)</label>
-            <input readOnly className="w-full border border-gray-100 bg-gray-50 rounded-xl px-3 py-2 text-sm font-mono text-gray-500"
-              value="1f_ZwuCvQwR-Kv1S2GR59pxSAezwU3bchJ2UYPFQT0FY" />
+            <label className="text-xs text-gray-500 mb-1 block">Script URL (sau khi Deploy)</label>
+            <input
+              placeholder="https://script.google.com/macros/s/.../exec"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-100 font-mono"
+              value={url} onChange={e => setUrl(e.target.value)}
+            />
+            {url && (
+              <p className="text-xs text-emerald-600 mt-1">✓ Đã có Script URL — dữ liệu sẽ đọc/ghi từ Google Sheets</p>
+            )}
+            {!url && (
+              <p className="text-xs text-amber-500 mt-1">Chưa có URL — đang dùng dữ liệu mẫu (demo)</p>
+            )}
+          </div>
+
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-700">
+            <strong>Lưu ý:</strong> Đảm bảo Google Sheet có sheet tên <strong>"Bookings"</strong> với hàng đầu tiên là tiêu đề.
+            Cột: A=ID, B=Ngày, C=Khách hàng, D=SĐT, E=Sản phẩm, F=SL, G=Đơn giá, H=Doanh thu, I=NV, J=Nguồn, K=KOL, L=Trạng thái, M=Ghi chú
           </div>
         </div>
       </SectionCard>
@@ -435,7 +529,7 @@ const TABS = [
 
 export default function Settings({ settings, user }) {
   const [activeTab, setActiveTab] = useState('company');
-  const { staff, setStaff, products, setProducts, kols, setKols, sources, setSources, sheetsApiKey, setSheetsApiKey, companyName, setCompanyName } = settings;
+  const { staff, setStaff, products, setProducts, kols, setKols, sources, setSources, sheetsApiKey, setSheetsApiKey, companyName, setCompanyName, scriptUrl, setScriptUrl } = settings;
 
   return (
     <div className="space-y-6">
@@ -455,7 +549,7 @@ export default function Settings({ settings, user }) {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'company' && <CompanyTab companyName={companyName} setCompanyName={setCompanyName} sheetsApiKey={sheetsApiKey} setSheetsApiKey={setSheetsApiKey} />}
+      {activeTab === 'company' && <CompanyTab companyName={companyName} setCompanyName={setCompanyName} sheetsApiKey={sheetsApiKey} setSheetsApiKey={setSheetsApiKey} scriptUrl={scriptUrl} setScriptUrl={setScriptUrl} />}
       {activeTab === 'staff' && <StaffTab staff={staff} setStaff={setStaff} />}
       {activeTab === 'products' && <ProductsTab products={products} setProducts={setProducts} />}
       {activeTab === 'kol' && <KOLTab kols={kols} setKols={setKols} />}
