@@ -55,16 +55,40 @@
 
   // ======== 1.5) OVERRIDE FOOTER NỘI DUNG TỪ FIRESTORE (nếu có) ========
   applyFooterConfig();
-  window.addEventListener('dtx:firebase-ready', applyFooterConfig, { once: true });
+
+  async function waitForFirebase(timeoutMs){
+    if (window.DTX_FIREBASE?.enabled) return true;
+    if (window.DTX_FIREBASE && window.DTX_FIREBASE.enabled === false && !window.DTX_FIREBASE.error) {
+      // explicitly disabled (e.g., file:// or non-firebase host)
+      return false;
+    }
+    return new Promise(resolve => {
+      let done = false;
+      const finish = (ok) => { if (done) return; done = true; cleanup(); resolve(ok); };
+      const onReady = () => finish(true);
+      const timer = setTimeout(() => finish(false), timeoutMs);
+      const poll = setInterval(() => {
+        if (window.DTX_FIREBASE?.enabled) finish(true);
+      }, 120);
+      const cleanup = () => {
+        window.removeEventListener('dtx:firebase-ready', onReady);
+        clearTimeout(timer);
+        clearInterval(poll);
+      };
+      window.addEventListener('dtx:firebase-ready', onReady);
+    });
+  }
 
   async function applyFooterConfig(){
     try {
       let cfg = null;
-      if (window.DTX_FIREBASE?.enabled){
+      const ok = await waitForFirebase(4000);
+      if (ok && window.DTX_FIREBASE?.enabled){
         const fb = window.DTX_FIREBASE;
         const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db, 'settings', 'footer'));
         if (snap.exists()) cfg = snap.data();
-      } else {
+      }
+      if (!cfg){
         const ls = localStorage.getItem('dtx_footer_config');
         if (ls) cfg = JSON.parse(ls);
       }
