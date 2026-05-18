@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chân trang — Detoxblanc Admin</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+<style>
+  .ftr-section { margin-bottom: 28px; padding: 20px 22px; background: var(--a-card,#fff); border:1px solid var(--a-line,#e8e4dc); border-radius:14px; }
+  .ftr-section h2 { margin:0 0 14px; font-size:16px; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .ftr-section h2 i { width:28px; height:28px; border-radius:8px; background:var(--a-soft,#E8EFF9); color:var(--a-primary,#2D5DA1); display:grid; place-items:center; font-size:12px; }
+  .ftr-section .lead { color:var(--a-ink-3,#6B7280); margin:0 0 14px; font-size:13.5px; }
+
+  .ftr-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .ftr-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width: 720px){ .ftr-grid-2,.ftr-grid-3{grid-template-columns:1fr} }
+
+  .ftr-field { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+  .ftr-field label { font-size:12.5px; font-weight:500; color:var(--a-ink-2,#374151); }
+  .ftr-field input, .ftr-field textarea, .ftr-field select {
+    padding:9px 12px; border:1px solid var(--a-line,#e8e4dc); border-radius:8px; font:14px Inter,sans-serif;
+    background:#fff; color:var(--a-ink,#1F2937);
+  }
+  .ftr-field textarea { resize:vertical; min-height:60px; }
+  .ftr-field input:focus, .ftr-field textarea:focus { outline:none; border-color:var(--a-primary,#2D5DA1); box-shadow:0 0 0 3px rgba(45,93,161,.12); }
+
+  .ftr-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .ftr-list-item { display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:center; }
+  .ftr-list-item input { padding:8px 10px; border:1px solid var(--a-line,#e8e4dc); border-radius:6px; font:13px Inter,sans-serif; }
+  .ftr-list-item .btn-del { background:#fee2e2; color:#991b1b; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; }
+  .ftr-list-item .btn-del:hover { background:#fecaca; }
+
+  .ftr-btn-add { padding:8px 14px; background:var(--a-soft,#E8EFF9); color:var(--a-primary,#2D5DA1); border:1px dashed var(--a-primary,#2D5DA1); border-radius:8px; cursor:pointer; font:500 13px Inter; margin-top:8px; }
+  .ftr-btn-add:hover { background:#dbeafe; }
+
+  .ftr-social-row { display:grid; grid-template-columns: 180px 1fr 1fr auto; gap:8px; align-items:center; }
+  @media (max-width: 720px){ .ftr-social-row{grid-template-columns:1fr 1fr auto; } .ftr-social-row select{grid-column:1/-2} }
+
+  .ftr-col-card { background:var(--a-soft-bg,#FAF8F4); padding:14px; border-radius:10px; margin-bottom:12px; }
+  .ftr-col-card h3 { margin:0 0 8px; font-size:13.5px; font-weight:600; color:var(--a-ink-2,#374151); }
+
+  .ftr-pay-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .ftr-pay-tag { background:#fff; border:1px solid var(--a-line,#e8e4dc); padding:6px 12px; border-radius:6px; font:500 12px JetBrains Mono,monospace; display:inline-flex; align-items:center; gap:6px; }
+  .ftr-pay-tag button { background:none; border:none; color:#991b1b; cursor:pointer; padding:0; font-size:14px; }
+
+  #footerPreview { margin-top:20px; padding:24px; background:#0F1F1C; color:#fff; border-radius:14px; font-size:13px; line-height:1.6; }
+  #footerPreview a { color:#a7d8c8; }
+  #footerPreview h4 { color:#fff; margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; }
+  #footerPreview .pv-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:24px; }
+  @media (max-width: 800px){ #footerPreview .pv-grid { grid-template-columns:1fr; } }
+  #footerPreview ul { list-style:none; padding:0; margin:0; }
+  #footerPreview li { margin:4px 0; }
+</style>
+</head>
+
+<body data-adm-page="footer">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Nội dung"},{"label":"Chân trang"}]'
+       data-title="Chân trang"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Chân trang (Footer)</h1>
+          <p>Chỉnh sửa toàn bộ nội dung footer xuất hiện ở 27 trang public.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnFtrReload"><i class="fa-solid fa-rotate"></i> Tải lại</button>
+          <button class="adm-btn" id="btnFtrReset" data-perm="settings:write"><i class="fa-solid fa-rotate-left"></i> Khôi phục mặc định</button>
+          <button class="adm-btn primary" id="btnFtrSave" data-perm="settings:write"><i class="fa-solid fa-check"></i> Lưu &amp; áp dụng</button>
+        </div>
+      </div>
+
+      <!-- 1. Thông tin công ty -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-building"></i> Thông tin công ty</h2>
+        <div class="ftr-grid-2">
+          <div class="ftr-field"><label>Tên thương hiệu</label><input id="f-brand" placeholder="DETOXBLANC"/></div>
+          <div class="ftr-field"><label>Slogan / Tagline</label><input id="f-slogan" placeholder="Dermatological Skincare"/></div>
+        </div>
+        <div class="ftr-field"><label>Mô tả công ty</label><textarea id="f-desc" rows="3"></textarea></div>
+        <div class="ftr-field"><label>Địa chỉ</label><input id="f-address"/></div>
+        <div class="ftr-grid-2">
+          <div class="ftr-field"><label>Hotline</label><input id="f-phone" placeholder="1900 6750"/></div>
+          <div class="ftr-field"><label>Email CSKH</label><input id="f-email" type="email"/></div>
+        </div>
+      </section>
+
+      <!-- 2. Mạng xã hội -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-share-nodes"></i> Mạng xã hội</h2>
+        <p class="lead">Các icon hiển thị bên dưới phần thông tin công ty.</p>
+        <div id="socialsList" class="ftr-list"></div>
+        <button type="button" class="ftr-btn-add" id="btnAddSocial"><i class="fa-solid fa-plus"></i> Thêm mạng xã hội</button>
+      </section>
+
+      <!-- 3. Cột menu -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-list-ul"></i> Cột menu</h2>
+        <p class="lead">3 cột menu chính (Thương hiệu · Mua sắm · Hỗ trợ &amp; tài khoản).</p>
+        <div id="columnsList"></div>
+      </section>
+
+      <!-- 4. Ứng dụng -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-mobile-screen"></i> Ứng dụng di động</h2>
+        <div class="ftr-grid-2">
+          <div class="ftr-field"><label>Tiêu đề khu vực app</label><input id="f-app-title" placeholder="Ứng dụng VMAPP"/></div>
+          <div class="ftr-field"><label>Mô tả ngắn</label><input id="f-app-desc"/></div>
+        </div>
+        <div class="ftr-grid-2">
+          <div class="ftr-field"><label>Link App Store</label><input id="f-app-ios" type="url"/></div>
+          <div class="ftr-field"><label>Link Google Play</label><input id="f-app-android" type="url"/></div>
+        </div>
+      </section>
+
+      <!-- 5. Thanh toán -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-credit-card"></i> Phương thức thanh toán</h2>
+        <p class="lead">Các badge thanh toán hiển thị ở góc dưới phải.</p>
+        <div class="ftr-field" style="flex-direction:row;gap:10px;align-items:flex-end">
+          <div style="flex:1"><label style="display:block;margin-bottom:5px">Thêm phương thức (VD: VISA, MOMO...)</label>
+            <input id="payInput" placeholder="Nhập tên rồi Enter" style="width:100%;padding:9px 12px;border:1px solid #e8e4dc;border-radius:8px"/></div>
+          <button type="button" class="ftr-btn-add" id="btnAddPay" style="margin:0"><i class="fa-solid fa-plus"></i> Thêm</button>
+        </div>
+        <div id="paymentsList" class="ftr-pay-tags"></div>
+      </section>
+
+      <!-- 6. Copyright -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-copyright"></i> Bản quyền &amp; pháp lý</h2>
+        <div class="ftr-field"><label>Dòng copyright</label><input id="f-copyright" placeholder="© 2018–2026 Detoxblanc.com..."/></div>
+        <div class="ftr-field"><label>Link pháp lý (Điều khoản, Bảo mật, Cookie, Sitemap)</label></div>
+        <div id="legalList" class="ftr-list"></div>
+        <button type="button" class="ftr-btn-add" id="btnAddLegal"><i class="fa-solid fa-plus"></i> Thêm link pháp lý</button>
+      </section>
+
+      <!-- Preview -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-eye"></i> Xem trước</h2>
+        <div id="footerPreview"></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // ===== Default footer config (matches assets/partials/footer.html) =====
+  const DEFAULT_FOOTER = {
+    company: {
+      brand: 'DETOXBLANC',
+      slogan: 'Dermatological Skincare',
+      description: 'CÔNG TY TNHH TMSX XNK VIỆT MỸ COSMETICS — nhà phân phối chính thức dược mỹ phẩm Detoxblanc trên toàn lãnh thổ Việt Nam.',
+      address: '193 Nguyễn Thị Minh Khai, Q.1, TP.HCM',
+      phone: '1900 6750',
+      email: 'cskh@detoxblanc.com'
+    },
+    socials: [
+      { icon: 'fa-brands fa-facebook-f',  label: 'Facebook',  url: 'https://facebook.com/detoxblanc' },
+      { icon: 'fa-brands fa-instagram',   label: 'Instagram', url: 'https://instagram.com/detoxblanc' },
+      { icon: 'fa-brands fa-tiktok',      label: 'TikTok',    url: 'https://tiktok.com/@detoxblanc' },
+      { icon: 'fa-brands fa-youtube',     label: 'YouTube',   url: 'https://youtube.com/@detoxblanc' },
+      { icon: 'fa-brands fa-linkedin-in', label: 'LinkedIn',  url: 'https://linkedin.com/company/detoxblanc' },
+      { icon: 'fa-solid fa-comment-dots', label: 'Zalo OA',   url: 'https://zalo.me/19006750' }
+    ],
+    columns: [
+      { title: 'Thương hiệu', links: [
+        { label: 'Giới thiệu Detoxblanc', href: 'about.html' },
+        { label: 'Khoa học & công thức',   href: 'science.html' },
+        { label: 'Cam kết an toàn',         href: 'safety.html' },
+        { label: 'Tin tức & sự kiện',       href: 'article.html' },
+        { label: 'Tuyển dụng',              href: 'careers.html' }
+      ]},
+      { title: 'Mua sắm', links: [
+        { label: 'Toàn bộ sản phẩm',     href: 'category.html' },
+        { label: 'Bộ sưu tập lâm sàng',  href: 'ritual.html' },
+        { label: 'Hộp quà tặng',          href: 'gift.html' },
+        { label: 'Nhà thuốc & đại lý',   href: 'contact.html' },
+        { label: 'Chính sách đại lý',     href: 'dealer.html' }
+      ]},
+      { title: 'Hỗ trợ & tài khoản', links: [
+        { label: 'Đăng nhập · Đăng ký', href: 'login.html' },
+        { label: 'Tài khoản của tôi',    href: 'account.html' },
+        { label: 'Sản phẩm yêu thích',   href: 'wishlist.html' },
+        { label: 'Theo dõi đơn hàng',    href: 'track.html' },
+        { label: 'Chính sách đổi trả',   href: 'returns.html' },
+        { label: 'Chính sách vận chuyển', href: 'shipping.html' },
+        { label: 'Báo hàng giả',         href: 'fake-report.html' },
+        { label: 'Câu hỏi thường gặp',   href: 'faq.html' }
+      ]}
+    ],
+    app: {
+      title: 'Ứng dụng VMAPP',
+      description: 'Xác thực chính hãng & quản lý đơn hàng trong lòng bàn tay.',
+      iosUrl: 'https://apps.apple.com/vn/app/vmapp-detoxblanc/id000000001',
+      androidUrl: 'https://play.google.com/store/apps/details?id=com.detoxblanc.vmapp'
+    },
+    payments: ['VISA','MC','JCB','AMEX','MOMO','VNP','COD'],
+    copyright: {
+      text: '© 2018–2026 Detoxblanc.com · All rights reserved · MST 0315678912',
+      links: [
+        { label: 'Điều khoản', href: 'terms.html' },
+        { label: 'Bảo mật',    href: 'privacy.html' },
+        { label: 'Cookie',     href: 'cookie.html' },
+        { label: 'Sitemap',    href: 'sitemap.html' }
+      ]
+    }
+  };
+
+  let state = JSON.parse(JSON.stringify(DEFAULT_FOOTER));
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function toast(msg, type='ok'){
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;background:${type==='ok'?'#16A34A':'#C0392B'};color:#fff;padding:12px 20px;border-radius:8px;z-index:9999;font:500 14px Inter;box-shadow:0 4px 12px rgba(0,0,0,.15)`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), 2800);
+  }
+
+  // ===== Render UI from state =====
+  function render(){
+    // Company
+    $('f-brand').value   = state.company.brand;
+    $('f-slogan').value  = state.company.slogan;
+    $('f-desc').value    = state.company.description;
+    $('f-address').value = state.company.address;
+    $('f-phone').value   = state.company.phone;
+    $('f-email').value   = state.company.email;
+
+    // Socials
+    $('socialsList').innerHTML = state.socials.map((s,i) => `
+      <div class="ftr-social-row">
+        <select data-soc-i="${i}" data-field="icon">
+          ${['fa-brands fa-facebook-f','fa-brands fa-instagram','fa-brands fa-tiktok','fa-brands fa-youtube','fa-brands fa-linkedin-in','fa-brands fa-twitter','fa-brands fa-x-twitter','fa-brands fa-pinterest','fa-brands fa-telegram','fa-brands fa-whatsapp','fa-solid fa-comment-dots','fa-solid fa-link'].map(ic =>
+            `<option value="${ic}" ${s.icon===ic?'selected':''}>${ic.replace('fa-brands fa-','').replace('fa-solid fa-','')}</option>`).join('')}
+        </select>
+        <input data-soc-i="${i}" data-field="label" value="${esc(s.label)}" placeholder="Tên hiển thị"/>
+        <input data-soc-i="${i}" data-field="url" value="${esc(s.url)}" placeholder="URL"/>
+        <button type="button" class="btn-del" data-del-soc="${i}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `).join('');
+
+    // Columns
+    $('columnsList').innerHTML = state.columns.map((col,ci) => `
+      <div class="ftr-col-card">
+        <div class="ftr-field"><label>Tiêu đề cột ${ci+1}</label>
+          <input data-col-i="${ci}" data-field="title" value="${esc(col.title)}"/></div>
+        <h3>Các link trong cột</h3>
+        <div class="ftr-list">
+          ${col.links.map((l,li) => `
+            <div class="ftr-list-item">
+              <input data-col-i="${ci}" data-link-i="${li}" data-field="label" value="${esc(l.label)}" placeholder="Tên link"/>
+              <input data-col-i="${ci}" data-link-i="${li}" data-field="href" value="${esc(l.href)}" placeholder="URL"/>
+              <button type="button" class="btn-del" data-del-link="${ci}.${li}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          `).join('')}
+        </div>
+        <button type="button" class="ftr-btn-add" data-add-link="${ci}"><i class="fa-solid fa-plus"></i> Thêm link</button>
+      </div>
+    `).join('');
+
+    // App
+    $('f-app-title').value   = state.app.title;
+    $('f-app-desc').value    = state.app.description;
+    $('f-app-ios').value     = state.app.iosUrl;
+    $('f-app-android').value = state.app.androidUrl;
+
+    // Payments
+    $('paymentsList').innerHTML = state.payments.map((p,i) =>
+      `<span class="ftr-pay-tag">${esc(p)} <button type="button" data-del-pay="${i}">×</button></span>`).join('');
+
+    // Copyright
+    $('f-copyright').value = state.copyright.text;
+    $('legalList').innerHTML = state.copyright.links.map((l,i) => `
+      <div class="ftr-list-item">
+        <input data-legal-i="${i}" data-field="label" value="${esc(l.label)}" placeholder="Tên link"/>
+        <input data-legal-i="${i}" data-field="href" value="${esc(l.href)}" placeholder="URL"/>
+        <button type="button" class="btn-del" data-del-legal="${i}"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `).join('');
+
+    renderPreview();
+  }
+
+  // ===== Sync state from inputs =====
+  function syncFromInputs(){
+    state.company = {
+      brand: $('f-brand').value,
+      slogan: $('f-slogan').value,
+      description: $('f-desc').value,
+      address: $('f-address').value,
+      phone: $('f-phone').value,
+      email: $('f-email').value
+    };
+    state.app = {
+      title: $('f-app-title').value,
+      description: $('f-app-desc').value,
+      iosUrl: $('f-app-ios').value,
+      androidUrl: $('f-app-android').value
+    };
+    state.copyright.text = $('f-copyright').value;
+    // Socials, columns, legal đã sync trực tiếp qua delegated events
+  }
+
+  // ===== Preview =====
+  function renderPreview(){
+    syncFromInputs();
+    const s = state;
+    $('footerPreview').innerHTML = `
+      <div class="pv-grid">
+        <div>
+          <strong style="font-size:15px;display:block;margin-bottom:6px">${esc(s.company.brand)}</strong>
+          <div style="opacity:.6;font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">${esc(s.company.slogan)}</div>
+          <p style="opacity:.85;font-size:12px">${esc(s.company.description)}</p>
+          <div style="font-size:12px;opacity:.85;margin:8px 0">
+            <div>📍 ${esc(s.company.address)}</div>
+            <div>📞 ${esc(s.company.phone)}</div>
+            <div>✉ ${esc(s.company.email)}</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            ${s.socials.map(sc => `<span style="width:28px;height:28px;background:rgba(255,255,255,.1);border-radius:50%;display:inline-grid;place-items:center" title="${esc(sc.label)}"><i class="${sc.icon}"></i></span>`).join('')}
+          </div>
+        </div>
+        ${s.columns.map(c => `
+          <div>
+            <h4>${esc(c.title)}</h4>
+            <ul>${c.links.map(l => `<li><a href="${esc(l.href)}">${esc(l.label)}</a></li>`).join('')}</ul>
+          </div>`).join('')}
+        <div>
+          <h4>${esc(s.app.title)}</h4>
+          <p style="opacity:.85;font-size:12px">${esc(s.app.description)}</p>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <a href="${esc(s.app.iosUrl)}">⌬ App Store</a>
+            <a href="${esc(s.app.androidUrl)}">▷ Google Play</a>
+          </div>
+          <h4 style="margin-top:14px">Thanh toán</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${s.payments.map(p => `<span style="background:rgba(255,255,255,.1);padding:3px 8px;border-radius:4px;font-size:11px;font-family:monospace">${esc(p)}</span>`).join('')}</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,.1);margin-top:18px;padding-top:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px;opacity:.7">
+        <span>${esc(s.copyright.text)}</span>
+        <div style="display:flex;gap:14px">${s.copyright.links.map(l => `<a href="${esc(l.href)}">${esc(l.label)}</a>`).join('')}</div>
+      </div>
+    `;
+  }
+
+  // ===== Event delegation =====
+  document.addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset.socI != null){
+      state.socials[+t.dataset.socI][t.dataset.field] = t.value;
+      renderPreview();
+    } else if (t.dataset.linkI != null){
+      state.columns[+t.dataset.colI].links[+t.dataset.linkI][t.dataset.field] = t.value;
+      renderPreview();
+    } else if (t.dataset.colI != null && t.dataset.field === 'title'){
+      state.columns[+t.dataset.colI].title = t.value;
+      renderPreview();
+    } else if (t.dataset.legalI != null){
+      state.copyright.links[+t.dataset.legalI][t.dataset.field] = t.value;
+      renderPreview();
+    } else if (['f-brand','f-slogan','f-desc','f-address','f-phone','f-email','f-app-title','f-app-desc','f-app-ios','f-app-android','f-copyright'].includes(t.id)){
+      renderPreview();
+    }
+  });
+  document.addEventListener('change', e => {
+    if (e.target.dataset.socI != null && e.target.dataset.field === 'icon'){
+      state.socials[+e.target.dataset.socI].icon = e.target.value;
+      renderPreview();
+    }
+  });
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button');
+    if (!t) return;
+    if (t.dataset.delSoc != null){ state.socials.splice(+t.dataset.delSoc,1); render(); }
+    else if (t.dataset.delPay != null){ state.payments.splice(+t.dataset.delPay,1); render(); }
+    else if (t.dataset.delLegal != null){ state.copyright.links.splice(+t.dataset.delLegal,1); render(); }
+    else if (t.dataset.delLink != null){
+      const [ci,li] = t.dataset.delLink.split('.').map(Number);
+      state.columns[ci].links.splice(li,1); render();
+    }
+    else if (t.dataset.addLink != null){
+      state.columns[+t.dataset.addLink].links.push({label:'Link mới', href:'#'}); render();
+    }
+  });
+
+  $('btnAddSocial').onclick = () => { state.socials.push({icon:'fa-solid fa-link', label:'Mới', url:'https://'}); render(); };
+  $('btnAddLegal').onclick  = () => { state.copyright.links.push({label:'Mới', href:'#'}); render(); };
+
+  $('payInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('btnAddPay').click(); }
+  });
+  $('btnAddPay').onclick = () => {
+    const v = $('payInput').value.trim();
+    if (v){ state.payments.push(v); $('payInput').value=''; render(); }
+  };
+
+  // ===== Save / Load via Firestore or localStorage =====
+  async function saveFooter(){
+    syncFromInputs();
+    try {
+      if (window.DTX_FIREBASE?.enabled){
+        const fb = window.DTX_FIREBASE;
+        await fb.dbMethods.setDoc(
+          fb.dbMethods.doc(fb.db, 'settings', 'footer'),
+          { ...state, updatedAt: fb.dbMethods.serverTimestamp() }
+        );
+        toast('✓ Đã lưu footer lên Firestore — áp dụng ngay cho mọi trang public');
+      } else {
+        localStorage.setItem('dtx_footer_config', JSON.stringify(state));
+        toast('✓ Đã lưu vào localStorage (local mode)');
+      }
+    } catch (err){
+      console.error(err);
+      toast('Lỗi: '+err.message, 'err');
+    }
+  }
+
+  async function loadFooter(){
+    try {
+      if (window.DTX_FIREBASE?.enabled){
+        const fb = window.DTX_FIREBASE;
+        const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db, 'settings', 'footer'));
+        if (snap.exists()){
+          const d = snap.data();
+          delete d.updatedAt;
+          state = { ...DEFAULT_FOOTER, ...d };
+          toast('✓ Đã tải cấu hình từ Firestore');
+        } else {
+          state = JSON.parse(JSON.stringify(DEFAULT_FOOTER));
+          toast('Dùng cấu hình mặc định (chưa lưu lần nào)');
+        }
+      } else {
+        const ls = localStorage.getItem('dtx_footer_config');
+        state = ls ? JSON.parse(ls) : JSON.parse(JSON.stringify(DEFAULT_FOOTER));
+      }
+      render();
+    } catch (err){
+      console.error(err);
+      state = JSON.parse(JSON.stringify(DEFAULT_FOOTER));
+      render();
+    }
+  }
+
+  $('btnFtrSave').onclick = saveFooter;
+  $('btnFtrReload').onclick = loadFooter;
+  $('btnFtrReset').onclick = () => {
+    if (confirm('Khôi phục về cấu hình footer mặc định? Các thay đổi chưa lưu sẽ mất.')){
+      state = JSON.parse(JSON.stringify(DEFAULT_FOOTER));
+      render();
+    }
+  };
+
+  // Initial render with defaults, then try load
+  render();
+  if (window.DTX_FIREBASE?.enabled){
+    loadFooter();
+  } else {
+    window.addEventListener('dtx:firebase-ready', loadFooter, { once:true });
+    // Also try localStorage
+    setTimeout(loadFooter, 100);
+  }
+})();
+</script>
+</body>
+</html>

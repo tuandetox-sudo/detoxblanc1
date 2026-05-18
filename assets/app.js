@@ -46,6 +46,103 @@
     } catch(err){ console.warn('Partial load failed:', err); }
   }
 
+  // ======== 1.5) OVERRIDE FOOTER NỘI DUNG TỪ FIRESTORE (nếu có) ========
+  applyFooterConfig();
+  window.addEventListener('dtx:firebase-ready', applyFooterConfig, { once: true });
+
+  async function applyFooterConfig(){
+    try {
+      let cfg = null;
+      if (window.DTX_FIREBASE?.enabled){
+        const fb = window.DTX_FIREBASE;
+        const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db, 'settings', 'footer'));
+        if (snap.exists()) cfg = snap.data();
+      } else {
+        const ls = localStorage.getItem('dtx_footer_config');
+        if (ls) cfg = JSON.parse(ls);
+      }
+      if (!cfg) return;
+      applyFooterToDOM(cfg);
+    } catch(err){ console.warn('Footer config load failed:', err); }
+  }
+
+  function applyFooterToDOM(c){
+    const esc = s => String(s||'').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const footer = document.querySelector('footer.site-footer');
+    if (!footer) return;
+
+    // Company block
+    if (c.company){
+      const aboutP = footer.querySelector('.footer-about');
+      if (aboutP) aboutP.textContent = c.company.description || aboutP.textContent;
+      const logoText = footer.querySelector('.logo-light .logo-text');
+      if (logoText){
+        logoText.innerHTML = `<strong>${esc(c.company.brand||'DETOXBLANC')}</strong><em>${esc(c.company.slogan||'')}</em>`;
+      }
+      const contact = footer.querySelector('.footer-contact');
+      if (contact){
+        contact.innerHTML = `
+          <li><i class="fa-solid fa-location-dot"></i> ${esc(c.company.address||'')}</li>
+          <li><i class="fa-solid fa-phone"></i> <a href="tel:${esc((c.company.phone||'').replace(/\s+/g,''))}">${esc(c.company.phone||'')}</a></li>
+          <li><i class="fa-solid fa-envelope"></i> <a href="mailto:${esc(c.company.email||'')}">${esc(c.company.email||'')}</a></li>
+        `;
+      }
+    }
+
+    // Socials
+    if (Array.isArray(c.socials)){
+      const sc = footer.querySelector('.socials');
+      if (sc){
+        sc.innerHTML = c.socials.map(s =>
+          `<a href="${esc(s.url)}" target="_blank" rel="noopener" aria-label="${esc(s.label)}"><i class="${esc(s.icon)}"></i></a>`
+        ).join('');
+      }
+    }
+
+    // Columns (Thương hiệu, Mua sắm, Hỗ trợ)
+    if (Array.isArray(c.columns)){
+      const cols = footer.querySelectorAll('.footer-grid > div');
+      // cols[0] = company, cols[1..3] = menu columns, cols[4] = app
+      c.columns.forEach((col, i) => {
+        const target = cols[i+1];
+        if (!target) return;
+        target.innerHTML = `
+          <h4>${esc(col.title)}</h4>
+          <ul>${(col.links||[]).map(l => `<li><a href="${esc(l.href)}">${esc(l.label)}</a></li>`).join('')}</ul>
+        `;
+      });
+    }
+
+    // App + Payments
+    if (c.app){
+      const appCol = footer.querySelectorAll('.footer-grid > div')[4];
+      if (appCol){
+        const paymentsHTML = (c.payments||[]).map(p => `<span class="pay">${esc(p)}</span>`).join('');
+        appCol.innerHTML = `
+          <h4>${esc(c.app.title||'Ứng dụng')}</h4>
+          <p class="footer-app">${esc(c.app.description||'')}</p>
+          <div class="store-btns sm">
+            <a href="${esc(c.app.iosUrl||'#')}" target="_blank" rel="noopener" class="store-btn"><i class="fa-brands fa-apple"></i><span><small>Tải về trên</small>App Store</span></a>
+            <a href="${esc(c.app.androidUrl||'#')}" target="_blank" rel="noopener" class="store-btn"><i class="fa-brands fa-google-play"></i><span><small>Tải về trên</small>Google Play</span></a>
+          </div>
+          <h4 class="mt-24">Thanh toán</h4>
+          <div class="pay-row">${paymentsHTML}</div>
+        `;
+      }
+    }
+
+    // Copyright
+    if (c.copyright){
+      const cr = footer.querySelector('.copyright-inner');
+      if (cr){
+        cr.innerHTML = `
+          <span>${esc(c.copyright.text||'')}</span>
+          <div class="legal">${(c.copyright.links||[]).map(l => `<a href="${esc(l.href)}">${esc(l.label)}</a>`).join('')}</div>
+        `;
+      }
+    }
+  }
+
   // ======== 2) MARK ACTIVE NAV ITEM ========
   const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
   const navMap = {

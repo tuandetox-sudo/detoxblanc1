@@ -72,6 +72,7 @@
       { "source": "/admin/collections", "destination": "/admin-collections.html" },
       { "source": "/admin/articles",    "destination": "/admin-articles.html" },
       { "source": "/admin/pages",       "destination": "/admin-pages.html" },
+      { "source": "/admin/footer",      "destination": "/admin-footer.html" },
       { "source": "/admin/reviews",     "destination": "/admin-reviews.html" },
       { "source": "/admin/newsletter",  "destination": "/admin-newsletter.html" },
       { "source": "/admin/vouchers",    "destination": "/admin-vouchers.html" },
