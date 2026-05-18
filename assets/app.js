@@ -4,6 +4,13 @@
 
 (async function(){
 
+  // ======== 0) LOAD FIREBASE (nếu chưa có) ========
+  if (!window.DTX_FIREBASE && location.protocol !== 'file:') {
+    const s = document.createElement('script');
+    s.src = 'assets/firebase-config.js';
+    document.head.appendChild(s);
+  }
+
   // ======== 1) SWAP HEADER + FOOTER PARTIALS (đồng nhất mọi trang) ========
   if (location.protocol !== 'file:') {
     try {
