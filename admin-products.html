@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sản phẩm — Detoxblanc Admin Console</title>
+<meta name="description" content="Quản trị catalog Detoxblanc — tìm kiếm, lọc, bulk-action toàn bộ SKU." />
+<meta name="theme-color" content="#0F1F1C" />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta name="color-scheme" content="light dark" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="products">
+
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+
+  <!-- Shell injects sidebar here -->
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Sản phẩm"}]'
+       data-title="Sản phẩm"></div>
+
+  <div class="adm-canvas">
+    <!-- Shell prepends topbar here -->
+
+    <main class="adm-page" id="adm-content">
+
+      <!-- Page head -->
+      <div class="adm-page-head">
+        <div>
+          <h1>Sản phẩm</h1>
+          <p>Quản trị toàn bộ <strong id="prCountLabel">—</strong> SKU trong catalog. Thay đổi được lưu cục bộ qua <em>localStorage</em>.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnReset" data-perm="products:write" title="Đặt lại dữ liệu về bản gốc (34 SKU seed)">
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Đặt lại seed
+          </button>
+          <button class="adm-btn" id="btnExport" data-perm="products:read">
+            <i class="fa-solid fa-file-export" aria-hidden="true"></i> Xuất CSV
+          </button>
+          <a class="adm-btn primary" href="admin-product-edit.html?new">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Thêm sản phẩm
+          </a>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="pr-filter-bar card" role="search">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input type="search" id="fltQ" placeholder="Tìm theo tên, mã SKU, hoạt chất…" aria-label="Tìm kiếm sản phẩm" />
+        </div>
+        <div class="field">
+          <select id="fltCat" aria-label="Lọc danh mục">
+            <option value="">Tất cả danh mục</option>
+          </select>
+        </div>
+        <div class="field">
+          <select id="fltStatus" aria-label="Lọc trạng thái">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Đang bán</option>
+            <option value="draft">Bản nháp</option>
+            <option value="archived">Lưu trữ</option>
+          </select>
+        </div>
+        <div class="field">
+          <select id="fltStock" aria-label="Lọc tồn kho">
+            <option value="">Tồn kho bất kỳ</option>
+            <option value="low">Dưới ngưỡng an toàn</option>
+            <option value="out">Hết hàng</option>
+            <option value="ok">Còn hàng</option>
+          </select>
+        </div>
+        <div class="field">
+          <select id="fltSort" aria-label="Sắp xếp">
+            <option value="updated">Mới cập nhật</option>
+            <option value="created">Mới tạo</option>
+            <option value="name">Tên A→Z</option>
+            <option value="price-asc">Giá tăng dần</option>
+            <option value="price-desc">Giá giảm dần</option>
+            <option value="stock-asc">Tồn ít → nhiều</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Bulk action bar (shows when selection > 0) -->
+      <div class="bulk-bar" id="bulkBar" hidden role="toolbar" aria-label="Tác vụ hàng loạt">
+        <span><strong id="bulkCount">0</strong> đã chọn</span>
+        <button class="adm-btn sm" data-bulk="active">
+          <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Đang bán
+        </button>
+        <button class="adm-btn sm" data-bulk="draft">
+          <i class="fa-solid fa-pen-ruler" aria-hidden="true"></i> Nháp
+        </button>
+        <button class="adm-btn sm" data-bulk="archived">
+          <i class="fa-solid fa-box-archive" aria-hidden="true"></i> Lưu trữ
+        </button>
+        <button class="adm-btn sm ghost-danger" data-bulk="delete">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i> Xoá
+        </button>
+        <button class="adm-btn sm" id="bulkClear" aria-label="Bỏ chọn tất cả" style="margin-left:auto">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i> Bỏ chọn
+        </button>
+      </div>
+
+      <!-- Products table -->
+      <section class="card" aria-labelledby="prTableTitle">
+        <div class="card-head">
+          <h3 id="prTableTitle">Danh sách SKU <span class="muted" id="prFoundLabel"></span></h3>
+          <div class="seg" role="tablist" aria-label="Cách hiển thị">
+            <button class="on" aria-selected="true" data-view="table"><i class="fa-solid fa-list" aria-hidden="true"></i> Bảng</button>
+            <button aria-selected="false" data-view="grid"><i class="fa-solid fa-table-cells" aria-hidden="true"></i> Lưới</button>
+          </div>
+        </div>
+
+        <div id="viewTable">
+          <table class="adm-tbl pr-tbl">
+            <thead>
+              <tr>
+                <th style="width:38px"><input type="checkbox" id="chkAll" aria-label="Chọn tất cả" /></th>
+                <th>Sản phẩm</th>
+                <th>Danh mục</th>
+                <th class="num">Giá</th>
+                <th class="num">Tồn kho</th>
+                <th>Trạng thái</th>
+                <th class="num">Đánh giá</th>
+                <th style="width:72px"></th>
+              </tr>
+            </thead>
+            <tbody id="prBody">
+              <!-- rows rendered by JS -->
+            </tbody>
+          </table>
+          <div class="empty-state" id="prEmpty" hidden>
+            <i class="fa-regular fa-folder-open" aria-hidden="true"></i>
+            <h4>Không có kết quả nào phù hợp</h4>
+            <p>Thử bỏ bớt bộ lọc hoặc <a href="admin-product-edit.html?new">tạo SKU mới</a>.</p>
+          </div>
+        </div>
+
+        <div id="viewGrid" hidden>
+          <div class="pr-grid" id="prGrid"><!-- cards by JS --></div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagi" id="prPagi" role="navigation" aria-label="Phân trang">
+          <!-- buttons by JS -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Đọc DTX_MODE từ localStorage trước khi load admin-api để store chọn đúng mode -->
+<script>
+  try { window.DTX_MODE = localStorage.getItem('dtx_mode') || 'local'; } catch (_) { window.DTX_MODE = 'local'; }
+  try { window.DTX_API_BASE = localStorage.getItem('dtx_api_base') || '/v1'; } catch (_) {}
+</script>
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-api.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // Mode banner — cho biết đang local hay remote, click để swap.
+  (function installModeBanner(){
+    const mode = window.DTX_MODE || 'local';
+    const b = document.createElement('div');
+    b.className = 'adm-mode-banner mode-' + mode;
+    b.innerHTML = `<span>Data: <strong>${mode === 'remote' ? 'Remote API' : 'Local (demo)'}</strong></span>
+      <button class="adm-btn sm" id="btnToggleMode" type="button">
+        <i class="fa-solid fa-arrows-rotate"></i> Đổi sang ${mode === 'remote' ? 'local' : 'remote'}
+      </button>`;
+    document.body.appendChild(b);
+    b.querySelector('#btnToggleMode').addEventListener('click', () => {
+      const next = mode === 'remote' ? 'local' : 'remote';
+      localStorage.setItem('dtx_mode', next);
+      location.reload();
+    });
+  })();
+
+  // Khi remote, DTX_ADMIN.create/update/remove là async → promise chain.
+  // Code bên dưới dùng pattern "gọi xong → render()" nên vẫn hoạt động cho cả 2 mode
+  // miễn là render() re-read từ store.all() (store tự emit event khi xong).
+
+  const PAGE_SIZE = 12;
+  const state = {
+    page: 1,
+    q: '',
+    cat: '',
+    status: '',
+    stock: '',
+    sort: 'updated',
+    view: 'table',
+    selected: new Set(),
+  };
+
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+
+  /* ---------- Load & filter ---------- */
+  function all(){ return window.DTX_ADMIN.all(); }
+
+  function applyFilters(list){
+    const q = state.q.trim().toLowerCase();
+    return list.filter(p => {
+      if (q){
+        const hay = (p.name + ' ' + p.code + ' ' + (p.ingr||'') + ' ' + (p.category||'')).toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (state.cat && p.category !== state.cat) return false;
+      if (state.status && p.status !== state.status) return false;
+      if (state.stock === 'low' && !(p.stock > 0 && p.stock <= (p.lowStock || 30))) return false;
+      if (state.stock === 'out' && p.stock !== 0) return false;
+      if (state.stock === 'ok' && !(p.stock > (p.lowStock || 30))) return false;
+      return true;
+    });
+  }
+
+  function applySort(list){
+    const s = state.sort;
+    const arr = [...list];
+    if (s === 'name') arr.sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+    else if (s === 'price-asc')  arr.sort((a,b) => (a.price||0) - (b.price||0));
+    else if (s === 'price-desc') arr.sort((a,b) => (b.price||0) - (a.price||0));
+    else if (s === 'stock-asc')  arr.sort((a,b) => (a.stock||0) - (b.stock||0));
+    else if (s === 'created')    arr.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+    else                         arr.sort((a,b) => (b.updatedAt||'').localeCompare(a.updatedAt||''));
+    return arr;
+  }
+
+  /* ---------- Render ---------- */
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const VND = n => window.DTX_ADMIN.formatVND(n);
+
+  function statusChip(s){
+    const map = {
+      active:   { c:'chip success', icon:'circle-check',      l:'Đang bán' },
+      draft:    { c:'chip warn',    icon:'pen-ruler',         l:'Nháp' },
+      archived: { c:'chip',         icon:'box-archive',       l:'Lưu trữ' },
+    };
+    const cfg = map[s] || map.active;
+    return `<span class="${cfg.c}"><i class="fa-solid fa-${cfg.icon}" aria-hidden="true"></i>${cfg.l}</span>`;
+  }
+
+  function stockChip(p){
+    const low = p.lowStock || 30;
+    if (p.stock === 0) return `<span class="chip danger" title="Hết hàng"><i class="fa-solid fa-ban" aria-hidden="true"></i>Hết</span>`;
+    if (p.stock <= low) return `<span class="chip warn" title="Dưới ngưỡng ${low}"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>${p.stock}</span>`;
+    return `<span class="num tabular">${p.stock}</span>`;
+  }
+
+  function rowHTML(p){
+    const checked = state.selected.has(p.id) ? 'checked' : '';
+    return `<tr data-id="${p.id}">
+      <td><input type="checkbox" class="rowchk" ${checked} aria-label="Chọn ${esc(p.name)}" /></td>
+      <td>
+        <div class="pr-cell">
+          <span class="pr-thumb" style="background:linear-gradient(135deg, ${esc(p.grad||'#63C1BB')}, #1F6661)">${esc(p.code)}</span>
+          <div class="pr-meta">
+            <a href="admin-product-edit.html?id=${encodeURIComponent(p.id)}" class="pr-name">${esc(p.name)}</a>
+            <small>${esc(p.code)} · ${esc(p.ingr || '')}</small>
+          </div>
+        </div>
+      </td>
+      <td>${esc(p.category || '')}</td>
+      <td class="num tabular">${VND(p.price)}${p.old ? `<br><small class="muted" style="text-decoration:line-through">${VND(p.old)}</small>` : ''}</td>
+      <td class="num">${stockChip(p)}</td>
+      <td>${statusChip(p.status)}</td>
+      <td class="num tabular">${p.rating || '—'} <small class="muted">(${p.reviews || 0})</small></td>
+      <td class="row-actions">
+        <a class="adm-iconbtn sm" href="admin-product-edit.html?id=${encodeURIComponent(p.id)}" title="Sửa" aria-label="Sửa ${esc(p.name)}">
+          <i class="fa-solid fa-pen" aria-hidden="true"></i>
+        </a>
+        <button class="adm-iconbtn sm" data-action="duplicate" data-id="${p.id}" title="Nhân bản" aria-label="Nhân bản">
+          <i class="fa-regular fa-clone" aria-hidden="true"></i>
+        </button>
+        <button class="adm-iconbtn sm ghost-danger" data-action="delete" data-id="${p.id}" title="Xoá" aria-label="Xoá">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </button>
+      </td>
+    </tr>`;
+  }
+
+  function cardHTML(p){
+    const checked = state.selected.has(p.id) ? 'checked' : '';
+    return `<article class="pr-card" data-id="${p.id}">
+      <label class="pr-card-chk"><input type="checkbox" class="rowchk" ${checked} aria-label="Chọn ${esc(p.name)}" /></label>
+      <div class="pr-card-img" style="background:linear-gradient(135deg, ${esc(p.grad||'#63C1BB')}, #1F6661)">
+        <span class="pr-card-code">${esc(p.code)}</span>
+      </div>
+      <div class="pr-card-body">
+        <a href="admin-product-edit.html?id=${encodeURIComponent(p.id)}" class="pr-card-name">${esc(p.name)}</a>
+        <small class="muted">${esc(p.category || '—')}</small>
+        <div class="pr-card-row">
+          <strong class="tabular">${VND(p.price)}</strong>
+          ${stockChip(p)}
+        </div>
+        <div class="pr-card-row">
+          ${statusChip(p.status)}
+          <span class="muted"><i class="fa-solid fa-star" aria-hidden="true" style="color:#F5B800"></i> ${p.rating || '—'}</span>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function populateCategories(list){
+    const cats = [...new Set(list.map(p => p.category).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'vi'));
+    const sel = $('#fltCat');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Tất cả danh mục</option>' +
+      cats.map(c => `<option value="${esc(c)}" ${c===cur?'selected':''}>${esc(c)}</option>`).join('');
+  }
+
+  function render(){
+    const list = all();
+    populateCategories(list);
+    const filtered = applySort(applyFilters(list));
+
+    $('#prCountLabel').textContent = list.length;
+    $('#prFoundLabel').textContent = filtered.length === list.length
+      ? `· ${list.length} sản phẩm`
+      : `· ${filtered.length}/${list.length}`;
+
+    // Prune selection of items no longer in filtered set (keep cross-page selections though)
+    const allIds = new Set(list.map(p => p.id));
+    [...state.selected].forEach(id => { if (!allIds.has(id)) state.selected.delete(id); });
+    updateBulkBar();
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if (state.page > totalPages) state.page = totalPages;
+    const start = (state.page - 1) * PAGE_SIZE;
+    const pageRows = filtered.slice(start, start + PAGE_SIZE);
+
+    // Empty state
+    $('#prEmpty').hidden = filtered.length !== 0;
+
+    // Table
+    $('#prBody').innerHTML = pageRows.map(rowHTML).join('');
+    // Grid
+    $('#prGrid').innerHTML = pageRows.map(cardHTML).join('');
+
+    // Check "all" state
+    const pageIds = pageRows.map(p => p.id);
+    const allChecked = pageIds.length > 0 && pageIds.every(id => state.selected.has(id));
+    const someChecked = pageIds.some(id => state.selected.has(id));
+    const chkAll = $('#chkAll');
+    chkAll.checked = allChecked;
+    chkAll.indeterminate = !allChecked && someChecked;
+
+    // View switch
+    $('#viewTable').hidden = state.view !== 'table';
+    $('#viewGrid').hidden = state.view !== 'grid';
+
+    // Pagination buttons
+    renderPagi(totalPages);
+  }
+
+  function renderPagi(total){
+    const cur = state.page;
+    const btn = (n, label, disabled, cls) =>
+      `<button class="${cls||''}" data-page="${n}" ${disabled?'disabled':''} ${cur===n?'aria-current="page"':''}>${label}</button>`;
+
+    // Build sparse range: always 1, last, cur-1, cur, cur+1
+    const pages = new Set([1, total, cur, cur-1, cur+1]);
+    const arr = [...pages].filter(n => n>=1 && n<=total).sort((a,b)=>a-b);
+
+    let html = btn(Math.max(1, cur-1), '<i class="fa-solid fa-chevron-left"></i>', cur===1);
+    let prev = 0;
+    arr.forEach(n => {
+      if (prev && n - prev > 1) html += `<span class="gap">…</span>`;
+      html += btn(n, n, false, cur===n?'on':'');
+      prev = n;
+    });
+    html += btn(Math.min(total, cur+1), '<i class="fa-solid fa-chevron-right"></i>', cur===total);
+
+    $('#prPagi').innerHTML = html;
+  }
+
+  function updateBulkBar(){
+    const n = state.selected.size;
+    $('#bulkBar').hidden = n === 0;
+    $('#bulkCount').textContent = n;
+  }
+
+  /* ---------- Wire inputs ---------- */
+  function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+  $('#fltQ').addEventListener('input', debounce(e => { state.q = e.target.value; state.page = 1; render(); }, 180));
+  $('#fltCat').addEventListener('change', e => { state.cat = e.target.value; state.page = 1; render(); });
+  $('#fltStatus').addEventListener('change', e => { state.status = e.target.value; state.page = 1; render(); });
+  $('#fltStock').addEventListener('change', e => { state.stock = e.target.value; state.page = 1; render(); });
+  $('#fltSort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+
+  // View toggle
+  document.querySelectorAll('.card-head .seg button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.card-head .seg button').forEach(x => { x.classList.remove('on'); x.setAttribute('aria-selected','false'); });
+      b.classList.add('on'); b.setAttribute('aria-selected','true');
+      state.view = b.dataset.view;
+      render();
+    });
+  });
+
+  // Delegated row actions + checkbox toggles
+  document.addEventListener('change', e => {
+    const el = e.target;
+    if (el.classList?.contains('rowchk')){
+      const tr = el.closest('[data-id]');
+      const id = tr?.getAttribute('data-id');
+      if (!id) return;
+      if (el.checked) state.selected.add(id); else state.selected.delete(id);
+      updateBulkBar();
+      // Update chkAll state
+      const pageIds = [...document.querySelectorAll('#prBody [data-id], #prGrid [data-id]')]
+        .map(n => n.getAttribute('data-id'));
+      const unique = [...new Set(pageIds)];
+      const chkAll = $('#chkAll');
+      const allChecked = unique.length > 0 && unique.every(id => state.selected.has(id));
+      const someChecked = unique.some(id => state.selected.has(id));
+      chkAll.checked = allChecked;
+      chkAll.indeterminate = !allChecked && someChecked;
+    }
+  });
+
+  $('#chkAll').addEventListener('change', e => {
+    const check = e.target.checked;
+    document.querySelectorAll('#prBody [data-id], #prGrid [data-id]').forEach(n => {
+      const id = n.getAttribute('data-id');
+      if (!id) return;
+      if (check) state.selected.add(id); else state.selected.delete(id);
+    });
+    render();
+  });
+
+  $('#bulkClear').addEventListener('click', () => { state.selected.clear(); render(); });
+
+  // Bulk actions
+  document.querySelectorAll('[data-bulk]').forEach(b => {
+    b.addEventListener('click', () => {
+      const ids = [...state.selected];
+      if (!ids.length) return;
+      const action = b.dataset.bulk;
+      if (action === 'delete'){
+        if (!confirm(`Xoá ${ids.length} SKU đã chọn? Hành động này không thể hoàn tác.`)) return;
+        window.DTX_ADMIN.removeMany(ids);
+        state.selected.clear();
+        window.admToast?.(`Đã xoá ${ids.length} SKU`, 'success');
+      } else {
+        window.DTX_ADMIN.setStatus(ids, action);
+        window.admToast?.(`Đã cập nhật ${ids.length} SKU → ${action}`, 'success');
+      }
+      render();
+    });
+  });
+
+  // Row-level actions (delete / duplicate)
+  document.addEventListener('click', e => {
+    const pg = e.target.closest('[data-page]');
+    if (pg){ state.page = Number(pg.dataset.page) || 1; render(); return; }
+
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const a = btn.dataset.action;
+    if (a === 'delete'){
+      const p = window.DTX_ADMIN.get(id);
+      if (!p) return;
+      if (!confirm(`Xoá "${p.name}"?`)) return;
+      window.DTX_ADMIN.remove(id);
+      state.selected.delete(id);
+      window.admToast?.('Đã xoá 1 SKU', 'success');
+      render();
+    } else if (a === 'duplicate'){
+      const p = window.DTX_ADMIN.get(id);
+      if (!p) return;
+      const copy = { ...p };
+      delete copy.id;
+      copy.name = p.name + ' (bản sao)';
+      copy.code = p.code + '-COPY';
+      copy.status = 'draft';
+      window.DTX_ADMIN.create(copy);
+      window.admToast?.('Đã nhân bản SKU', 'success');
+      render();
+    }
+  });
+
+  // Reset seed
+  $('#btnReset').addEventListener('click', () => {
+    if (!confirm('Đặt lại toàn bộ dữ liệu sản phẩm về bản gốc (34 SKU)? Mọi thay đổi cục bộ sẽ mất.')) return;
+    window.DTX_ADMIN.reset();
+    state.selected.clear();
+    window.admToast?.('Đã khôi phục dữ liệu seed', 'info');
+    render();
+  });
+
+  // Export CSV
+  $('#btnExport').addEventListener('click', () => {
+    const list = applySort(applyFilters(all()));
+    const cols = ['id','code','name','category','ingr','price','old','stock','status','rating','reviews','updatedAt'];
+    const csv = [cols.join(',')].concat(
+      list.map(p => cols.map(k => {
+        const v = p[k] == null ? '' : String(p[k]).replace(/"/g, '""');
+        return /[",\n]/.test(v) ? `"${v}"` : v;
+      }).join(','))
+    ).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `detoxblanc-products-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    window.admToast?.(`Đã xuất ${list.length} dòng CSV`, 'success');
+  });
+
+  // React to external mutations (e.g. edit page saved in other tab)
+  window.addEventListener('dtx:products-updated', render);
+  window.addEventListener('storage', e => {
+    if (e.key === 'dtx_admin_products') render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

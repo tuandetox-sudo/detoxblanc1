@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cổng quản trị nội bộ — Detoxblanc Admin Console</title>
+<meta name="description" content="Đăng nhập cổng quản trị Detoxblanc — khu vực dành cho nhân sự nội bộ. Yêu cầu xác thực 2 lớp." />
+<meta name="theme-color" content="#0A1F1D" />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/styles.css" />
+
+<style>
+/* ================ ADMIN LOGIN — scoped styles ================ */
+:root{
+  --adm-bg:       #07161A;
+  --adm-bg-2:     #0A2326;
+  --adm-surface:  rgba(255,255,255,.04);
+  --adm-surface-2:rgba(255,255,255,.07);
+  --adm-border:   rgba(132,200,195,.16);
+  --adm-border-s: rgba(132,200,195,.28);
+  --adm-ink:      #E8F4F2;
+  --adm-ink-2:    #A4BDB9;
+  --adm-ink-3:    #6E857F;
+  --adm-brand:    #63C1BB;
+  --adm-brand-2:  #8DDAD4;
+  --adm-danger:   #F38B8B;
+  --adm-warn:     #F5C46B;
+  --adm-ok:       #7DDDB5;
+}
+body.admin-body{
+  background:
+    radial-gradient(1200px 700px at -10% -20%, rgba(99,193,187,.18), transparent 60%),
+    radial-gradient(900px 600px at 120% 110%, rgba(99,193,187,.12), transparent 60%),
+    linear-gradient(180deg, #06141A 0%, #081F22 100%);
+  color:var(--adm-ink);
+  min-height:100vh;
+  margin:0;
+  font-family:'Manrope', sans-serif;
+  overflow-x:hidden;
+}
+body.admin-body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(99,193,187,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,193,187,.045) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  z-index:0;
+}
+
+.adm-wrap{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:1.05fr .95fr;
+  min-height:100vh;
+}
+@media (max-width:980px){ .adm-wrap{ grid-template-columns:1fr } }
+
+/* ---- LEFT: brand + security panel ---- */
+.adm-side{
+  padding:40px 56px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:40px;
+  border-right:1px solid var(--adm-border);
+  position:relative;
+  background:linear-gradient(180deg, rgba(10,35,38,.6), rgba(7,22,26,.2));
+}
+@media (max-width:980px){ .adm-side{ padding:32px 24px;border-right:0;border-bottom:1px solid var(--adm-border) } }
+
+.adm-brand{ display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--adm-ink) }
+.adm-brand .logo-mark{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg, rgba(99,193,187,.25), rgba(99,193,187,.05));
+  border:1px solid var(--adm-border-s);
+  display:grid;place-items:center;color:var(--adm-brand-2);
+}
+.adm-brand strong{ font-family:'Space Grotesk';letter-spacing:.14em;font-size:15px;color:var(--adm-ink) }
+.adm-brand em{ display:block;font-style:normal;font-size:11px;color:var(--adm-ink-3);letter-spacing:.22em;text-transform:uppercase;margin-top:2px }
+
+.adm-hero h1{
+  font-family:'Space Grotesk';
+  font-size:clamp(30px, 3.4vw, 46px);line-height:1.08;
+  margin:24px 0 16px;color:var(--adm-ink);font-weight:600;letter-spacing:-.01em;
+}
+.adm-hero h1 mark{ background:none;color:var(--adm-brand-2);font-weight:700 }
+.adm-hero p{ color:var(--adm-ink-2);max-width:520px;line-height:1.7;font-size:15px }
+
+.adm-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:999px;
+  background:rgba(99,193,187,.08);
+  border:1px solid var(--adm-border-s);
+  color:var(--adm-brand-2);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
+}
+.adm-tag .dot{ width:6px;height:6px;border-radius:50%;background:var(--adm-ok);box-shadow:0 0 0 4px rgba(125,221,181,.18);animation:dot-pulse 2s ease-in-out infinite }
+@keyframes dot-pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.4 } }
+
+.adm-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;
+}
+.adm-stat{
+  background:var(--adm-surface);border:1px solid var(--adm-border);
+  border-radius:14px;padding:16px;
+}
+.adm-stat b{ display:block;font-family:'Space Grotesk';font-size:22px;color:var(--adm-brand-2);letter-spacing:.02em }
+.adm-stat span{ display:block;font-size:11px;color:var(--adm-ink-3);margin-top:4px;letter-spacing:.12em;text-transform:uppercase }
+
+.adm-trust{
+  background:var(--adm-surface);border:1px solid var(--adm-border);
+  border-radius:14px;padding:20px;
+}
+.adm-trust h4{
+  margin:0 0 12px;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--adm-ink-3);font-weight:700;
+}
+.adm-trust ul{ list-style:none;margin:0;padding:0;display:grid;gap:10px }
+.adm-trust li{ display:flex;align-items:flex-start;gap:12px;font-size:13.5px;color:var(--adm-ink-2);line-height:1.5 }
+.adm-trust li i{ color:var(--adm-brand-2);margin-top:2px;width:16px;flex:0 0 16px }
+
+.adm-footline{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  font-size:12px;color:var(--adm-ink-3);letter-spacing:.02em;
+}
+.adm-footline a{ color:var(--adm-ink-2);text-decoration:none;border-bottom:1px dotted var(--adm-ink-3) }
+.adm-footline a:hover{ color:var(--adm-brand-2);border-color:var(--adm-brand-2) }
+
+/* ---- RIGHT: login form ---- */
+.adm-main{
+  padding:40px 56px;display:flex;flex-direction:column;justify-content:center;gap:24px;
+  position:relative;
+}
+@media (max-width:980px){ .adm-main{ padding:40px 24px } }
+
+.adm-card{
+  width:100%;max-width:440px;margin:0 auto;
+  background:rgba(10,25,28,.55);
+  backdrop-filter:blur(14px);
+  border:1px solid var(--adm-border);
+  border-radius:20px;
+  padding:36px 32px;
+  box-shadow:0 30px 60px rgba(0,0,0,.35), 0 0 0 1px rgba(99,193,187,.04) inset;
+}
+.adm-card h2{
+  font-family:'Space Grotesk';font-size:26px;font-weight:600;margin:0 0 6px;
+  color:var(--adm-ink);letter-spacing:-.01em;
+}
+.adm-card .lede{ color:var(--adm-ink-2);font-size:14px;margin:0 0 24px }
+
+.adm-field{ display:block;margin-bottom:16px;position:relative }
+.adm-field label{
+  display:block;font-size:12px;color:var(--adm-ink-2);margin-bottom:6px;
+  letter-spacing:.12em;text-transform:uppercase;font-weight:600;
+}
+.adm-field .ipt{
+  width:100%;box-sizing:border-box;
+  background:var(--adm-surface-2);border:1px solid var(--adm-border);
+  color:var(--adm-ink);font-family:inherit;font-size:14.5px;
+  padding:13px 16px 13px 44px;border-radius:12px;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.adm-field .ipt:hover{ border-color:var(--adm-border-s) }
+.adm-field .ipt:focus{
+  outline:none;border-color:var(--adm-brand);
+  background:rgba(99,193,187,.06);
+  box-shadow:0 0 0 4px rgba(99,193,187,.14);
+}
+.adm-field .ipt::placeholder{ color:var(--adm-ink-3) }
+.adm-field i.prefix{
+  position:absolute;left:15px;top:38px;color:var(--adm-ink-3);font-size:14px;
+}
+.adm-field .toggle-eye{
+  position:absolute;right:12px;top:32px;background:none;border:0;color:var(--adm-ink-3);cursor:pointer;
+  padding:6px;font-size:14px;border-radius:6px;
+}
+.adm-field .toggle-eye:hover{ color:var(--adm-brand-2) }
+
+.adm-row{ display:flex;justify-content:space-between;align-items:center;margin:4px 0 22px;gap:12px;flex-wrap:wrap }
+.adm-check{ display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--adm-ink-2);cursor:pointer;user-select:none }
+.adm-check input{ accent-color:var(--adm-brand);width:15px;height:15px }
+.adm-link{ color:var(--adm-brand-2);text-decoration:none;font-size:13px;font-weight:500 }
+.adm-link:hover{ text-decoration:underline }
+
+.adm-btn{
+  width:100%;border:0;cursor:pointer;
+  padding:14px 20px;border-radius:12px;
+  font-family:'Space Grotesk';font-size:14.5px;font-weight:600;letter-spacing:.04em;
+  background:linear-gradient(135deg, #63C1BB 0%, #3AA39C 100%);
+  color:#04211F;
+  box-shadow:0 12px 24px rgba(99,193,187,.22);
+  transition:transform .12s ease, box-shadow .12s ease;
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+}
+.adm-btn:hover{ transform:translateY(-1px);box-shadow:0 16px 32px rgba(99,193,187,.30) }
+.adm-btn:active{ transform:translateY(0) }
+.adm-btn.ghost{
+  background:transparent;color:var(--adm-ink);
+  border:1px solid var(--adm-border-s);box-shadow:none;
+}
+.adm-btn.ghost:hover{ background:var(--adm-surface-2);border-color:var(--adm-brand) }
+
+.adm-divider{
+  text-align:center;margin:22px 0 18px;position:relative;font-size:11px;
+  color:var(--adm-ink-3);letter-spacing:.22em;text-transform:uppercase;
+}
+.adm-divider::before,.adm-divider::after{
+  content:"";position:absolute;top:50%;width:38%;height:1px;background:var(--adm-border);
+}
+.adm-divider::before{ left:0 } .adm-divider::after{ right:0 }
+
+.adm-sso{ display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px }
+.adm-sso .adm-btn{ padding:12px 16px;font-size:13.5px;font-family:'Manrope';font-weight:600;letter-spacing:0 }
+.adm-sso .adm-btn i{ font-size:15px }
+
+.adm-alert{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;border-radius:10px;
+  background:rgba(245,196,107,.10);border:1px solid rgba(245,196,107,.30);
+  color:#FBE3B3;font-size:12.5px;line-height:1.5;margin-bottom:20px;
+}
+.adm-alert i{ color:var(--adm-warn);margin-top:2px }
+.adm-alert strong{ color:#FDF0D4;font-weight:600 }
+
+/* 2FA code input */
+.adm-otp{ display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:8px 0 4px }
+.adm-otp input{
+  width:100%;aspect-ratio:1/1;text-align:center;
+  background:var(--adm-surface-2);border:1px solid var(--adm-border);border-radius:10px;
+  color:var(--adm-ink);font-family:'JetBrains Mono';font-size:22px;font-weight:500;
+  transition:border-color .15s ease, background .15s ease;
+}
+.adm-otp input:focus{
+  outline:none;border-color:var(--adm-brand);background:rgba(99,193,187,.08);
+  box-shadow:0 0 0 4px rgba(99,193,187,.14);
+}
+
+.adm-meta{
+  text-align:center;margin-top:18px;color:var(--adm-ink-3);font-size:12px;line-height:1.7;
+}
+.adm-meta code{
+  font-family:'JetBrains Mono';background:var(--adm-surface);padding:2px 7px;border-radius:5px;
+  color:var(--adm-ink-2);border:1px solid var(--adm-border);font-size:11.5px;
+}
+.adm-meta a{ color:var(--adm-ink-2);text-decoration:none;border-bottom:1px dotted var(--adm-ink-3) }
+
+/* Security rail bên ngoài card */
+.adm-rail{
+  max-width:440px;margin:0 auto;display:flex;justify-content:space-between;
+  font-size:11px;color:var(--adm-ink-3);letter-spacing:.04em;
+}
+.adm-rail span{ display:inline-flex;align-items:center;gap:6px }
+.adm-rail i{ color:var(--adm-brand-2);font-size:11px }
+
+/* Back-to-site top link */
+.adm-back{
+  position:absolute;top:28px;right:36px;
+  font-size:12.5px;color:var(--adm-ink-2);text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px;letter-spacing:.04em;
+  padding:8px 14px;border-radius:999px;border:1px solid var(--adm-border);
+  background:rgba(0,0,0,.15);
+}
+.adm-back:hover{ color:var(--adm-brand-2);border-color:var(--adm-border-s) }
+@media (max-width:980px){ .adm-back{ top:16px;right:16px;font-size:11.5px } }
+</style>
+</head>
+
+<body class="admin-body">
+
+<a class="skip-link" href="#admin-main">Đi tới nội dung chính</a>
+
+<a href="index.html" class="adm-back" aria-label="Trở về trang khách hàng">
+  <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Trang khách hàng
+</a>
+
+<div class="adm-wrap">
+
+  <!-- ============== LEFT ============== -->
+  <aside class="adm-side" aria-label="Giới thiệu cổng quản trị">
+    <a class="adm-brand" href="index.html">
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="22" height="22">
+          <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M13 20 Q20 10 27 20 Q20 30 13 20 Z" fill="currentColor" opacity=".2"/>
+          <path d="M13 20 Q20 10 27 20 Q20 30 13 20 Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="20" cy="20" r="2" fill="currentColor"/>
+        </svg>
+      </span>
+      <span>
+        <strong>DETOXBLANC</strong>
+        <em>Admin Console</em>
+      </span>
+    </a>
+
+    <div class="adm-hero">
+      <span class="adm-tag"><span class="dot"></span> Hệ thống hoạt động bình thường</span>
+      <h1>Cổng quản trị <mark>nội bộ</mark>.<br/>Chỉ dành cho nhân sự được uỷ quyền.</h1>
+      <p>Bạn đang truy cập khu vực vận hành thương hiệu Detoxblanc — quản lý đơn hàng, hàng hoá, nội dung, phân tích và phân phối dược mỹ phẩm. Mọi phiên làm việc được ghi log và bảo vệ bằng xác thực hai lớp.</p>
+
+      <div class="adm-stats" role="list" aria-label="Số liệu hệ thống hôm nay">
+        <div class="adm-stat" role="listitem"><b>99.98<sup>%</sup></b><span>Uptime 30 ngày</span></div>
+        <div class="adm-stat" role="listitem"><b>42</b><span>Admin đang online</span></div>
+        <div class="adm-stat" role="listitem"><b>2m</b><span>Sao lưu gần nhất</span></div>
+      </div>
+    </div>
+
+    <div class="adm-trust">
+      <h4><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> An toàn &amp; tuân thủ</h4>
+      <ul>
+        <li><i class="fa-solid fa-lock" aria-hidden="true"></i> Mã hoá TLS 1.3 đầu cuối · chứng chỉ Digicert EV</li>
+        <li><i class="fa-solid fa-key" aria-hidden="true"></i> Bắt buộc xác thực hai lớp (TOTP hoặc FIDO2)</li>
+        <li><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Ghi log truy cập · đáp ứng ISO/IEC 27001</li>
+        <li><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Phân quyền RBAC theo phòng ban · khoá IP theo văn phòng</li>
+      </ul>
+    </div>
+
+    <div class="adm-footline">
+      <span>© 2018–2026 Detoxblanc · Admin Build <code style="font-family:'JetBrains Mono'; font-size:11px;">v4.12.3</code></span>
+      <span><a href="#">Changelog</a> · <a href="#">Trạng thái</a></span>
+    </div>
+  </aside>
+
+  <!-- ============== RIGHT ============== -->
+  <main class="adm-main" id="admin-main">
+    <section class="adm-card" aria-labelledby="adm-title">
+      <h2 id="adm-title">Đăng nhập quản trị</h2>
+      <p class="lede">Dùng tài khoản email doanh nghiệp <code style="font-family:'JetBrains Mono'; font-size:12px; background:rgba(255,255,255,.05); padding:2px 6px; border-radius:4px;">@detoxblanc.com</code> để tiếp tục.</p>
+
+      <div class="adm-alert" role="status">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <div><strong>Khu vực hạn chế.</strong> Truy cập trái phép sẽ bị chặn IP và truy vết theo luật An ninh mạng 2018.</div>
+      </div>
+
+      <form id="adminLoginForm" novalidate onsubmit="return admLogin(event)">
+        <!-- Email -->
+        <label class="adm-field">
+          <label for="adm-email">Email công ty</label>
+          <i class="fa-solid fa-envelope prefix" aria-hidden="true"></i>
+          <input id="adm-email" class="ipt" type="email" name="email" required
+                 autocomplete="username" placeholder="ten.ban@detoxblanc.com"
+                 pattern=".*@detoxblanc\.com$" />
+        </label>
+
+        <!-- Password -->
+        <label class="adm-field">
+          <label for="adm-pass">Mật khẩu</label>
+          <i class="fa-solid fa-lock prefix" aria-hidden="true"></i>
+          <input id="adm-pass" class="ipt" type="password" name="password" required minlength="10"
+                 autocomplete="current-password" placeholder="Tối thiểu 10 ký tự" />
+          <button type="button" class="toggle-eye" aria-label="Hiện/ẩn mật khẩu" onclick="admToggleEye(this)">
+            <i class="fa-regular fa-eye" aria-hidden="true"></i>
+          </button>
+        </label>
+
+        <!-- 2FA -->
+        <div class="adm-field" aria-labelledby="adm-otp-label">
+          <label id="adm-otp-label">Mã xác thực hai lớp (TOTP)</label>
+          <div class="adm-otp" role="group" aria-label="Nhập 6 chữ số từ ứng dụng xác thực">
+            <input maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Chữ số 1" />
+            <input maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Chữ số 2" />
+            <input maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Chữ số 3" />
+            <input maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Chữ số 4" />
+            <input maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Chữ số 5" />
+            <input maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Chữ số 6" />
+          </div>
+        </div>
+
+        <div class="adm-row">
+          <label class="adm-check">
+            <input type="checkbox" name="trust_device" /> Ghi nhớ thiết bị này 30 ngày
+          </label>
+          <a class="adm-link" href="#">Không truy cập được?</a>
+        </div>
+
+        <button type="submit" class="adm-btn">
+          <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
+          Đăng nhập an toàn
+        </button>
+
+        <div class="adm-divider">Hoặc dùng SSO doanh nghiệp</div>
+
+        <div class="adm-sso">
+          <button type="button" class="adm-btn ghost" onclick="admSso('google')">
+            <i class="fa-brands fa-google" aria-hidden="true"></i> Google Workspace
+          </button>
+          <button type="button" class="adm-btn ghost" onclick="admSso('microsoft')">
+            <i class="fa-brands fa-microsoft" aria-hidden="true"></i> Microsoft 365
+          </button>
+        </div>
+      </form>
+
+      <div class="adm-meta">
+        <div>Cần cấp lại quyền truy cập? Liên hệ <a href="mailto:it@detoxblanc.com">it@detoxblanc.com</a> hoặc nội bộ <code>#ops-helpdesk</code>.</div>
+      </div>
+    </section>
+
+    <div class="adm-rail" aria-label="Thông tin phiên truy cập">
+      <span><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Phiên được mã hoá TLS 1.3</span>
+      <span><i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i> IP 203.162.x.x · TP.HCM, VN</span>
+    </div>
+  </main>
+
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script>
+  // Hiện/ẩn mật khẩu
+  function admToggleEye(btn){
+    const input = btn.parentElement.querySelector('input');
+    const icon = btn.querySelector('i');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    icon.className = showing ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+  }
+
+  // OTP: tự động nhảy ô + paste 6 số
+  (function(){
+    const boxes = document.querySelectorAll('.adm-otp input');
+    boxes.forEach((b, i) => {
+      b.addEventListener('input', e => {
+        e.target.value = e.target.value.replace(/\D/g,'').slice(0,1);
+        if (e.target.value && boxes[i+1]) boxes[i+1].focus();
+      });
+      b.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !b.value && boxes[i-1]) boxes[i-1].focus();
+      });
+      b.addEventListener('paste', e => {
+        const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+        if (txt.length){
+          e.preventDefault();
+          [...txt].forEach((ch, j) => { if (boxes[j]) boxes[j].value = ch; });
+          boxes[Math.min(txt.length, boxes.length-1)].focus();
+        }
+      });
+    });
+  })();
+
+  // Giả lập đăng nhập
+  function admLogin(e){
+    e.preventDefault();
+    const email = document.getElementById('adm-email').value.trim();
+    const pass  = document.getElementById('adm-pass').value;
+    const otp   = [...document.querySelectorAll('.adm-otp input')].map(i => i.value).join('');
+
+    // Khi Firebase Auth bật → bỏ qua quy tắc legacy (domain, length, OTP)
+    // vì Firebase tự enforce min 6 ký tự + tuỳ chọn 2FA riêng
+    const useFirebase = !!(window.DTX_AUTH?.isFirestore || window.DTX_FIREBASE?.enabled);
+    if (!useFirebase) {
+      if (!email.endsWith('@detoxblanc.com')){
+        alert('Email phải thuộc miền @detoxblanc.com'); return false;
+      }
+      if (pass.length < 10){
+        alert('Mật khẩu tối thiểu 10 ký tự'); return false;
+      }
+      if (otp.length !== 6){
+        alert('Vui lòng nhập đủ 6 chữ số mã xác thực'); return false;
+      }
+    } else {
+      if (!email || !pass) { alert('Nhập email và mật khẩu'); return false; }
+    }
+    const btn = e.target.querySelector('.adm-btn[type="submit"]');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
+    btn.disabled = true;
+
+    // ─── Production: Firebase Auth login ───────────────────
+    // Khi env-detect bật Firebase mode → dùng Auth thật
+    if (window.DTX_AUTH?.isFirestore || window.DTX_FIREBASE?.enabled) {
+      (async () => {
+        try {
+          // OTP bị bỏ qua trong v1.0 — Firebase Auth tự đảm nhiệm 2FA nếu enable
+          const wait = () => new Promise(r => {
+            if (window.DTX_AUTH?.isFirestore) return r();
+            window.addEventListener('dtx:firebase-ready', r, { once: true });
+          });
+          await wait();
+          await window.DTX_AUTH.login(email, pass);
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> Thành công · đang chuyển';
+          // Redirect to next param hoặc dashboard
+          const params = new URLSearchParams(location.search);
+          const next = params.get('next') || '/admin';
+          location.href = next;
+        } catch (err) {
+          btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Đăng nhập an toàn';
+          btn.disabled = false;
+          const msg = ({
+            'auth/invalid-credential': 'Email hoặc mật khẩu không đúng',
+            'auth/user-not-found':     'Không tồn tại tài khoản với email này',
+            'auth/wrong-password':     'Sai mật khẩu',
+            'auth/too-many-requests':  'Quá nhiều lần thử — chờ vài phút rồi thử lại',
+            'auth/network-request-failed': 'Lỗi mạng — kiểm tra kết nối',
+          })[err.code] || ('Đăng nhập thất bại: ' + (err.message || err.code));
+          alert(msg);
+        }
+      })();
+      return false;
+    }
+
+    // ─── Demo / local mode (giữ flow cũ) ───────────────────
+    setTimeout(() => {
+      try { sessionStorage.setItem('dtx_admin_session', JSON.stringify({ email, at: Date.now() })); } catch(_){}
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Thành công · đang chuyển';
+      location.href = 'admin.html';
+    }, 1200);
+    return false;
+  }
+
+  function admSso(provider){
+    alert('Demo: Chuyển hướng SSO (' + provider + ') — nhà phát triển sẽ wire OAuth flow ở giai đoạn tích hợp.');
+  }
+</script>
+<!-- Firebase Auth (chỉ active khi production hostname) -->
+<script src="assets/firebase-config.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+</body>
+</html>

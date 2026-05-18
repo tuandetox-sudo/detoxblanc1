@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chỉnh sửa sản phẩm — Detoxblanc Admin Console</title>
+<meta name="description" content="Chỉnh sửa/Tạo mới SKU — giá, tồn kho, variants, ảnh, SEO. Auto-save nháp." />
+<meta name="theme-color" content="#0F1F1C" />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta name="color-scheme" content="light dark" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="products">
+
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Sản phẩm","href":"admin-products.html"},{"label":"Chỉnh sửa"}]'
+       data-title="Chỉnh sửa sản phẩm"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <!-- Head -->
+      <div class="adm-page-head">
+        <div>
+          <h1 id="pgTitle">Chỉnh sửa sản phẩm</h1>
+          <p id="pgSubtitle" class="muted">Chỉnh sửa thông tin, giá, kho, SEO và variants.</p>
+        </div>
+        <div class="adm-head-actions">
+          <a class="adm-btn" href="admin-products.html">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Quay lại
+          </a>
+          <button class="adm-btn" id="btnDuplicate" type="button">
+            <i class="fa-regular fa-clone" aria-hidden="true"></i> Nhân bản
+          </button>
+          <button class="adm-btn ghost-danger" id="btnDelete" type="button">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i> Xoá
+          </button>
+        </div>
+      </div>
+
+      <form id="editForm" class="edit-grid" autocomplete="off" novalidate>
+
+        <!-- LEFT (main fields) -->
+        <div class="edit-main">
+
+          <section class="card">
+            <div class="card-head"><h3>Thông tin chung</h3></div>
+            <div class="card-body">
+              <div class="field">
+                <label for="f-name">Tên sản phẩm <span class="req">*</span></label>
+                <input id="f-name" name="name" type="text" class="input" required maxlength="120" placeholder="Ví dụ: Radiance Serum N°1 — Tinh chất dưỡng sáng · mờ nám" />
+              </div>
+              <div class="row-2">
+                <div class="field">
+                  <label for="f-code">Mã SKU <span class="req">*</span></label>
+                  <input id="f-code" name="code" type="text" class="input mono" required maxlength="32" placeholder="N°01" />
+                </div>
+                <div class="field">
+                  <label for="f-slug">Slug URL <span class="hint">tự sinh nếu bỏ trống</span></label>
+                  <input id="f-slug" name="slug" type="text" class="input mono" maxlength="80" placeholder="radiance-serum-n1" />
+                </div>
+              </div>
+              <div class="row-2">
+                <div class="field">
+                  <label for="f-category">Danh mục</label>
+                  <input id="f-category" name="category" type="text" class="input" list="catList" placeholder="Trị nám / Chống nắng / …" />
+                  <datalist id="catList"></datalist>
+                </div>
+                <div class="field">
+                  <label for="f-ingr">Hoạt chất chính</label>
+                  <input id="f-ingr" name="ingr" type="text" class="input" placeholder="Niacinamide 10%" maxlength="80" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="f-description">Mô tả chi tiết</label>
+                <textarea id="f-description" name="description" class="textarea" rows="5" maxlength="1200" placeholder="Mô tả công dụng, thành phần, hướng dẫn sử dụng…"></textarea>
+              </div>
+              <div class="row-2">
+                <div class="field">
+                  <label for="f-b1">Điểm nhấn 1</label>
+                  <input id="f-b1" name="b1" type="text" class="input" maxlength="80" placeholder="Tranexamic Acid 5%" />
+                </div>
+                <div class="field">
+                  <label for="f-b2">Điểm nhấn 2</label>
+                  <input id="f-b2" name="b2" type="text" class="input" maxlength="80" placeholder="Giảm 70% nám sau 12 tuần" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h3>Giá & Kho</h3></div>
+            <div class="card-body">
+              <div class="row-3">
+                <div class="field">
+                  <label for="f-price">Giá bán (₫) <span class="req">*</span></label>
+                  <div class="input-group">
+                    <input id="f-price" name="price" type="number" class="input" min="0" step="1000" required />
+                    <span class="suffix">₫</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="f-old">Giá gốc (₫) <span class="hint">gạch ngang</span></label>
+                  <div class="input-group">
+                    <input id="f-old" name="old" type="number" class="input" min="0" step="1000" />
+                    <span class="suffix">₫</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="f-grad">Màu thumbnail</label>
+                  <div class="input-group">
+                    <input id="f-grad" name="grad" type="color" class="input color" value="#63C1BB" style="padding:2px 6px;height:38px" />
+                    <span class="suffix mono" id="gradHex">#63C1BB</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row-3">
+                <div class="field">
+                  <label for="f-stock">Tồn kho</label>
+                  <input id="f-stock" name="stock" type="number" class="input" min="0" step="1" value="0" />
+                </div>
+                <div class="field">
+                  <label for="f-lowStock">Ngưỡng cảnh báo</label>
+                  <input id="f-lowStock" name="lowStock" type="number" class="input" min="0" step="1" value="30" />
+                </div>
+                <div class="field">
+                  <label for="f-tag">Nhãn hiển thị</label>
+                  <div class="row-2 nogap">
+                    <input id="f-tag" name="tag" type="text" class="input" maxlength="12" placeholder="HOT / NEW / -15%" />
+                    <select id="f-tagCls" name="tagCls" class="select">
+                      <option value="tag-green">Neutral</option>
+                      <option value="tag-hot">Hot</option>
+                      <option value="tag-new">New</option>
+                      <option value="tag-sale">Sale</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <h3>Variants <span class="muted">(tùy chọn)</span></h3>
+              <button type="button" class="adm-btn sm" id="btnAddVar">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Thêm variant
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="var-tbl" id="varTbl">
+                <div class="var-head">
+                  <span>Kích cỡ</span>
+                  <span>Giá (₫)</span>
+                  <span>Tồn</span>
+                  <span></span>
+                </div>
+                <div class="var-rows" id="varRows"></div>
+                <p class="muted sm" id="varEmpty">Chưa có variant nào. SKU sẽ bán theo giá & tồn kho chính.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h3>SEO & tags</h3></div>
+            <div class="card-body">
+              <div class="field">
+                <label for="f-seoTitle">Tiêu đề SEO <span class="hint">≤ 60 ký tự</span></label>
+                <input id="f-seoTitle" name="seoTitle" type="text" class="input" maxlength="60" />
+                <small class="counter"><span id="seoTitleLen">0</span> / 60</small>
+              </div>
+              <div class="field">
+                <label for="f-seoDesc">Mô tả SEO <span class="hint">≤ 160 ký tự</span></label>
+                <textarea id="f-seoDesc" name="seoDesc" class="textarea" rows="3" maxlength="160"></textarea>
+                <small class="counter"><span id="seoDescLen">0</span> / 160</small>
+              </div>
+              <div class="field">
+                <label for="f-tags">Tags</label>
+                <div class="tag-input" id="tagInput">
+                  <span class="pills" id="tagPills"></span>
+                  <input id="f-tags" type="text" placeholder="Nhập tag rồi Enter…" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- RIGHT (sidebar) -->
+        <aside class="edit-side">
+
+          <section class="card">
+            <div class="card-head"><h3>Trạng thái</h3></div>
+            <div class="card-body">
+              <div class="field">
+                <label for="f-status">Trạng thái bán</label>
+                <select id="f-status" name="status" class="select">
+                  <option value="active">Đang bán</option>
+                  <option value="draft">Bản nháp</option>
+                  <option value="archived">Lưu trữ</option>
+                </select>
+              </div>
+              <ul class="meta-list">
+                <li><span>ID</span><strong id="metaId" class="mono">—</strong></li>
+                <li><span>Tạo lúc</span><strong id="metaCreated">—</strong></li>
+                <li><span>Cập nhật</span><strong id="metaUpdated">—</strong></li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h3>Hình ảnh</h3></div>
+            <div class="card-body">
+              <div class="img-preview" id="imgPreview">
+                <div class="img-thumb" id="imgThumbBig"></div>
+                <small class="muted">Thumbnail tạm dùng gradient. Upload thực sẽ cần backend.</small>
+              </div>
+              <div class="img-drop" aria-label="Kéo thả ảnh vào đây">
+                <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+                <p>Kéo thả ảnh hoặc <a href="#" id="imgPickBtn">chọn từ máy</a></p>
+                <small class="muted">PNG / JPG / WebP · tối đa 5MB mỗi ảnh</small>
+                <input type="file" id="imgPickInput" accept="image/*" multiple hidden />
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h3>Rating & reviews</h3></div>
+            <div class="card-body">
+              <div class="row-2">
+                <div class="field">
+                  <label for="f-rating">Điểm</label>
+                  <input id="f-rating" name="rating" type="number" class="input" step="0.1" min="0" max="5" value="4.8" />
+                </div>
+                <div class="field">
+                  <label for="f-reviews">Số đánh giá</label>
+                  <input id="f-reviews" name="reviews" type="number" class="input" min="0" value="0" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </aside>
+
+        <!-- Sticky save bar spans full width -->
+        <div class="save-bar edit-savebar">
+          <span class="status" id="saveStatus"><i class="fa-solid fa-circle" aria-hidden="true"></i> Chưa thay đổi</span>
+          <button class="adm-btn" type="button" id="btnReset">
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Hoàn tác
+          </button>
+          <button class="adm-btn primary" type="submit" id="btnSave">
+            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> <span id="saveLabel">Lưu sản phẩm</span>
+          </button>
+        </div>
+
+      </form>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const params = new URLSearchParams(location.search);
+  const isNew = params.has('new') || !params.get('id');
+  const id = params.get('id');
+
+  let original = null;
+  let tags = [];
+  let variants = [];
+  let dirty = false;
+
+  /* ---------- Load record ---------- */
+  function blank(){
+    return {
+      id:null, code:'', name:'', category:'', ingr:'',
+      bullets:['',''], tag:'', tagCls:'tag-green',
+      rating:'4.8', reviews:0, price:0, old:null,
+      stock:0, lowStock:30, status:'active',
+      slug:'', seoTitle:'', seoDesc:'', description:'',
+      tags:[], grad:'#63C1BB', variants:[],
+      createdAt:null, updatedAt:null,
+    };
+  }
+
+  function hydrate(rec){
+    original = JSON.parse(JSON.stringify(rec));
+    $('#f-name').value = rec.name || '';
+    $('#f-code').value = rec.code || '';
+    $('#f-slug').value = rec.slug || '';
+    $('#f-category').value = rec.category || '';
+    $('#f-ingr').value = rec.ingr || '';
+    $('#f-description').value = rec.description || '';
+    $('#f-b1').value = rec.bullets?.[0] || '';
+    $('#f-b2').value = rec.bullets?.[1] || '';
+    $('#f-price').value = rec.price ?? 0;
+    $('#f-old').value = rec.old ?? '';
+    $('#f-grad').value = rec.grad || '#63C1BB';
+    $('#gradHex').textContent = rec.grad || '#63C1BB';
+    $('#f-stock').value = rec.stock ?? 0;
+    $('#f-lowStock').value = rec.lowStock ?? 30;
+    $('#f-tag').value = rec.tag || '';
+    $('#f-tagCls').value = rec.tagCls || 'tag-green';
+    $('#f-seoTitle').value = rec.seoTitle || '';
+    $('#f-seoDesc').value = rec.seoDesc || '';
+    $('#f-status').value = rec.status || 'active';
+    $('#f-rating').value = rec.rating || '4.8';
+    $('#f-reviews').value = rec.reviews || 0;
+    tags = Array.isArray(rec.tags) ? [...rec.tags] : [];
+    variants = Array.isArray(rec.variants) ? JSON.parse(JSON.stringify(rec.variants)) : [];
+    renderTags();
+    renderVariants();
+    syncThumb();
+    syncCounters();
+    renderMeta(rec);
+    setDirty(false);
+  }
+
+  function renderMeta(rec){
+    $('#metaId').textContent = rec.id || '—';
+    $('#metaCreated').textContent = rec.createdAt ? new Date(rec.createdAt).toLocaleString('vi-VN') : '—';
+    $('#metaUpdated').textContent = rec.updatedAt ? new Date(rec.updatedAt).toLocaleString('vi-VN') : '—';
+  }
+
+  /* ---------- Tags ---------- */
+  function renderTags(){
+    const pills = $('#tagPills');
+    pills.innerHTML = tags.map((t,i) =>
+      `<span class="pill">${escapeHTML(t)}<button type="button" aria-label="Xoá tag ${escapeHTML(t)}" data-tag-rm="${i}"><i class="fa-solid fa-xmark"></i></button></span>`
+    ).join('');
+  }
+  $('#f-tags').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ','){
+      e.preventDefault();
+      const v = e.target.value.trim().replace(/,/g,'');
+      if (v && !tags.includes(v)){ tags.push(v); renderTags(); setDirty(true); }
+      e.target.value = '';
+    } else if (e.key === 'Backspace' && !e.target.value && tags.length){
+      tags.pop(); renderTags(); setDirty(true);
+    }
+  });
+  $('#tagPills').addEventListener('click', e => {
+    const btn = e.target.closest('[data-tag-rm]');
+    if (!btn) return;
+    tags.splice(Number(btn.dataset.tagRm), 1);
+    renderTags(); setDirty(true);
+  });
+
+  /* ---------- Variants ---------- */
+  function renderVariants(){
+    const rows = $('#varRows');
+    rows.innerHTML = variants.map((v, i) => `
+      <div class="var-row" data-idx="${i}">
+        <input type="text" class="input sm" data-vk="size" value="${escapeAttr(v.size||'')}" placeholder="30ml" />
+        <input type="number" class="input sm" data-vk="price" value="${v.price ?? ''}" min="0" step="1000" placeholder="0" />
+        <input type="number" class="input sm" data-vk="stock" value="${v.stock ?? ''}" min="0" step="1" placeholder="0" />
+        <button type="button" class="adm-iconbtn sm ghost-danger" data-var-rm="${i}" aria-label="Xoá variant">
+          <i class="fa-solid fa-trash" aria-hidden="true"></i>
+        </button>
+      </div>
+    `).join('');
+    $('#varEmpty').hidden = variants.length > 0;
+  }
+  $('#btnAddVar').addEventListener('click', () => {
+    variants.push({ size:'', price:0, stock:0 });
+    renderVariants(); setDirty(true);
+  });
+  $('#varRows').addEventListener('input', e => {
+    const row = e.target.closest('[data-idx]');
+    if (!row) return;
+    const idx = Number(row.dataset.idx);
+    const key = e.target.dataset.vk;
+    if (!key) return;
+    variants[idx][key] = key === 'size' ? e.target.value : Number(e.target.value) || 0;
+    setDirty(true);
+  });
+  $('#varRows').addEventListener('click', e => {
+    const btn = e.target.closest('[data-var-rm]');
+    if (!btn) return;
+    variants.splice(Number(btn.dataset.varRm), 1);
+    renderVariants(); setDirty(true);
+  });
+
+  /* ---------- Thumb + counters ---------- */
+  function syncThumb(){
+    const grad = $('#f-grad').value || '#63C1BB';
+    const code = $('#f-code').value || 'SKU';
+    $('#gradHex').textContent = grad.toUpperCase();
+    const big = $('#imgThumbBig');
+    big.style.background = `linear-gradient(135deg, ${grad}, #1F6661)`;
+    big.textContent = code;
+  }
+  $('#f-grad').addEventListener('input', syncThumb);
+  $('#f-code').addEventListener('input', syncThumb);
+
+  function syncCounters(){
+    $('#seoTitleLen').textContent = $('#f-seoTitle').value.length;
+    $('#seoDescLen').textContent = $('#f-seoDesc').value.length;
+  }
+  $('#f-seoTitle').addEventListener('input', syncCounters);
+  $('#f-seoDesc').addEventListener('input', syncCounters);
+
+  // Auto-fill slug from name when slug empty
+  $('#f-name').addEventListener('blur', () => {
+    if (!$('#f-slug').value.trim() && $('#f-name').value.trim()){
+      $('#f-slug').value = window.DTX_ADMIN.slug($('#f-name').value);
+    }
+  });
+
+  /* ---------- Dirty tracking ---------- */
+  function setDirty(d){
+    dirty = d;
+    const st = $('#saveStatus');
+    if (d){ st.className = 'status dirty'; st.innerHTML = '<i class="fa-solid fa-circle" aria-hidden="true"></i> Có thay đổi chưa lưu'; }
+    else  { st.className = 'status saved'; st.innerHTML = '<i class="fa-solid fa-circle-check" aria-hidden="true"></i> Không thay đổi'; }
+  }
+  document.querySelectorAll('#editForm input, #editForm textarea, #editForm select').forEach(el => {
+    el.addEventListener('input',  () => setDirty(true));
+    el.addEventListener('change', () => setDirty(true));
+  });
+  window.addEventListener('beforeunload', e => {
+    if (dirty){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  /* ---------- Categories datalist ---------- */
+  function fillCategoryList(){
+    const cats = [...new Set(window.DTX_ADMIN.all().map(p => p.category).filter(Boolean))].sort();
+    $('#catList').innerHTML = cats.map(c => `<option value="${escapeAttr(c)}"></option>`).join('');
+  }
+
+  /* ---------- Save ---------- */
+  $('#editForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('#f-name').value.trim();
+    const code = $('#f-code').value.trim();
+    if (!name){ window.admToast?.('Thiếu tên sản phẩm', 'warn'); $('#f-name').focus(); return; }
+    if (!code){ window.admToast?.('Thiếu mã SKU', 'warn'); $('#f-code').focus(); return; }
+
+    const payload = {
+      name, code,
+      slug: $('#f-slug').value.trim(),
+      category: $('#f-category').value.trim(),
+      ingr: $('#f-ingr').value.trim(),
+      description: $('#f-description').value.trim(),
+      b1: $('#f-b1').value.trim(),
+      b2: $('#f-b2').value.trim(),
+      price: Number($('#f-price').value) || 0,
+      old:   $('#f-old').value ? Number($('#f-old').value) : null,
+      grad:  $('#f-grad').value,
+      stock: Number($('#f-stock').value) || 0,
+      lowStock: Number($('#f-lowStock').value) || 30,
+      tag: $('#f-tag').value.trim(),
+      tagCls: $('#f-tagCls').value,
+      status: $('#f-status').value,
+      rating: $('#f-rating').value,
+      reviews: Number($('#f-reviews').value) || 0,
+      seoTitle: $('#f-seoTitle').value.trim(),
+      seoDesc: $('#f-seoDesc').value.trim(),
+      tags: tags,
+      variants: variants,
+    };
+
+    let rec;
+    if (isNew || !original?.id){
+      rec = window.DTX_ADMIN.create(payload);
+      window.admToast?.('Đã tạo sản phẩm mới', 'success');
+      // Replace URL with the new id so subsequent saves update
+      history.replaceState(null, '', `admin-product-edit.html?id=${encodeURIComponent(rec.id)}`);
+      bootFromId(rec.id);
+    } else {
+      rec = window.DTX_ADMIN.update(original.id, payload);
+      window.admToast?.('Đã lưu thay đổi', 'success');
+      hydrate(rec);
+    }
+  });
+
+  /* ---------- Reset (undo) ---------- */
+  $('#btnReset').addEventListener('click', () => {
+    if (!original) return;
+    if (dirty && !confirm('Huỷ toàn bộ thay đổi?')) return;
+    hydrate(original);
+    window.admToast?.('Đã hoàn tác thay đổi', 'info');
+  });
+
+  /* ---------- Delete ---------- */
+  $('#btnDelete').addEventListener('click', () => {
+    if (isNew || !original?.id){ window.admToast?.('SKU chưa tồn tại để xoá', 'warn'); return; }
+    if (!confirm(`Xoá "${original.name}"? Hành động này không thể hoàn tác.`)) return;
+    window.DTX_ADMIN.remove(original.id);
+    window.admToast?.('Đã xoá SKU', 'success');
+    setTimeout(() => location.href = 'admin-products.html', 400);
+  });
+
+  /* ---------- Duplicate ---------- */
+  $('#btnDuplicate').addEventListener('click', () => {
+    if (isNew || !original?.id){ window.admToast?.('Lưu SKU trước khi nhân bản', 'warn'); return; }
+    const copy = { ...original };
+    delete copy.id;
+    copy.name = original.name + ' (bản sao)';
+    copy.code = original.code + '-COPY';
+    copy.status = 'draft';
+    const rec = window.DTX_ADMIN.create(copy);
+    window.admToast?.('Đã nhân bản — mở bản sao', 'success');
+    setTimeout(() => location.href = `admin-product-edit.html?id=${encodeURIComponent(rec.id)}`, 300);
+  });
+
+  /* ---------- Image picker (preview only, no upload backend) ---------- */
+  $('#imgPickBtn').addEventListener('click', e => { e.preventDefault(); $('#imgPickInput').click(); });
+  $('#imgPickInput').addEventListener('change', () => {
+    window.admToast?.('Upload ảnh cần backend — hiện lưu cục bộ không hỗ trợ', 'info');
+  });
+
+  /* ---------- Helpers ---------- */
+  function escapeHTML(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function escapeAttr(s){ return escapeHTML(s); }
+
+  /* ---------- Boot ---------- */
+  function bootFromId(recordId){
+    const rec = window.DTX_ADMIN.get(recordId);
+    if (!rec){ window.admToast?.('Không tìm thấy SKU', 'danger'); location.href = 'admin-products.html'; return; }
+    $('#pgTitle').textContent = 'Chỉnh sửa — ' + (rec.name.length > 40 ? rec.name.slice(0,40)+'…' : rec.name);
+    $('#pgSubtitle').textContent = `SKU ${rec.code} · ${rec.category || 'Chưa phân loại'}`;
+    $('#saveLabel').textContent = 'Lưu thay đổi';
+    document.title = `${rec.code} — Detoxblanc Admin`;
+    hydrate(rec);
+  }
+
+  fillCategoryList();
+
+  if (isNew){
+    $('#pgTitle').textContent = 'Tạo sản phẩm mới';
+    $('#pgSubtitle').textContent = 'Điền thông tin cơ bản — có thể chỉnh sửa thêm sau khi lưu.';
+    $('#saveLabel').textContent = 'Tạo sản phẩm';
+    $('#btnDelete').disabled = true;
+    $('#btnDuplicate').disabled = true;
+    hydrate(blank());
+    setDirty(false);
+  } else {
+    bootFromId(id);
+  }
+})();
+</script>
+</body>
+</html>

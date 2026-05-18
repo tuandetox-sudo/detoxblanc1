@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Đánh giá — Detoxblanc Admin</title>
+<meta name="description" content="Duyệt / từ chối / trả lời đánh giá sản phẩm." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="reviews">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Nội dung"},{"label":"Đánh giá"}]'
+       data-title="Đánh giá"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Đánh giá sản phẩm</h1>
+          <p>Duyệt <strong id="rvPending">—</strong> đánh giá chờ xử lý. Đánh giá đã duyệt hiển thị công khai trên trang sản phẩm.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnRvReset" data-perm="products:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại seed</button>
+          <button class="adm-btn" id="btnRvApproveAll" data-perm="products:write"><i class="fa-solid fa-check-double"></i> Duyệt tất cả pending</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng</span><strong id="statRvTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">Pending</span><strong id="statRvPending" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Approved</span><strong id="statRvOk" style="color:#0F766E">0</strong></div>
+        <div class="stat-card"><span class="lbl">Rejected</span><strong id="statRvBad" style="color:#C0392B">0</strong></div>
+        <div class="stat-card"><span class="lbl">Sao TB</span><strong id="statRvAvg">—</strong></div>
+      </div>
+
+      <div class="pr-filter-bar card">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="rvQ" placeholder="Tên khách, sản phẩm, nội dung…" />
+        </div>
+        <div class="field"><select id="rvStatus">
+          <option value="">Tất cả trạng thái</option>
+          <option value="pending">Chờ duyệt</option>
+          <option value="approved">Đã duyệt</option>
+          <option value="rejected">Từ chối</option>
+        </select></div>
+        <div class="field"><select id="rvRating">
+          <option value="">Tất cả sao</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★</option>
+          <option value="3">★★★</option>
+          <option value="2">★★</option>
+          <option value="1">★</option>
+        </select></div>
+      </div>
+
+      <div id="rvList" class="review-list"></div>
+      <div class="empty-state" id="rvEmpty" hidden>
+        <i class="fa-solid fa-comment-slash"></i>
+        <p>Không có đánh giá nào khớp bộ lọc.</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  try { window.DTX_MODE = localStorage.getItem('dtx_mode') || 'local'; } catch (_) {}
+</script>
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-api.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const S = window.DTX_ADMIN_REVIEWS;
+  const F = window.DTX_ADMIN_FMT;
+  const state = { q:'', status:'', rating:'' };
+
+  function stars(n) {
+    let s = '';
+    for (let i = 1; i <= 5; i++) s += `<i class="fa-${i <= n ? 'solid' : 'regular'} fa-star"></i>`;
+    return `<span class="rv-stars" aria-label="${n}/5">${s}</span>`;
+  }
+
+  function statusBadge(s){
+    const map = { pending:['warn','Chờ duyệt'], approved:['ok','Đã duyệt'], rejected:['bad','Từ chối'] };
+    const [cls, lbl] = map[s] || ['muted', s];
+    return `<span class="badge ${cls}">${lbl}</span>`;
+  }
+
+  function render(){
+    const all = S.all();
+    const pending = all.filter(r => r.status === 'pending').length;
+    document.getElementById('rvPending').textContent = pending;
+    document.getElementById('statRvTotal').textContent = all.length;
+    document.getElementById('statRvPending').textContent = pending;
+    document.getElementById('statRvOk').textContent = all.filter(r => r.status === 'approved').length;
+    document.getElementById('statRvBad').textContent = all.filter(r => r.status === 'rejected').length;
+    const approved = all.filter(r => r.status === 'approved');
+    const avg = approved.length ? (approved.reduce((s, r) => s + r.rating, 0) / approved.length) : 0;
+    document.getElementById('statRvAvg').textContent = approved.length ? avg.toFixed(2) + ' ★' : '—';
+
+    const q = state.q.trim().toLowerCase();
+    const list = all.filter(r => {
+      if (q && !(r.authorName.toLowerCase().includes(q) || r.productName.toLowerCase().includes(q) || r.body.toLowerCase().includes(q))) return false;
+      if (state.status && r.status !== state.status) return false;
+      if (state.rating && r.rating !== Number(state.rating)) return false;
+      return true;
+    }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const root = document.getElementById('rvList');
+    const empty = document.getElementById('rvEmpty');
+    if (!list.length) { root.innerHTML=''; empty.hidden=false; return; }
+    empty.hidden = true;
+    root.innerHTML = list.map(r => {
+      const initials = r.authorName.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase();
+      return `<article class="review-card" data-id="${r.id}">
+        <header>
+          <div class="user-cell"><span class="avatar-sm">${initials}</span>
+            <div>
+              <strong>${r.authorName} ${r.verified ? '<span class="chip accent" style="font-size:10px">đã mua</span>' : ''}</strong>
+              <small class="muted">${F.dt(r.createdAt)} · ${r.productName}</small>
+            </div>
+          </div>
+          ${statusBadge(r.status)}
+        </header>
+        ${stars(r.rating)}
+        ${r.title ? `<h4>${r.title}</h4>` : ''}
+        <p>${r.body}</p>
+        <footer>
+          ${r.status !== 'approved' ? `<button class="adm-btn sm primary" data-approve="${r.id}"><i class="fa-solid fa-check"></i> Duyệt</button>` : ''}
+          ${r.status !== 'rejected' ? `<button class="adm-btn sm" data-reject="${r.id}"><i class="fa-solid fa-xmark"></i> Từ chối</button>` : ''}
+          <button class="icon-btn" data-del="${r.id}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+        </footer>
+      </article>`;
+    }).join('');
+  }
+
+  document.getElementById('rvQ').addEventListener('input', e => { state.q = e.target.value; render(); });
+  document.getElementById('rvStatus').addEventListener('change', e => { state.status = e.target.value; render(); });
+  document.getElementById('rvRating').addEventListener('change', e => { state.rating = e.target.value; render(); });
+
+  document.getElementById('rvList').addEventListener('click', e => {
+    const ap = e.target.closest('[data-approve]');
+    if (ap) { S.update(ap.dataset.approve, { status: 'approved' }); render(); window.admToast?.('Đã duyệt', 'ok'); return; }
+    const rj = e.target.closest('[data-reject]');
+    if (rj) { S.update(rj.dataset.reject, { status: 'rejected' }); render(); window.admToast?.('Đã từ chối', 'ok'); return; }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const r = S.get(del.dataset.del);
+      if (r && confirm(`Xoá đánh giá của ${r.authorName}?`)) { S.remove(r.id); render(); window.admToast?.('Đã xoá', 'ok'); }
+    }
+  });
+
+  document.getElementById('btnRvApproveAll').addEventListener('click', () => {
+    const pend = S.all().filter(r => r.status === 'pending');
+    if (!pend.length) return window.admToast?.('Không có đánh giá chờ duyệt', 'info');
+    if (!confirm(`Duyệt tất cả ${pend.length} đánh giá pending?`)) return;
+    pend.forEach(r => S.update(r.id, { status: 'approved' }));
+    render(); window.admToast?.(`Đã duyệt ${pend.length} đánh giá`, 'ok');
+  });
+
+  document.getElementById('btnRvReset').addEventListener('click', () => {
+    if (confirm('Đặt lại seed?')) { S.reset(); render(); window.admToast?.('Reset OK', 'ok'); }
+  });
+
+  window.addEventListener('dtx:reviews-updated', render);
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_reviews')) render(); });
+  render();
+})();
+</script>
+</body></html>

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Đơn hàng — Detoxblanc Admin</title>
+<meta name="description" content="Quản trị đơn hàng Detoxblanc — lọc, cập nhật trạng thái, in phiếu giao." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta name="theme-color" content="#0F1F1C" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="orders">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Bán hàng"},{"label":"Đơn hàng"}]'
+       data-title="Đơn hàng"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Đơn hàng</h1>
+          <p>Theo dõi <strong id="ordCountLabel">—</strong> đơn trong 30 ngày. Cập nhật trạng thái, xuất hoá đơn, in phiếu.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnOrderReset"><i class="fa-solid fa-rotate-left"></i> Đặt lại seed</button>
+          <button class="adm-btn" id="btnOrderExport" data-perm="orders:read"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+          <button class="adm-btn primary" id="btnOrderCreate" data-perm="orders:write"><i class="fa-solid fa-plus"></i> Tạo đơn thủ công</button>
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stat-grid" id="ordStats">
+        <div class="stat-card"><span class="lbl">Chờ xác nhận</span><strong id="statPending">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đang đóng gói</span><strong id="statPacking">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đang giao</span><strong id="statShipping">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã giao (7 ngày)</span><strong id="statDelivered">0</strong></div>
+        <div class="stat-card"><span class="lbl">Doanh thu 7 ngày</span><strong id="statRevenue">—</strong></div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="pr-filter-bar card" role="search">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="ordQ" placeholder="Mã đơn, tên khách, SĐT…" aria-label="Tìm đơn" />
+        </div>
+        <div class="field"><select id="ordStatus" aria-label="Trạng thái">
+          <option value="">Tất cả trạng thái</option>
+        </select></div>
+        <div class="field"><select id="ordPay" aria-label="Thanh toán">
+          <option value="">Tất cả thanh toán</option>
+        </select></div>
+        <div class="field"><select id="ordMethod" aria-label="Phương thức">
+          <option value="">Tất cả phương thức</option>
+        </select></div>
+        <div class="field"><select id="ordSort">
+          <option value="new">Mới nhất</option>
+          <option value="old">Cũ nhất</option>
+          <option value="total-desc">Giá trị cao → thấp</option>
+          <option value="total-asc">Giá trị thấp → cao</option>
+        </select></div>
+        <button class="adm-btn" id="ordClear"><i class="fa-solid fa-xmark"></i> Xoá lọc</button>
+      </div>
+
+      <!-- Bulk bar -->
+      <div class="bulk-bar" id="ordBulkBar" hidden>
+        <span><strong id="ordBulkCount">0</strong> đơn đã chọn</span>
+        <button class="adm-btn" data-bulk-status="confirmed">Xác nhận</button>
+        <button class="adm-btn" data-bulk-status="packing">Đang đóng gói</button>
+        <button class="adm-btn" data-bulk-status="shipping">Đang giao</button>
+        <button class="adm-btn" data-bulk-status="cancelled">Huỷ</button>
+        <button class="adm-btn" id="ordBulkClear"><i class="fa-solid fa-xmark"></i> Bỏ chọn</button>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <table class="adm-tbl" id="ordTable">
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="ordCheckAll" aria-label="Chọn tất cả" /></th>
+              <th>Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Sản phẩm</th>
+              <th style="text-align:right">Tổng tiền</th>
+              <th>Thanh toán</th>
+              <th>Trạng thái</th>
+              <th>Thời gian</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ordTbody"></tbody>
+        </table>
+        <div class="empty-state" id="ordEmpty" hidden>
+          <i class="fa-solid fa-inbox"></i>
+          <p>Không tìm thấy đơn nào khớp bộ lọc.</p>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pager" id="ordPager"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Admin create-order modal -->
+<div class="adm-modal" id="ordCreateModal" hidden aria-hidden="true">
+  <div class="adm-modal-backdrop" data-close-create></div>
+  <div class="adm-modal-card adm-modal-lg" role="dialog" aria-labelledby="ordCreateTitle">
+    <header class="adm-modal-head">
+      <h3 id="ordCreateTitle"><i class="fa-solid fa-receipt"></i> Tạo đơn thủ công</h3>
+      <button class="adm-btn" data-close-create aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="adm-modal-body">
+      <div class="create-grid">
+        <!-- LEFT: customer + items -->
+        <section class="create-col">
+          <h4>1 · Khách hàng</h4>
+          <div class="cust-picker">
+            <div class="field search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="ocCustSearch" type="search" placeholder="Tìm theo tên / SĐT / email…" autocomplete="off" />
+            </div>
+            <div class="cust-results" id="ocCustResults" hidden></div>
+            <label class="cust-new-toggle"><input type="checkbox" id="ocNewCust" /> Khách mới (nhập tay)</label>
+            <div class="cust-new" id="ocCustNew" hidden>
+              <div class="form-row">
+                <label>Họ tên *<input id="ocCustName" maxlength="120" /></label>
+                <label>SĐT *<input id="ocCustPhone" maxlength="20" /></label>
+              </div>
+              <label>Email<input id="ocCustEmail" type="email" maxlength="120" /></label>
+            </div>
+            <div class="cust-selected" id="ocCustSelected" hidden>
+              <strong id="ocCustSelName"></strong> <span id="ocCustSelMeta" class="muted"></span>
+              <span class="pill" id="ocCustTier"></span>
+              <button class="linkish" id="ocCustClear">Đổi khách</button>
+            </div>
+          </div>
+
+          <h4>2 · Sản phẩm</h4>
+          <div class="prod-picker">
+            <div class="field search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="ocProdSearch" type="search" placeholder="Tìm SP trong catalog…" autocomplete="off" />
+            </div>
+            <div class="prod-results" id="ocProdResults" hidden></div>
+          </div>
+          <table class="adm-tbl item-tbl" id="ocItemTbl">
+            <thead><tr><th>Sản phẩm</th><th style="width:90px;text-align:right">Giá</th><th style="width:70px">SL</th><th style="width:100px;text-align:right">Tạm tính</th><th style="width:34px"></th></tr></thead>
+            <tbody id="ocItemBody"><tr><td colspan="5" class="muted" style="text-align:center;padding:16px">Chưa có sản phẩm</td></tr></tbody>
+          </table>
+
+          <h4>3 · Ghi chú</h4>
+          <label>Ghi chú KH (xuất email/phiếu)<textarea id="ocNoteCust" rows="2" maxlength="1000" placeholder="Vd. Giao giờ hành chính"></textarea></label>
+          <label>Ghi chú nội bộ (không gửi KH)<textarea id="ocNoteInt" rows="2" maxlength="2000" placeholder="Vd. Khách VIP, gọi xác nhận trước"></textarea></label>
+        </section>
+
+        <!-- RIGHT: address + shipping + payment + summary -->
+        <section class="create-col">
+          <h4>4 · Địa chỉ giao hàng</h4>
+          <div class="form-row">
+            <label>Người nhận *<input id="ocShipName" maxlength="120" /></label>
+            <label>SĐT *<input id="ocShipPhone" maxlength="20" /></label>
+          </div>
+          <div class="form-row">
+            <label style="flex:2">Địa chỉ *<input id="ocShipLine1" maxlength="200" placeholder="Số nhà, đường" /></label>
+            <label>Phường/Xã<input id="ocShipWard" maxlength="100" /></label>
+          </div>
+          <div class="form-row">
+            <label>Quận/Huyện<input id="ocShipDistrict" maxlength="100" /></label>
+            <label>Tỉnh/TP *<input id="ocShipProvince" maxlength="100" value="TP. Hồ Chí Minh" /></label>
+          </div>
+          <details class="alt-recipient">
+            <summary>Người nhận khác người đặt</summary>
+            <div class="form-row">
+              <label>Tên người nhận<input id="ocRecipName" maxlength="120" /></label>
+              <label>SĐT người nhận<input id="ocRecipPhone" maxlength="20" /></label>
+            </div>
+          </details>
+
+          <h4>5 · Vận chuyển & Thanh toán</h4>
+          <div class="form-row">
+            <label>Phương thức giao<select id="ocShipMethod">
+              <option value="standard">Thường</option>
+              <option value="express">Hoả tốc</option>
+              <option value="same_day">Giao trong ngày</option>
+              <option value="pickup">Khách tự lấy</option>
+            </select></label>
+            <label>Phí giao<input id="ocShipFee" type="number" min="0" value="30000" /></label>
+          </div>
+          <div class="form-row">
+            <label>Thanh toán<select id="ocPayMethod">
+              <option value="cod">COD</option>
+              <option value="bank_transfer">Chuyển khoản</option>
+              <option value="vnpay">VNPay</option>
+              <option value="momo">MoMo</option>
+            </select></label>
+            <label>Nguồn đơn<select id="ocChannel">
+              <option value="">(Admin nhập tay)</option>
+              <option value="phone">Điện thoại</option>
+              <option value="zalo">Zalo</option>
+              <option value="fb">Facebook</option>
+              <option value="tiktok">TikTok</option>
+              <option value="pos">Tại cửa hàng</option>
+              <option value="marketplace">Sàn TMĐT</option>
+            </select></label>
+          </div>
+
+          <h4>6 · Giảm giá & Quà tặng</h4>
+          <div class="form-row">
+            <label>Voucher<div style="display:flex;gap:6px;align-items:center"><input id="ocVoucher" maxlength="30" placeholder="CODE" style="flex:1" /><button class="adm-btn" id="ocVoucherCheck" type="button">Kiểm tra</button></div></label>
+            <label>Giảm thêm (VND)<input id="ocDiscountExtra" type="number" min="0" value="0" /></label>
+          </div>
+          <small class="muted" id="ocVoucherStatus"></small>
+          <label class="chk"><input type="checkbox" id="ocGiftWrap" /> Gói quà (+ 20.000₫)</label>
+          <label id="ocGiftMsgWrap" hidden>Lời nhắn kèm quà<textarea id="ocGiftMsg" rows="2" maxlength="500"></textarea></label>
+
+          <h4>7 · Trạng thái tạo</h4>
+          <div class="radio-group">
+            <label><input type="radio" name="ocStatus" value="draft" /> <b>Nháp</b> — chưa xác nhận, chưa reserve kho</label>
+            <label><input type="radio" name="ocStatus" value="quote" /> <b>Báo giá</b> — gửi KH duyệt</label>
+            <label><input type="radio" name="ocStatus" value="pending" checked /> <b>Chờ xác nhận</b> — gửi email confirm</label>
+          </div>
+
+          <div class="summary-box" id="ocSummary">
+            <div><span>Tạm tính</span><strong id="ocSumSub">0₫</strong></div>
+            <div><span>Giảm giá</span><strong id="ocSumDisc">0₫</strong></div>
+            <div><span>Phí giao</span><strong id="ocSumShip">0₫</strong></div>
+            <div><span>Gói quà</span><strong id="ocSumGift">0₫</strong></div>
+            <div class="total"><span>Tổng cộng</span><strong id="ocSumTotal">0₫</strong></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <footer class="adm-modal-foot">
+      <button class="adm-btn" data-close-create>Huỷ</button>
+      <button class="adm-btn primary" id="ocSubmit"><i class="fa-solid fa-check"></i> Tạo đơn</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Order detail drawer -->
+<aside class="drawer" id="ordDrawer" hidden aria-hidden="true" aria-labelledby="ordDrawerTitle">
+  <div class="drawer-backdrop" data-close-drawer></div>
+  <div class="drawer-panel">
+    <header>
+      <h3 id="ordDrawerTitle">Chi tiết đơn</h3>
+      <button class="drawer-close" data-close-drawer aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="drawer-body" id="ordDrawerBody"></div>
+  </div>
+</aside>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const S = window.DTX_ADMIN_ORDERS;
+  const F = window.DTX_ADMIN_FMT;
+
+  const state = {
+    page: 1, q: '', status: '', pay: '', method: '', sort: 'new',
+    selected: new Set(), perPage: 15,
+  };
+
+  // populate selects
+  (function initSelects(){
+    const elStatus = document.getElementById('ordStatus');
+    S.STATUSES.forEach(s => {
+      const o = document.createElement('option'); o.value = s; o.textContent = S.statusLabel(s);
+      elStatus.appendChild(o);
+    });
+    const elPay = document.getElementById('ordPay');
+    S.PAY_STATUSES.forEach(s => {
+      const o = document.createElement('option'); o.value = s; o.textContent = S.paymentLabel(s);
+      elPay.appendChild(o);
+    });
+    const elM = document.getElementById('ordMethod');
+    S.PAY_METHODS.forEach(m => {
+      const o = document.createElement('option'); o.value = m;
+      o.textContent = { cod:'COD', vnpay:'VNPay', momo:'MoMo', bank_transfer:'Chuyển khoản' }[m] || m;
+      elM.appendChild(o);
+    });
+  })();
+
+  function filterSort(list){
+    const q = state.q.trim().toLowerCase();
+    let out = list.filter(o => {
+      if (q && !(o.code.toLowerCase().includes(q) ||
+                 (o.customer?.name || '').toLowerCase().includes(q) ||
+                 (o.customer?.phone || '').includes(q))) return false;
+      if (state.status && o.status !== state.status) return false;
+      if (state.pay && o.paymentStatus !== state.pay) return false;
+      if (state.method && o.paymentMethod !== state.method) return false;
+      return true;
+    });
+    out.sort((a,b) => {
+      switch(state.sort){
+        case 'old': return new Date(a.placedAt) - new Date(b.placedAt);
+        case 'total-desc': return b.total - a.total;
+        case 'total-asc': return a.total - b.total;
+        default: return new Date(b.placedAt) - new Date(a.placedAt);
+      }
+    });
+    return out;
+  }
+
+  function statusBadge(s){
+    const map = {
+      pending: 'warn', confirmed: 'info', packing: 'info',
+      shipping: 'info', delivered: 'ok', cancelled: 'bad', returned: 'bad',
+    };
+    return `<span class="badge ${map[s] || 'muted'}">${S.statusLabel(s)}</span>`;
+  }
+  function payBadge(o){
+    const cls = o.paymentStatus === 'paid' ? 'ok' : o.paymentStatus === 'failed' ? 'bad' : 'warn';
+    return `<span class="badge ${cls}">${S.paymentLabel(o.paymentStatus)}</span>
+            <small class="muted" style="display:block;font-size:11px;margin-top:2px">${({cod:'COD',vnpay:'VNPay',momo:'MoMo',bank_transfer:'CK'}[o.paymentMethod] || o.paymentMethod)}</small>`;
+  }
+
+  function render(){
+    const all = S.all();
+    const filtered = filterSort(all);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage));
+    if (state.page > totalPages) state.page = totalPages;
+    const slice = filtered.slice((state.page-1)*state.perPage, state.page*state.perPage);
+
+    document.getElementById('ordCountLabel').textContent = all.length.toLocaleString('vi-VN');
+
+    // stats
+    const within7 = (d) => (Date.now() - new Date(d).getTime()) < 7*86400000;
+    document.getElementById('statPending').textContent = all.filter(o=>o.status==='pending').length;
+    document.getElementById('statPacking').textContent = all.filter(o=>o.status==='packing').length;
+    document.getElementById('statShipping').textContent = all.filter(o=>o.status==='shipping').length;
+    document.getElementById('statDelivered').textContent = all.filter(o=>o.status==='delivered' && within7(o.placedAt)).length;
+    const rev = all.filter(o => o.paymentStatus==='paid' && within7(o.placedAt)).reduce((s,o)=>s+o.total, 0);
+    document.getElementById('statRevenue').textContent = F.vnd(rev);
+
+    // rows
+    const tbody = document.getElementById('ordTbody');
+    const empty = document.getElementById('ordEmpty');
+    if (!slice.length) { tbody.innerHTML = ''; empty.hidden = false; }
+    else {
+      empty.hidden = true;
+      tbody.innerHTML = slice.map(o => {
+        const itemsSummary = o.items.map(i => `${i.name} × ${i.qty}`).join(', ');
+        const ts = new Date(o.placedAt);
+        return `<tr data-id="${o.id}">
+          <td><input type="checkbox" data-check="${o.id}" ${state.selected.has(o.id)?'checked':''}></td>
+          <td><a href="#" data-open="${o.id}" class="mono">${o.code}</a></td>
+          <td title="${(o.customer?.name || '').replace(/"/g,'&quot;')}">
+            <strong>${o.customer?.name || '—'}</strong><br>
+            <small class="muted">${o.customer?.phone || ''} · ${o.customer?.province || ''}</small>
+          </td>
+          <td title="${itemsSummary.replace(/"/g,'&quot;')}"><small class="wrap">${itemsSummary.length > 60 ? itemsSummary.slice(0,60)+'…' : itemsSummary}</small></td>
+          <td style="text-align:right"><strong>${F.vnd(o.total)}</strong></td>
+          <td>${payBadge(o)}</td>
+          <td>${statusBadge(o.status)}</td>
+          <td><small>${ts.toLocaleDateString('vi-VN')}<br>${ts.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}</small></td>
+          <td style="text-align:right">
+            <button class="icon-btn" data-open="${o.id}" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></button>
+            <button class="icon-btn" data-print="${o.id}" title="In phiếu"><i class="fa-solid fa-print"></i></button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // pager
+    const pager = document.getElementById('ordPager');
+    if (totalPages > 1) {
+      let html = '';
+      for (let p = 1; p <= totalPages; p++) {
+        html += `<button class="${p===state.page?'active':''}" data-page="${p}">${p}</button>`;
+      }
+      pager.innerHTML = html;
+    } else pager.innerHTML = '';
+
+    // bulk bar
+    const bar = document.getElementById('ordBulkBar');
+    if (state.selected.size) {
+      bar.hidden = false;
+      document.getElementById('ordBulkCount').textContent = state.selected.size;
+    } else bar.hidden = true;
+  }
+
+  // bind filters
+  document.getElementById('ordQ').addEventListener('input', e => { state.q = e.target.value; state.page=1; render(); });
+  document.getElementById('ordStatus').addEventListener('change', e => { state.status = e.target.value; state.page=1; render(); });
+  document.getElementById('ordPay').addEventListener('change', e => { state.pay = e.target.value; state.page=1; render(); });
+  document.getElementById('ordMethod').addEventListener('change', e => { state.method = e.target.value; state.page=1; render(); });
+  document.getElementById('ordSort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+  document.getElementById('ordClear').addEventListener('click', () => {
+    state.q = state.status = state.pay = state.method = ''; state.sort = 'new'; state.page = 1;
+    document.getElementById('ordQ').value='';
+    ['ordStatus','ordPay','ordMethod'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('ordSort').value='new';
+    render();
+  });
+
+  // Bulk
+  document.getElementById('ordCheckAll').addEventListener('change', e => {
+    const checked = e.target.checked;
+    document.querySelectorAll('#ordTbody [data-check]').forEach(cb => {
+      cb.checked = checked;
+      const id = cb.dataset.check;
+      if (checked) state.selected.add(id); else state.selected.delete(id);
+    });
+    render();
+  });
+  document.getElementById('ordTbody').addEventListener('change', e => {
+    if (e.target.dataset.check) {
+      const id = e.target.dataset.check;
+      if (e.target.checked) state.selected.add(id); else state.selected.delete(id);
+      render();
+    }
+  });
+  document.getElementById('ordBulkClear').addEventListener('click', () => {
+    state.selected.clear(); render();
+  });
+  document.querySelectorAll('[data-bulk-status]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const status = btn.dataset.bulkStatus;
+      const ids = [...state.selected];
+      ids.forEach(id => S.update(id, { status }));
+      state.selected.clear();
+      window.admToast?.(`Đã cập nhật ${ids.length} đơn → ${S.statusLabel(status)}`, 'ok');
+      render();
+    });
+  });
+
+  // Row actions
+  document.getElementById('ordTbody').addEventListener('click', e => {
+    const open = e.target.closest('[data-open]');
+    if (open) { e.preventDefault(); openDrawer(open.dataset.open); }
+    const pr = e.target.closest('[data-print]');
+    if (pr) { printSlip(pr.dataset.print); }
+  });
+
+  // Pager click
+  document.getElementById('ordPager').addEventListener('click', e => {
+    const b = e.target.closest('[data-page]');
+    if (b) { state.page = Number(b.dataset.page); render(); }
+  });
+
+  // Drawer
+  function openDrawer(id){
+    const o = S.get(id); if (!o) return;
+    const el = document.getElementById('ordDrawer');
+    const body = document.getElementById('ordDrawerBody');
+    const title = document.getElementById('ordDrawerTitle');
+    title.textContent = `Đơn ${o.code}`;
+    const itemsHtml = o.items.map(i => `
+      <tr><td>${i.name}</td><td style="text-align:right">${i.qty}</td>
+          <td style="text-align:right">${F.vnd(i.priceUnit)}</td>
+          <td style="text-align:right">${F.vnd(i.subtotal)}</td></tr>`).join('');
+    const statusOptions = S.STATUSES.map(s => `<option value="${s}" ${s===o.status?'selected':''}>${S.statusLabel(s)}</option>`).join('');
+    body.innerHTML = `
+      <section class="drawer-section">
+        <h4>Khách hàng</h4>
+        <dl class="meta-list">
+          <dt>Tên</dt><dd>${o.customer?.name || '—'}</dd>
+          <dt>SĐT</dt><dd>${o.customer?.phone || '—'}</dd>
+          <dt>Địa chỉ giao</dt><dd>${o.shippingAddress ? [o.shippingAddress.line1, o.shippingAddress.ward, o.shippingAddress.district, o.shippingAddress.province].filter(Boolean).join(', ') : '—'}</dd>
+          <dt>Ghi chú</dt><dd>${o.notes || '—'}</dd>
+        </dl>
+      </section>
+      <section class="drawer-section">
+        <h4>Sản phẩm</h4>
+        <table class="adm-tbl mini">
+          <thead><tr><th>Tên</th><th style="text-align:right">SL</th><th style="text-align:right">Đơn giá</th><th style="text-align:right">Thành tiền</th></tr></thead>
+          <tbody>${itemsHtml}</tbody>
+          <tfoot>
+            <tr><td colspan="3" style="text-align:right">Tạm tính</td><td style="text-align:right">${F.vnd(o.subtotal)}</td></tr>
+            <tr><td colspan="3" style="text-align:right">Giảm giá</td><td style="text-align:right">−${F.vnd(o.discountTotal)}</td></tr>
+            <tr><td colspan="3" style="text-align:right">Phí vận chuyển</td><td style="text-align:right">${F.vnd(o.shippingFee)}</td></tr>
+            <tr><td colspan="3" style="text-align:right"><strong>Tổng cộng</strong></td><td style="text-align:right"><strong>${F.vnd(o.total)}</strong></td></tr>
+          </tfoot>
+        </table>
+      </section>
+      <section class="drawer-section">
+        <h4>Trạng thái</h4>
+        <div class="row-2">
+          <label><span>Trạng thái đơn</span>
+            <select id="drStatus">${statusOptions}</select>
+          </label>
+          <label><span>Thanh toán</span>
+            <select id="drPay">${S.PAY_STATUSES.map(s=>`<option value="${s}" ${s===o.paymentStatus?'selected':''}>${S.paymentLabel(s)}</option>`).join('')}</select>
+          </label>
+        </div>
+        <button class="adm-btn primary" id="drSave" style="margin-top:12px"><i class="fa-solid fa-check"></i> Lưu thay đổi</button>
+      </section>
+    `;
+    document.getElementById('drSave').addEventListener('click', () => {
+      S.update(id, { status: document.getElementById('drStatus').value, paymentStatus: document.getElementById('drPay').value });
+      window.admToast?.('Đã cập nhật đơn', 'ok');
+      closeDrawer();
+      render();
+    });
+    el.hidden = false; el.setAttribute('aria-hidden', 'false');
+  }
+  function closeDrawer(){
+    const el = document.getElementById('ordDrawer');
+    el.hidden = true; el.setAttribute('aria-hidden', 'true');
+  }
+  document.getElementById('ordDrawer').addEventListener('click', e => {
+    if (e.target.matches('[data-close-drawer]')) closeDrawer();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  function printSlip(id){
+    const o = S.get(id); if (!o) return;
+    const w = window.open('', '_blank', 'width=700,height=900');
+    const html = `
+      <html><head><title>Phiếu giao ${o.code}</title>
+      <style>body{font-family:system-ui;padding:24px}h1{margin:0 0 4px}small{color:#666}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{padding:6px;border-bottom:1px solid #ddd;text-align:left}th{background:#f4f4f4}</style>
+      </head><body>
+      <h1>Phiếu giao hàng</h1>
+      <small>Mã đơn: <b>${o.code}</b> · ${new Date(o.placedAt).toLocaleString('vi-VN')}</small>
+      <h3>Nhận hàng</h3>
+      <p>${o.customer?.name || ''} · ${o.customer?.phone || ''}<br>${o.shippingAddress ? [o.shippingAddress.line1, o.shippingAddress.ward, o.shippingAddress.district, o.shippingAddress.province].filter(Boolean).join(', ') : ''}</p>
+      <h3>Sản phẩm</h3>
+      <table><thead><tr><th>Tên</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+      <tbody>${o.items.map(i=>`<tr><td>${i.name}</td><td>${i.qty}</td><td>${F.vnd(i.priceUnit)}</td><td>${F.vnd(i.subtotal)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="3"><b>Tổng</b></td><td><b>${F.vnd(o.total)}</b></td></tr></tfoot></table>
+      <p style="margin-top:24px">Thanh toán: <b>${({cod:'Tiền mặt (COD)',vnpay:'VNPay',momo:'MoMo',bank_transfer:'Chuyển khoản'}[o.paymentMethod])}</b> · ${S.paymentLabel(o.paymentStatus)}</p>
+      </body></html>`;
+    w.document.write(html); w.document.close(); setTimeout(()=>w.print(), 250);
+  }
+
+  // Action buttons
+  document.getElementById('btnOrderReset').addEventListener('click', () => {
+    if (!confirm('Đặt lại dữ liệu đơn hàng về bản gốc?')) return;
+    S.reset(); render(); window.admToast?.('Đã reset đơn hàng', 'ok');
+  });
+  document.getElementById('btnOrderExport').addEventListener('click', () => {
+    const all = S.all();
+    const header = ['Mã đơn','Khách','SĐT','Tỉnh','Tổng tiền','Trạng thái','Thanh toán','PTTT','Ngày'];
+    const esc = s => '"' + String(s ?? '').replace(/"/g,'""') + '"';
+    const rows = all.map(o => [o.code, o.customer?.name, o.customer?.phone, o.customer?.province, o.total, S.statusLabel(o.status), S.paymentLabel(o.paymentStatus), o.paymentMethod, new Date(o.placedAt).toLocaleString('vi-VN')].map(esc).join(','));
+    const csv = '\ufeff' + [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `orders-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+  /* ═════════════════════════ CREATE-ORDER MODAL ═════════════════════════
+     Flow: pick customer (existing or new) → pick items → enter address &
+     shipping → voucher/discount/gift wrap → confirm. All state in `oc`,
+     summary recomputes on every change.
+     ═══════════════════════════════════════════════════════════════════════ */
+  const GIFT_WRAP_FEE = 20000;
+  const SHIP_FEE_BY_METHOD = { standard: 30000, express: 55000, same_day: 85000, pickup: 0 };
+  const PROVINCE_DEFAULT = 'TP. Hồ Chí Minh';
+
+  const oc = {
+    customer: null,       // {id,name,phone,email,tier?} | null
+    newCust: false,
+    items: [],            // [{productId, variantId?, name, priceUnit, qty}]
+    voucher: null,        // resolved voucher object or null
+    voucherError: '',
+  };
+
+  const modal = document.getElementById('ordCreateModal');
+  const $ = (id) => document.getElementById(id);
+
+  function openCreateModal(){
+    // reset state
+    oc.customer = null; oc.newCust = false; oc.items = []; oc.voucher = null; oc.voucherError = '';
+    // reset inputs
+    $('ocCustSearch').value = ''; $('ocCustResults').hidden = true; $('ocCustResults').innerHTML = '';
+    $('ocNewCust').checked = false; $('ocCustNew').hidden = true;
+    ['ocCustName','ocCustPhone','ocCustEmail'].forEach(id => $(id).value = '');
+    $('ocCustSelected').hidden = true;
+    $('ocProdSearch').value = ''; $('ocProdResults').hidden = true; $('ocProdResults').innerHTML = '';
+    $('ocNoteCust').value = ''; $('ocNoteInt').value = '';
+    ['ocShipName','ocShipPhone','ocShipLine1','ocShipWard','ocShipDistrict','ocRecipName','ocRecipPhone'].forEach(id => $(id).value = '');
+    $('ocShipProvince').value = PROVINCE_DEFAULT;
+    $('ocShipMethod').value = 'standard'; $('ocShipFee').value = String(SHIP_FEE_BY_METHOD.standard);
+    $('ocPayMethod').value = 'cod'; $('ocChannel').value = '';
+    $('ocVoucher').value = ''; $('ocVoucherStatus').textContent = ''; $('ocVoucherStatus').style.color = '';
+    $('ocDiscountExtra').value = '0';
+    $('ocGiftWrap').checked = false; $('ocGiftMsg').value = ''; $('ocGiftMsgWrap').hidden = true;
+    document.querySelector('input[name="ocStatus"][value="pending"]').checked = true;
+    renderItems(); renderSummary();
+    modal.hidden = false; modal.setAttribute('aria-hidden','false');
+    setTimeout(() => $('ocCustSearch').focus(), 30);
+  }
+  function closeCreateModal(){ modal.hidden = true; modal.setAttribute('aria-hidden','true'); }
+  modal.addEventListener('click', e => { if (e.target.matches('[data-close-create]')) closeCreateModal(); });
+
+  /* ---- Customer picker ------------------------------------------------ */
+  let custTimer = null;
+  $('ocCustSearch').addEventListener('input', e => {
+    clearTimeout(custTimer);
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { $('ocCustResults').hidden = true; return; }
+    custTimer = setTimeout(() => {
+      const all = (window.DTX_ADMIN_CUSTOMERS?.all() || []);
+      const results = all.filter(c =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.phone || '').includes(q) ||
+        (c.email || '').toLowerCase().includes(q)
+      ).slice(0, 10);
+      const box = $('ocCustResults');
+      if (!results.length) {
+        box.innerHTML = `<div class="cust-result muted">Không có KH khớp · tích "Khách mới" để nhập tay</div>`;
+      } else {
+        box.innerHTML = results.map(c => `
+          <div class="cust-result" data-cust="${c.id}">
+            <strong>${c.name}</strong>
+            <small>${c.phone || ''} · ${c.email || ''} · ${c.province || ''}</small>
+            ${c.tags?.includes('VIP') ? '<span class="pill pill-vip">VIP</span>' : ''}
+          </div>`).join('');
+      }
+      box.hidden = false;
+    }, 160);
+  });
+  $('ocCustResults').addEventListener('click', e => {
+    const row = e.target.closest('[data-cust]'); if (!row) return;
+    const c = window.DTX_ADMIN_CUSTOMERS.get(row.dataset.cust); if (!c) return;
+    selectCustomer(c);
+  });
+  function selectCustomer(c){
+    oc.customer = c;
+    $('ocCustSelected').hidden = false;
+    $('ocCustSelName').textContent = c.name;
+    $('ocCustSelMeta').textContent = `· ${c.phone || '—'} · ${c.email || '—'}`;
+    const tierEl = $('ocCustTier');
+    if (c.tags?.includes('VIP')) { tierEl.textContent = 'VIP'; tierEl.hidden = false; }
+    else tierEl.hidden = true;
+    $('ocCustSearch').value = ''; $('ocCustResults').hidden = true;
+    $('ocNewCust').checked = false; $('ocCustNew').hidden = true;
+    // pre-fill shipping from customer
+    if (!$('ocShipName').value) $('ocShipName').value = c.name || '';
+    if (!$('ocShipPhone').value) $('ocShipPhone').value = c.phone || '';
+    if (!$('ocShipProvince').value || $('ocShipProvince').value === PROVINCE_DEFAULT)
+      $('ocShipProvince').value = c.province || PROVINCE_DEFAULT;
+  }
+  $('ocCustClear').addEventListener('click', e => {
+    e.preventDefault();
+    oc.customer = null; $('ocCustSelected').hidden = true;
+    $('ocCustSearch').focus();
+  });
+  $('ocNewCust').addEventListener('change', e => {
+    oc.newCust = e.target.checked;
+    $('ocCustNew').hidden = !oc.newCust;
+    if (oc.newCust) { oc.customer = null; $('ocCustSelected').hidden = true; }
+  });
+
+  /* ---- Product picker ------------------------------------------------ */
+  let prodTimer = null;
+  $('ocProdSearch').addEventListener('input', e => {
+    clearTimeout(prodTimer);
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { $('ocProdResults').hidden = true; return; }
+    prodTimer = setTimeout(() => {
+      const all = (window.DTX_ADMIN?.all() || []);
+      const results = all.filter(p =>
+        p.status === 'active' &&
+        ((p.name || '').toLowerCase().includes(q) ||
+         (p.code || '').toLowerCase().includes(q) ||
+         (p.category || '').toLowerCase().includes(q))
+      ).slice(0, 10);
+      const box = $('ocProdResults');
+      if (!results.length) {
+        box.innerHTML = `<div class="prod-result muted">Không có SP khớp</div>`;
+      } else {
+        box.innerHTML = results.map(p => `
+          <div class="prod-result" data-prod="${p.id}">
+            <strong>${p.name}</strong>
+            <small>${p.code} · ${F.vnd(p.price)} · Tồn ${p.stock}</small>
+          </div>`).join('');
+      }
+      box.hidden = false;
+    }, 160);
+  });
+  $('ocProdResults').addEventListener('click', e => {
+    const row = e.target.closest('[data-prod]'); if (!row) return;
+    const p = window.DTX_ADMIN.get(row.dataset.prod); if (!p) return;
+    addItem(p);
+    $('ocProdSearch').value = ''; $('ocProdResults').hidden = true; $('ocProdSearch').focus();
+  });
+  function addItem(p){
+    const existing = oc.items.find(x => x.productId === p.id);
+    if (existing) { existing.qty += 1; }
+    else { oc.items.push({ productId: p.id, name: p.name, priceUnit: Number(p.price || 0), qty: 1 }); }
+    renderItems(); renderSummary();
+  }
+  function renderItems(){
+    const body = $('ocItemBody');
+    if (!oc.items.length) {
+      body.innerHTML = `<tr><td colspan="5" class="muted" style="text-align:center;padding:16px">Chưa có sản phẩm</td></tr>`;
+      return;
+    }
+    body.innerHTML = oc.items.map((it, idx) => `
+      <tr>
+        <td><strong>${it.name}</strong></td>
+        <td style="text-align:right">${F.vnd(it.priceUnit)}</td>
+        <td>
+          <div style="display:flex;gap:4px;align-items:center">
+            <button class="icon-btn" data-qty="-1" data-idx="${idx}">−</button>
+            <input type="number" min="1" value="${it.qty}" data-qty-input="${idx}" style="width:50px;text-align:center" />
+            <button class="icon-btn" data-qty="1" data-idx="${idx}">+</button>
+          </div>
+        </td>
+        <td style="text-align:right"><strong>${F.vnd(it.priceUnit * it.qty)}</strong></td>
+        <td><button class="icon-btn" data-rm="${idx}" title="Xoá"><i class="fa-solid fa-trash"></i></button></td>
+      </tr>`).join('');
+  }
+  $('ocItemBody').addEventListener('click', e => {
+    const q = e.target.closest('[data-qty]');
+    if (q) {
+      const idx = Number(q.dataset.idx); const d = Number(q.dataset.qty);
+      oc.items[idx].qty = Math.max(1, oc.items[idx].qty + d);
+      renderItems(); renderSummary();
+      return;
+    }
+    const rm = e.target.closest('[data-rm]');
+    if (rm) {
+      oc.items.splice(Number(rm.dataset.rm), 1); renderItems(); renderSummary();
+    }
+  });
+  $('ocItemBody').addEventListener('change', e => {
+    const inp = e.target.closest('[data-qty-input]');
+    if (inp) {
+      const idx = Number(inp.dataset.qtyInput);
+      const v = Math.max(1, Number(inp.value) || 1);
+      oc.items[idx].qty = v; renderItems(); renderSummary();
+    }
+  });
+
+  /* ---- Shipping / gift / voucher ------------------------------------- */
+  $('ocShipMethod').addEventListener('change', e => {
+    const fee = SHIP_FEE_BY_METHOD[e.target.value] ?? 30000;
+    $('ocShipFee').value = String(fee);
+    renderSummary();
+  });
+  $('ocShipFee').addEventListener('input', renderSummary);
+  $('ocDiscountExtra').addEventListener('input', renderSummary);
+  $('ocGiftWrap').addEventListener('change', e => {
+    $('ocGiftMsgWrap').hidden = !e.target.checked;
+    renderSummary();
+  });
+
+  $('ocVoucherCheck').addEventListener('click', () => {
+    const code = $('ocVoucher').value.trim().toUpperCase();
+    const status = $('ocVoucherStatus');
+    oc.voucher = null; oc.voucherError = '';
+    if (!code) { status.textContent = 'Chưa nhập mã voucher.'; status.style.color = ''; renderSummary(); return; }
+    const all = (window.DTX_ADMIN_VOUCHERS?.all() || []);
+    const v = all.find(x => x.code === code);
+    if (!v) { oc.voucherError = 'Voucher không tồn tại.'; }
+    else if (v.status !== 'active') { oc.voucherError = `Voucher ${v.status === 'scheduled' ? 'chưa tới ngày áp dụng' : 'đã hết hạn/bị khoá'}.`; }
+    else {
+      const now = new Date();
+      if (v.startAt && new Date(v.startAt) > now) { oc.voucherError = 'Voucher chưa tới ngày áp dụng.'; }
+      else if (v.endAt && new Date(v.endAt) < now) { oc.voucherError = 'Voucher đã hết hạn.'; }
+      else if (v.usageLimit != null && v.usedCount >= v.usageLimit) { oc.voucherError = 'Voucher đã hết lượt dùng.'; }
+      else {
+        const sub = oc.items.reduce((s,i)=>s + i.priceUnit * i.qty, 0);
+        if (v.minOrder && sub < v.minOrder) { oc.voucherError = `Đơn tối thiểu ${F.vnd(v.minOrder)}, hiện ${F.vnd(sub)}.`; }
+        else { oc.voucher = v; }
+      }
+    }
+    if (oc.voucher) {
+      status.textContent = `✓ ${oc.voucher.description || oc.voucher.code} — đã áp dụng.`;
+      status.style.color = 'var(--a-ok, #15803d)';
+    } else {
+      status.textContent = '✗ ' + oc.voucherError;
+      status.style.color = 'var(--a-bad, #b91c1c)';
+    }
+    renderSummary();
+  });
+
+  function computeTotals(){
+    const subtotal = oc.items.reduce((s, i) => s + i.priceUnit * i.qty, 0);
+    const shippingFee = Math.max(0, Number($('ocShipFee').value) || 0);
+    const giftWrapFee = $('ocGiftWrap').checked ? GIFT_WRAP_FEE : 0;
+    const extra = Math.max(0, Number($('ocDiscountExtra').value) || 0);
+    let voucherDisc = 0; let voucherShip = 0;
+    if (oc.voucher) {
+      if (oc.voucher.type === 'percent') voucherDisc = Math.floor(subtotal * oc.voucher.value / 100);
+      else if (oc.voucher.type === 'amount') voucherDisc = Number(oc.voucher.value || 0);
+      else if (oc.voucher.type === 'shipping') voucherShip = shippingFee;
+    }
+    const discountTotal = Math.min(subtotal, voucherDisc + extra);
+    const realShip = Math.max(0, shippingFee - voucherShip);
+    const total = Math.max(0, subtotal - discountTotal + realShip + giftWrapFee);
+    return { subtotal, discountTotal, shippingFee: realShip, giftWrapFee, total };
+  }
+
+  function renderSummary(){
+    const t = computeTotals();
+    $('ocSumSub').textContent = F.vnd(t.subtotal);
+    $('ocSumDisc').textContent = '−' + F.vnd(t.discountTotal);
+    $('ocSumShip').textContent = F.vnd(t.shippingFee);
+    $('ocSumGift').textContent = F.vnd(t.giftWrapFee);
+    $('ocSumTotal').textContent = F.vnd(t.total);
+  }
+
+  /* ---- Submit -------------------------------------------------------- */
+  $('ocSubmit').addEventListener('click', () => {
+    // Validate
+    let customer = null;
+    if (oc.customer) customer = oc.customer;
+    else if (oc.newCust) {
+      const name = $('ocCustName').value.trim();
+      const phone = $('ocCustPhone').value.trim();
+      if (!name || !phone) { window.admToast?.('Nhập họ tên + SĐT khách mới', 'bad'); return; }
+      customer = { name, phone, email: $('ocCustEmail').value.trim() || null };
+    } else {
+      window.admToast?.('Chọn khách hoặc tích "Khách mới"', 'bad'); return;
+    }
+    if (!oc.items.length) { window.admToast?.('Thêm ít nhất 1 sản phẩm', 'bad'); return; }
+    const shipName = $('ocShipName').value.trim();
+    const shipPhone = $('ocShipPhone').value.trim();
+    const shipLine1 = $('ocShipLine1').value.trim();
+    const shipProvince = $('ocShipProvince').value.trim();
+    if (!shipName || !shipPhone || !shipLine1 || !shipProvince) {
+      window.admToast?.('Điền đủ địa chỉ giao (người nhận, SĐT, địa chỉ, tỉnh)', 'bad'); return;
+    }
+
+    const t = computeTotals();
+    const status = document.querySelector('input[name="ocStatus"]:checked')?.value || 'pending';
+    const recipName = $('ocRecipName').value.trim();
+    const recipPhone = $('ocRecipPhone').value.trim();
+
+    const items = oc.items.map(i => ({
+      productId: i.productId,
+      name: i.name,
+      priceUnit: i.priceUnit,
+      qty: i.qty,
+      subtotal: i.priceUnit * i.qty,
+    }));
+
+    const orderPayload = {
+      customer: {
+        id: customer.id || undefined,
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email || null,
+        province: shipProvince,
+      },
+      items,
+      subtotal: t.subtotal,
+      discountTotal: t.discountTotal,
+      shippingFee: t.shippingFee,
+      giftWrapFee: t.giftWrapFee,
+      total: t.total,
+      status,
+      paymentStatus: 'pending',
+      paymentMethod: $('ocPayMethod').value,
+      shippingMethod: $('ocShipMethod').value,
+      shippingAddress: {
+        fullName: shipName,
+        phone: shipPhone,
+        province: shipProvince,
+        district: $('ocShipDistrict').value.trim(),
+        ward: $('ocShipWard').value.trim(),
+        line1: shipLine1,
+        recipientName: recipName || null,
+        recipientPhone: recipPhone || null,
+      },
+      voucherCode: oc.voucher?.code || null,
+      notes: $('ocNoteCust').value.trim(),
+      internalNote: $('ocNoteInt').value.trim(),
+      giftWrap: $('ocGiftWrap').checked,
+      giftMessage: $('ocGiftMsg').value.trim() || null,
+      source: 'admin',
+      channel: $('ocChannel').value || null,
+    };
+
+    // Create customer if new + persist
+    if (oc.newCust && window.DTX_ADMIN_CUSTOMERS) {
+      const existing = window.DTX_ADMIN_CUSTOMERS.all().find(c =>
+        (customer.phone && c.phone === customer.phone) ||
+        (customer.email && c.email === customer.email)
+      );
+      if (!existing) {
+        const created = window.DTX_ADMIN_CUSTOMERS.create({
+          name: customer.name, phone: customer.phone, email: customer.email,
+          province: shipProvince,
+        });
+        orderPayload.customer.id = created.id;
+      } else {
+        orderPayload.customer.id = existing.id;
+      }
+    }
+
+    // Increment voucher usage (local simulation)
+    if (oc.voucher && window.DTX_ADMIN_VOUCHERS) {
+      window.DTX_ADMIN_VOUCHERS.update(oc.voucher.id, { usedCount: (oc.voucher.usedCount || 0) + 1 });
+    }
+
+    const created = S.create(orderPayload);
+    closeCreateModal();
+    render();
+    window.admToast?.(`Đã tạo đơn ${created.code} (${S.statusLabel(status)})`, 'ok');
+  });
+
+  document.getElementById('btnOrderCreate').addEventListener('click', openCreateModal);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.hidden) closeCreateModal();
+  });
+
+  window.addEventListener('dtx:orders-updated', render);
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_orders')) render(); });
+
+  render();
+})();
+</script>
+</body></html>

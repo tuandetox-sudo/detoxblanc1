@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helpers
+    function isAuthed() { return request.auth != null; }
+    function isAdmin() {
+      return isAuthed() && (
+        request.auth.token.role == 'owner' ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.email == 'tuan@detoxblanc.com'
+      );
+    }
+    function isStaff() {
+      return isAuthed() && (
+        isAdmin() ||
+        request.auth.token.role in ['support', 'editor', 'accountant']
+      );
+    }
+
+    // ─── Public-read collections (catalog) ──────────────────
+    // Mọi visitor có thể đọc; chỉ staff được sửa.
+    match /products/{id}    { allow read: if true; allow write: if isStaff(); }
+    match /collections/{id} { allow read: if true; allow write: if isStaff(); }
+    match /articles/{id}    { allow read: if true; allow write: if isStaff(); }
+    match /reviews/{id}     {
+      allow read: if true;
+      // Khách viết review: chỉ create khi authed, không update/delete
+      allow create: if isAuthed();
+      allow update, delete: if isStaff();
+    }
+
+    // ─── Staff-only ─────────────────────────────────────────
+    match /orders/{id}     { allow read, write: if isStaff(); }
+    match /customers/{id}  { allow read, write: if isStaff(); }
+    match /vouchers/{id}   { allow read, write: if isStaff(); }
+    match /returns/{id}    { allow read, write: if isStaff(); }
+    match /movements/{id}  { allow read, write: if isStaff(); }
+
+    // ─── Admin-only ─────────────────────────────────────────
+    match /audit/{id}      { allow read: if isStaff(); allow write: if isAdmin(); }
+    match /users/{id}      { allow read, write: if isAdmin(); }
+    match /settings/{id}   { allow read: if isStaff(); allow write: if isAdmin(); }
+
+    // ─── Newsletter (subscribe public, read staff) ──────────
+    match /subscribers/{id} {
+      allow read: if isStaff();
+      allow create: if true; // bất cứ ai cũng subscribe được
+      allow update, delete: if isStaff();
+    }
+
+    // ─── Default deny ───────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

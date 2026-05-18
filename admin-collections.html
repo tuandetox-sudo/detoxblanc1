@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bộ sưu tập — Detoxblanc Admin</title>
+<meta name="description" content="Quản lý bộ sưu tập sản phẩm (smart / manual), thứ tự hiển thị, publish." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="collections">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Danh mục"},{"label":"Bộ sưu tập"}]'
+       data-title="Bộ sưu tập"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Bộ sưu tập</h1>
+          <p>Nhóm sản phẩm theo chủ đề. <strong>Smart</strong>: tự động theo rule. <strong>Manual</strong>: chọn tay, kéo thả thứ tự.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnColReset" data-perm="products:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại seed</button>
+          <button class="adm-btn primary" id="btnColNew" data-perm="products:write"><i class="fa-solid fa-plus"></i> Tạo bộ sưu tập</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng</span><strong id="statColTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã xuất bản</span><strong id="statColPub" style="color:#0F766E">0</strong></div>
+        <div class="stat-card"><span class="lbl">Nháp</span><strong id="statColDraft" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Smart</span><strong id="statColSmart">0</strong></div>
+        <div class="stat-card"><span class="lbl">Manual</span><strong id="statColManual">0</strong></div>
+      </div>
+
+      <div class="pr-filter-bar card">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="colQ" placeholder="Tên, slug, mô tả…" />
+        </div>
+        <div class="field"><select id="colKind">
+          <option value="">Tất cả kiểu</option>
+          <option value="smart">Smart</option>
+          <option value="manual">Manual</option>
+        </select></div>
+        <div class="field"><select id="colPub">
+          <option value="">Tất cả</option>
+          <option value="1">Đã xuất bản</option>
+          <option value="0">Nháp</option>
+        </select></div>
+      </div>
+
+      <div id="colGrid" class="col-grid"></div>
+      <div class="empty-state" id="colEmpty" hidden>
+        <i class="fa-solid fa-layer-group"></i>
+        <p>Không có bộ sưu tập nào khớp bộ lọc.</p>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal: chỉnh sửa collection -->
+<div class="adm-modal" id="colModal" hidden>
+  <div class="adm-modal-card adm-modal-lg" role="dialog" aria-modal="true" aria-labelledby="colModalTitle">
+    <header>
+      <h3 id="colModalTitle">Bộ sưu tập</h3>
+      <button class="icon-btn" id="btnColClose" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="adm-modal-body">
+      <form id="colForm" class="adm-form">
+        <input type="hidden" id="fId" />
+        <div class="form-row">
+          <label><span>Tên</span><input type="text" id="fName" required /></label>
+          <label><span>Slug</span><input type="text" id="fSlug" required pattern="[a-z0-9-]+" /></label>
+        </div>
+        <label><span>Mô tả</span><textarea id="fDesc" rows="2"></textarea></label>
+        <div class="form-row">
+          <label><span>Kiểu</span>
+            <select id="fKind">
+              <option value="manual">Manual — chọn tay</option>
+              <option value="smart">Smart — tự động theo rule</option>
+            </select>
+          </label>
+          <label><span>Thứ tự</span><input type="number" id="fPos" min="0" step="1" value="0" /></label>
+          <label class="check"><input type="checkbox" id="fPub" checked /> <span>Xuất bản</span></label>
+        </div>
+
+        <div id="fSmartBox" class="rule-box" hidden>
+          <h4>Rule (Smart)</h4>
+          <div class="form-row">
+            <label><span>Sort</span>
+              <select id="fSort">
+                <option value="">—</option>
+                <option value="sales">Bán chạy</option>
+                <option value="new">Mới nhất</option>
+                <option value="price-asc">Giá ↑</option>
+                <option value="price-desc">Giá ↓</option>
+              </select>
+            </label>
+            <label><span>Tag chứa</span><input type="text" id="fTag" placeholder="vd: vegan" /></label>
+            <label><span>Mới trong (ngày)</span><input type="number" id="fNewWithin" min="0" step="1" placeholder="30" /></label>
+            <label><span>Giới hạn</span><input type="number" id="fLimit" min="0" step="1" placeholder="8" /></label>
+          </div>
+        </div>
+
+        <div id="fManualBox" class="pick-box" hidden>
+          <h4>Sản phẩm trong bộ sưu tập</h4>
+          <div class="pick-grid">
+            <div>
+              <label class="muted" style="font-size:12px">Đã chọn (<span id="fPickedCount">0</span>)</label>
+              <ul class="pick-list" id="fPicked"></ul>
+            </div>
+            <div>
+              <label class="muted" style="font-size:12px">Chưa chọn</label>
+              <input type="search" id="fPickSearch" placeholder="Tìm sản phẩm…" />
+              <ul class="pick-list" id="fPickAvail"></ul>
+            </div>
+          </div>
+        </div>
+
+        <footer class="form-actions">
+          <button type="button" class="adm-btn" id="btnColDel" hidden><i class="fa-solid fa-trash"></i> Xoá</button>
+          <span class="spacer"></span>
+          <button type="button" class="adm-btn" id="btnColCancel">Huỷ</button>
+          <button type="submit" class="adm-btn primary"><i class="fa-solid fa-save"></i> Lưu</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  try { window.DTX_MODE = localStorage.getItem('dtx_mode') || 'local'; } catch (_) {}
+</script>
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-api.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const S = window.DTX_ADMIN_COLLECTIONS;
+  const P = window.DTX_ADMIN;             // Products store
+  const F = window.DTX_ADMIN_FMT;
+  const state = { q:'', kind:'', pub:'' };
+  const edit  = { id:null, picked:[], pickQ:'' };
+
+  function slugify(s){
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+
+  function renderStats(){
+    const all = S.all();
+    document.getElementById('statColTotal').textContent = all.length;
+    document.getElementById('statColPub').textContent = all.filter(c => c.published).length;
+    document.getElementById('statColDraft').textContent = all.filter(c => !c.published).length;
+    document.getElementById('statColSmart').textContent = all.filter(c => c.isSmart).length;
+    document.getElementById('statColManual').textContent = all.filter(c => !c.isSmart).length;
+  }
+
+  function smartPreview(rule){
+    if (!rule) return '—';
+    const bits = [];
+    if (rule.sort)      bits.push(`sort: <code>${rule.sort}</code>`);
+    if (rule.tag)       bits.push(`tag: <code>${rule.tag}</code>`);
+    if (rule.newWithin) bits.push(`mới ≤ <code>${rule.newWithin}d</code>`);
+    if (rule.limit)     bits.push(`limit: <code>${rule.limit}</code>`);
+    return bits.join(' · ') || 'không rule';
+  }
+
+  function productNames(ids){
+    if (!P) return [];
+    return (ids || []).map(id => P.get(id)).filter(Boolean);
+  }
+
+  function render(){
+    renderStats();
+    const all = S.all();
+    const q = state.q.trim().toLowerCase();
+    const list = all.filter(c => {
+      if (q && !(
+        c.name.toLowerCase().includes(q) ||
+        c.slug.toLowerCase().includes(q) ||
+        (c.description || '').toLowerCase().includes(q)
+      )) return false;
+      if (state.kind === 'smart'  && !c.isSmart) return false;
+      if (state.kind === 'manual' &&  c.isSmart) return false;
+      if (state.pub  === '1'      && !c.published) return false;
+      if (state.pub  === '0'      &&  c.published) return false;
+      return true;
+    }).sort((a,b) => (a.position || 0) - (b.position || 0));
+
+    const grid = document.getElementById('colGrid');
+    const empty = document.getElementById('colEmpty');
+    if (!list.length) { grid.innerHTML = ''; empty.hidden = false; return; }
+    empty.hidden = true;
+
+    grid.innerHTML = list.map(c => {
+      const count = c.isSmart
+        ? `<em class="muted">tự động</em>`
+        : `<strong>${(c.productIds || []).length}</strong> sản phẩm`;
+      const kindBadge = c.isSmart
+        ? '<span class="chip accent">Smart</span>'
+        : '<span class="chip">Manual</span>';
+      const pubBadge = c.published
+        ? '<span class="badge ok">Đã xuất bản</span>'
+        : '<span class="badge warn">Nháp</span>';
+      return `<article class="col-card" data-id="${c.id}">
+        <header>
+          <div>
+            <strong>${c.name}</strong>
+            <small class="muted">/${c.slug}</small>
+          </div>
+          <div class="col-badges">${kindBadge} ${pubBadge}</div>
+        </header>
+        <p class="muted">${c.description || '<em>Chưa có mô tả.</em>'}</p>
+        <dl class="col-meta">
+          <dt>Kiểu</dt><dd>${c.isSmart ? smartPreview(c.rule) : count}</dd>
+          <dt>Vị trí</dt><dd>#${c.position || 0}</dd>
+          <dt>Cập nhật</dt><dd>${F.date(c.updatedAt || c.createdAt)}</dd>
+        </dl>
+        <footer>
+          <button class="adm-btn sm" data-up="${c.id}" title="Lên"><i class="fa-solid fa-arrow-up"></i></button>
+          <button class="adm-btn sm" data-down="${c.id}" title="Xuống"><i class="fa-solid fa-arrow-down"></i></button>
+          <button class="adm-btn sm" data-toggle="${c.id}">
+            ${c.published ? '<i class="fa-solid fa-eye-slash"></i> Ẩn' : '<i class="fa-solid fa-eye"></i> Xuất bản'}
+          </button>
+          <span class="spacer"></span>
+          <button class="adm-btn sm primary" data-edit="${c.id}"><i class="fa-solid fa-pen"></i> Sửa</button>
+          <button class="icon-btn" data-del="${c.id}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+        </footer>
+      </article>`;
+    }).join('');
+  }
+
+  /* ---- Modal ---- */
+  const modal = document.getElementById('colModal');
+  function openModal(c){
+    edit.id = c?.id || null;
+    edit.picked = Array.isArray(c?.productIds) ? [...c.productIds] : [];
+    edit.pickQ = '';
+    document.getElementById('colModalTitle').textContent = c ? `Sửa — ${c.name}` : 'Tạo bộ sưu tập';
+    document.getElementById('fId').value     = c?.id || '';
+    document.getElementById('fName').value   = c?.name || '';
+    document.getElementById('fSlug').value   = c?.slug || '';
+    document.getElementById('fDesc').value   = c?.description || '';
+    document.getElementById('fKind').value   = c?.isSmart ? 'smart' : 'manual';
+    document.getElementById('fPos').value    = c?.position ?? 0;
+    document.getElementById('fPub').checked  = c?.published !== false;
+    document.getElementById('fSort').value       = c?.rule?.sort || '';
+    document.getElementById('fTag').value        = c?.rule?.tag  || '';
+    document.getElementById('fNewWithin').value  = c?.rule?.newWithin ?? '';
+    document.getElementById('fLimit').value      = c?.rule?.limit     ?? '';
+    document.getElementById('fPickSearch').value = '';
+    document.getElementById('btnColDel').hidden  = !c;
+    applyKindBoxes();
+    renderPick();
+    modal.hidden = false;
+  }
+  function closeModal(){ modal.hidden = true; }
+
+  function applyKindBoxes(){
+    const k = document.getElementById('fKind').value;
+    document.getElementById('fSmartBox').hidden  = k !== 'smart';
+    document.getElementById('fManualBox').hidden = k !== 'manual';
+  }
+  document.getElementById('fKind').addEventListener('change', applyKindBoxes);
+
+  function renderPick(){
+    if (!P) return;
+    const all = (P.all() || []).slice().sort((a,b) => a.name.localeCompare(b.name, 'vi'));
+    const picked = edit.picked;
+    const q = edit.pickQ.trim().toLowerCase();
+
+    const pickedUl = document.getElementById('fPicked');
+    pickedUl.innerHTML = picked.length
+      ? picked.map((id, i) => {
+          const p = P.get(id); if (!p) return '';
+          return `<li data-id="${id}">
+            <button type="button" class="pill-move" data-move-up="${id}" ${i===0?'disabled':''} title="Lên"><i class="fa-solid fa-arrow-up"></i></button>
+            <button type="button" class="pill-move" data-move-down="${id}" ${i===picked.length-1?'disabled':''} title="Xuống"><i class="fa-solid fa-arrow-down"></i></button>
+            <span>${p.name}</span>
+            <small class="muted">${p.code || ''}</small>
+            <button type="button" class="icon-btn" data-unpick="${id}" title="Bỏ"><i class="fa-solid fa-xmark"></i></button>
+          </li>`;
+        }).join('')
+      : '<li class="muted">Chưa chọn sản phẩm nào.</li>';
+    document.getElementById('fPickedCount').textContent = picked.length;
+
+    const avail = all.filter(p => !picked.includes(p.id) && (!q || p.name.toLowerCase().includes(q) || (p.code || '').toLowerCase().includes(q)));
+    const availUl = document.getElementById('fPickAvail');
+    availUl.innerHTML = avail.length
+      ? avail.slice(0, 80).map(p => `<li data-id="${p.id}">
+          <button type="button" class="pill-move" data-pick="${p.id}" title="Thêm"><i class="fa-solid fa-plus"></i></button>
+          <span>${p.name}</span>
+          <small class="muted">${p.code || ''}</small>
+        </li>`).join('')
+      : '<li class="muted">Không có sản phẩm phù hợp.</li>';
+  }
+
+  document.getElementById('fPickSearch').addEventListener('input', e => { edit.pickQ = e.target.value; renderPick(); });
+  document.getElementById('fPicked').addEventListener('click', e => {
+    const u = e.target.closest('[data-unpick]');
+    if (u) { edit.picked = edit.picked.filter(x => x !== u.dataset.unpick); renderPick(); return; }
+    const up = e.target.closest('[data-move-up]');
+    if (up) { const i = edit.picked.indexOf(up.dataset.moveUp); if (i > 0) { [edit.picked[i-1], edit.picked[i]] = [edit.picked[i], edit.picked[i-1]]; renderPick(); } return; }
+    const dn = e.target.closest('[data-move-down]');
+    if (dn) { const i = edit.picked.indexOf(dn.dataset.moveDown); if (i >= 0 && i < edit.picked.length-1) { [edit.picked[i+1], edit.picked[i]] = [edit.picked[i], edit.picked[i+1]]; renderPick(); } return; }
+  });
+  document.getElementById('fPickAvail').addEventListener('click', e => {
+    const t = e.target.closest('[data-pick]');
+    if (t) { edit.picked.push(t.dataset.pick); renderPick(); }
+  });
+
+  // Auto slug khi tạo mới
+  document.getElementById('fName').addEventListener('input', e => {
+    const slugEl = document.getElementById('fSlug');
+    if (!edit.id && !slugEl.dataset.touched) slugEl.value = slugify(e.target.value);
+  });
+  document.getElementById('fSlug').addEventListener('input', e => { e.target.dataset.touched = '1'; });
+
+  document.getElementById('colForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const isSmart = document.getElementById('fKind').value === 'smart';
+    const rule = isSmart ? {
+      sort:      document.getElementById('fSort').value || undefined,
+      tag:       document.getElementById('fTag').value.trim() || undefined,
+      newWithin: Number(document.getElementById('fNewWithin').value) || undefined,
+      limit:     Number(document.getElementById('fLimit').value) || undefined,
+    } : null;
+    const payload = {
+      name:        document.getElementById('fName').value.trim(),
+      slug:        slugify(document.getElementById('fSlug').value.trim()),
+      description: document.getElementById('fDesc').value.trim(),
+      isSmart,
+      rule,
+      productIds:  isSmart ? [] : [...edit.picked],
+      position:    Number(document.getElementById('fPos').value) || 0,
+      published:   document.getElementById('fPub').checked,
+    };
+    if (!payload.name || !payload.slug) return window.admToast?.('Thiếu tên hoặc slug', 'warn');
+    // Kiểm tra trùng slug
+    const dup = S.all().find(x => x.slug === payload.slug && x.id !== edit.id);
+    if (dup) return window.admToast?.('Slug đã tồn tại', 'warn');
+
+    if (edit.id) { S.update(edit.id, payload); window.admToast?.('Đã lưu', 'ok'); }
+    else         { S.create(payload);          window.admToast?.('Đã tạo bộ sưu tập', 'ok'); }
+    closeModal(); render();
+  });
+
+  document.getElementById('btnColDel').addEventListener('click', () => {
+    if (!edit.id) return;
+    const c = S.get(edit.id); if (!c) return;
+    if (confirm(`Xoá bộ sưu tập "${c.name}"?`)) { S.remove(edit.id); closeModal(); render(); window.admToast?.('Đã xoá', 'ok'); }
+  });
+
+  document.getElementById('btnColCancel').addEventListener('click', closeModal);
+  document.getElementById('btnColClose').addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target.id === 'colModal') closeModal(); });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  /* ---- Grid actions ---- */
+  document.getElementById('colGrid').addEventListener('click', e => {
+    const ed = e.target.closest('[data-edit]');
+    if (ed) { const c = S.get(ed.dataset.edit); if (c) openModal(c); return; }
+    const tg = e.target.closest('[data-toggle]');
+    if (tg) { const c = S.get(tg.dataset.toggle); if (c) { S.update(c.id, { published: !c.published }); render(); window.admToast?.(c.published ? 'Đã ẩn' : 'Đã xuất bản', 'ok'); } return; }
+    const up = e.target.closest('[data-up]');
+    if (up) { reorder(up.dataset.up, -1); return; }
+    const dn = e.target.closest('[data-down]');
+    if (dn) { reorder(dn.dataset.down, +1); return; }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const c = S.get(del.dataset.del);
+      if (c && confirm(`Xoá bộ sưu tập "${c.name}"?`)) { S.remove(c.id); render(); window.admToast?.('Đã xoá', 'ok'); }
+    }
+  });
+
+  function reorder(id, dir){
+    const list = S.all().slice().sort((a,b) => (a.position || 0) - (b.position || 0));
+    const idx = list.findIndex(c => c.id === id);
+    if (idx < 0) return;
+    const j = idx + dir;
+    if (j < 0 || j >= list.length) return;
+    // Swap position
+    const a = list[idx], b = list[j];
+    const pa = a.position || 0, pb = b.position || 0;
+    S.update(a.id, { position: pb });
+    S.update(b.id, { position: pa });
+    render();
+  }
+
+  document.getElementById('colQ').addEventListener('input', e => { state.q = e.target.value; render(); });
+  document.getElementById('colKind').addEventListener('change', e => { state.kind = e.target.value; render(); });
+  document.getElementById('colPub').addEventListener('change', e => { state.pub = e.target.value; render(); });
+
+  document.getElementById('btnColNew').addEventListener('click', () => openModal(null));
+  document.getElementById('btnColReset').addEventListener('click', () => {
+    if (confirm('Đặt lại seed?')) { S.reset(); render(); window.admToast?.('Reset OK', 'ok'); }
+  });
+
+  window.addEventListener('dtx:collections-updated', render);
+  window.addEventListener('dtx:products-updated', () => { if (!modal.hidden) renderPick(); });
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_collections')) render(); });
+  render();
+})();
+</script>
+</body></html>

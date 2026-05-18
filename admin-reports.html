@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Báo cáo — Detoxblanc Admin</title>
+<meta name="description" content="Doanh thu, đơn, sản phẩm bán chạy, cohort khách hàng." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="reports">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Tổng quan"},{"label":"Báo cáo"}]'
+       data-title="Báo cáo"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+      <div class="adm-page-head">
+        <div>
+          <h1>Báo cáo</h1>
+          <p>Doanh thu, đơn hàng, sản phẩm bán chạy, phân tích khách hàng theo cohort.</p>
+        </div>
+        <div class="adm-head-actions">
+          <select id="rpRange" class="adm-btn">
+            <option value="7">7 ngày</option>
+            <option value="30" selected>30 ngày</option>
+            <option value="90">90 ngày</option>
+          </select>
+          <button class="adm-btn" id="btnRpExport" data-perm="reports:read"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Đơn</span><strong id="kpiOrders">—</strong><small class="muted" id="kpiOrdersAov">AOV: —</small></div>
+        <div class="stat-card"><span class="lbl">GMV</span><strong id="kpiGmv">—</strong></div>
+        <div class="stat-card"><span class="lbl">Pending</span><strong id="kpiPending" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đang đóng gói</span><strong id="kpiPacking">0</strong></div>
+        <div class="stat-card"><span class="lbl">SKU thấp ngưỡng</span><strong id="kpiLowStock" style="color:#C0392B">0</strong></div>
+        <div class="stat-card"><span class="lbl">Khách VIP</span><strong id="kpiVip">0</strong></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-head"><h3>Doanh thu theo ngày</h3></div>
+        <div class="chart-bars" id="revenueChart" aria-label="Biểu đồ doanh thu"></div>
+      </div>
+
+      <div class="report-grid">
+        <div class="card">
+          <div class="card-head"><h3>Top sản phẩm</h3></div>
+          <table class="adm-tbl">
+            <thead><tr><th>Sản phẩm</th><th style="text-align:right">Số lượng</th><th style="text-align:right">Doanh thu</th></tr></thead>
+            <tbody id="topTbody"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Phân bổ trạng thái đơn</h3></div>
+          <div class="status-bars" id="statusBars"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  try { window.DTX_MODE = localStorage.getItem('dtx_mode') || 'local'; } catch (_) { window.DTX_MODE = 'local'; }
+</script>
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-api.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const R = window.DTX_ADMIN_REPORTS;
+  const F = window.DTX_ADMIN_FMT;
+  const ORD = window.DTX_ADMIN_ORDERS;
+  let days = 30;
+
+  function fmtShortVnd(v) {
+    if (!v) return '0';
+    if (v >= 1e9) return (v / 1e9).toFixed(1) + ' tỷ';
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + ' tr';
+    if (v >= 1e3) return (v / 1e3).toFixed(0) + 'k';
+    return String(v);
+  }
+
+  async function renderOverview(){
+    const o = await R.overview();
+    document.getElementById('kpiOrders').textContent = o.orders_7d ?? o.orders_30d ?? 0;
+    document.getElementById('kpiOrdersAov').textContent = 'AOV: ' + F.vnd(o.aov_7d ?? o.aov_30d ?? 0);
+    document.getElementById('kpiGmv').textContent = F.vnd(o.gmv_7d ?? o.gmv_30d ?? 0);
+    document.getElementById('kpiPending').textContent = o.pending_orders ?? 0;
+    document.getElementById('kpiPacking').textContent = o.packing_orders ?? 0;
+    document.getElementById('kpiLowStock').textContent = o.low_stock_skus ?? 0;
+    document.getElementById('kpiVip').textContent = o.customers_vip ?? 0;
+  }
+
+  async function renderRevenue(){
+    let series = [];
+    try {
+      const from = new Date(Date.now() - days * 86400_000).toISOString();
+      const to   = new Date().toISOString();
+      const r = await R.revenue(from, to, 'day');
+      series = r.series || [];
+    } catch (_) {
+      series = (await R.revenue()).series || [];
+    }
+    const max = series.reduce((m, x) => Math.max(m, x.revenue), 0) || 1;
+    const wrap = document.getElementById('revenueChart');
+    wrap.innerHTML = series.map(d => {
+      const h = Math.round((d.revenue / max) * 100);
+      return `<div class="bar-col" title="${d.date} · ${F.vnd(d.revenue)} · ${d.orders} đơn">
+        <div class="bar" style="height:${h}%"></div>
+        <small>${d.date.slice(5)}</small>
+      </div>`;
+    }).join('') || '<p class="muted">Không có dữ liệu trong khoảng này.</p>';
+  }
+
+  async function renderTop(){
+    const r = await R.topProducts(10);
+    const tbody = document.getElementById('topTbody');
+    const rows = (r.data || []);
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="3" class="muted">Chưa có dữ liệu bán hàng.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(p => `
+      <tr>
+        <td><strong>${p.name || '(chưa rõ)'}</strong><br><small class="muted">${p.code || p.product_id}</small></td>
+        <td style="text-align:right">${(p.qty || 0).toLocaleString('vi-VN')}</td>
+        <td style="text-align:right"><strong>${F.vnd(p.revenue || 0)}</strong></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderStatusBars(){
+    const all = ORD?.all() || [];
+    const buckets = {};
+    const labels = { pending:'Chờ xác nhận', confirmed:'Đã xác nhận', packing:'Đang đóng', shipping:'Đang giao', delivered:'Đã giao', cancelled:'Đã huỷ', returned:'Hoàn trả' };
+    all.forEach(o => buckets[o.status] = (buckets[o.status] || 0) + 1);
+    const total = Math.max(1, Object.values(buckets).reduce((s, v) => s + v, 0));
+    const wrap = document.getElementById('statusBars');
+    wrap.innerHTML = Object.entries(labels).map(([k, lbl]) => {
+      const n = buckets[k] || 0;
+      const pct = Math.round(n / total * 100);
+      return `<div class="sbar">
+        <div class="sbar-label"><span>${lbl}</span><strong>${n} <small class="muted">(${pct}%)</small></strong></div>
+        <div class="sbar-track"><div class="sbar-fill state-${k}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  async function renderAll(){
+    await Promise.all([renderOverview(), renderRevenue(), renderTop()]);
+    renderStatusBars();
+  }
+
+  document.getElementById('rpRange').addEventListener('change', e => { days = +e.target.value || 30; renderRevenue(); });
+  document.getElementById('btnRpExport').addEventListener('click', async () => {
+    const r = await R.revenue(new Date(Date.now() - days*86400_000).toISOString(), new Date().toISOString(), 'day');
+    const rows = (r.series || []).map(s => [s.date, s.revenue, s.orders].join(','));
+    const csv = '\ufeff' + ['Date,Revenue,Orders', ...rows].join('\n');
+    const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    const a = document.createElement('a'); a.href = url; a.download = `revenue-${days}d.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  window.addEventListener('dtx:orders-updated', renderAll);
+  renderAll();
+})();
+</script>
+</body></html>

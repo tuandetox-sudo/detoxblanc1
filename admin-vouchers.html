@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Voucher — Detoxblanc Admin</title>
+<meta name="description" content="Quản lý mã giảm giá — tạo, xem lịch sử dùng, xuất báo cáo." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="vouchers">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Bán hàng"},{"label":"Voucher"}]'
+       data-title="Voucher"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Voucher</h1>
+          <p>Quản lý <strong id="vouCount">—</strong> mã khuyến mãi. Hỗ trợ giảm %, giảm số tiền, miễn phí ship.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnVouReset" data-perm="vouchers:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại</button>
+          <button class="adm-btn primary" id="btnVouNew" data-perm="vouchers:write"><i class="fa-solid fa-plus"></i> Tạo voucher</button>
+        </div>
+      </div>
+
+      <div class="pr-filter-bar card">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="vouQ" placeholder="Mã voucher, mô tả…" />
+        </div>
+        <div class="field"><select id="vouStatus">
+          <option value="">Tất cả trạng thái</option>
+          <option value="active">Đang hiệu lực</option>
+          <option value="scheduled">Đã lên lịch</option>
+          <option value="expired">Hết hạn</option>
+          <option value="paused">Tạm dừng</option>
+        </select></div>
+        <div class="field"><select id="vouType">
+          <option value="">Tất cả loại</option>
+          <option value="percent">Giảm %</option>
+          <option value="amount">Giảm số tiền</option>
+          <option value="shipping">Miễn phí ship</option>
+        </select></div>
+      </div>
+
+      <div class="card">
+        <table class="adm-tbl" id="vouTbl">
+          <thead>
+            <tr>
+              <th>Mã</th><th>Loại</th><th>Giá trị</th><th>Đơn tối thiểu</th>
+              <th>Thời hạn</th><th>Đã dùng</th><th>Trạng thái</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="vouTbody"></tbody>
+        </table>
+        <div class="empty-state" id="vouEmpty" hidden>
+          <i class="fa-solid fa-ticket"></i><p>Chưa có voucher nào.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Voucher form modal -->
+<div class="modal-backdrop" id="vouModal" hidden>
+  <div class="modal">
+    <header><h3 id="vouModalTitle">Tạo voucher</h3>
+      <button class="icon-btn" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <form id="vouForm" class="modal-body">
+      <input type="hidden" name="id" />
+      <div class="row-2">
+        <label><span>Mã voucher*</span><input name="code" required minlength="3" maxlength="30" pattern="[A-Z0-9]+" class="mono" placeholder="WELCOME50"/></label>
+        <label><span>Loại*</span>
+          <select name="type" required>
+            <option value="percent">Giảm % đơn</option>
+            <option value="amount">Giảm số tiền</option>
+            <option value="shipping">Miễn phí ship</option>
+          </select>
+        </label>
+      </div>
+      <div class="row-2">
+        <label><span>Giá trị</span><input type="number" name="value" min="0" step="1000"/></label>
+        <label><span>Đơn tối thiểu (VND)</span><input type="number" name="minOrder" min="0" step="1000"/></label>
+      </div>
+      <div class="row-2">
+        <label><span>Bắt đầu</span><input type="date" name="startAt"/></label>
+        <label><span>Kết thúc</span><input type="date" name="endAt"/></label>
+      </div>
+      <div class="row-2">
+        <label><span>Giới hạn dùng (để trống = không giới hạn)</span><input type="number" name="usageLimit" min="0"/></label>
+        <label><span>Trạng thái</span>
+          <select name="status">
+            <option value="active">Đang hiệu lực</option>
+            <option value="scheduled">Lên lịch</option>
+            <option value="paused">Tạm dừng</option>
+            <option value="expired">Hết hạn</option>
+          </select>
+        </label>
+      </div>
+      <label><span>Mô tả</span><textarea name="description" rows="2" maxlength="200"></textarea></label>
+      <footer>
+        <button type="button" class="adm-btn" data-close-modal>Huỷ</button>
+        <button type="submit" class="adm-btn primary"><i class="fa-solid fa-check"></i> Lưu</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const S = window.DTX_ADMIN_VOUCHERS;
+  const F = window.DTX_ADMIN_FMT;
+  const state = { q:'', status:'', type:'' };
+
+  function typeLabel(t){ return { percent:'Giảm %', amount:'Giảm số tiền', shipping:'Miễn phí ship' }[t] || t; }
+  function statusLabel(s){ return { active:'Đang hiệu lực', scheduled:'Đã lên lịch', expired:'Hết hạn', paused:'Tạm dừng' }[s] || s; }
+  function statusClass(s){ return { active:'ok', scheduled:'info', expired:'bad', paused:'warn' }[s] || 'muted'; }
+
+  function render(){
+    const all = S.all();
+    document.getElementById('vouCount').textContent = all.length;
+    const q = state.q.trim().toLowerCase();
+    const list = all.filter(v => {
+      if (q && !(v.code.toLowerCase().includes(q) || (v.description||'').toLowerCase().includes(q))) return false;
+      if (state.status && v.status !== state.status) return false;
+      if (state.type && v.type !== state.type) return false;
+      return true;
+    });
+    const tbody = document.getElementById('vouTbody');
+    const empty = document.getElementById('vouEmpty');
+    if (!list.length) { tbody.innerHTML=''; empty.hidden=false; return; }
+    empty.hidden = true;
+    tbody.innerHTML = list.map(v => {
+      const valueDisp = v.type==='percent' ? (v.value+'%') : v.type==='amount' ? F.vnd(v.value) : 'Free ship';
+      const period = [v.startAt, v.endAt].filter(Boolean).join(' → ') || 'Không giới hạn';
+      const usage = v.usageLimit ? `${v.usedCount}/${v.usageLimit}` : v.usedCount;
+      return `<tr data-id="${v.id}">
+        <td><code class="mono">${v.code}</code><br><small class="muted">${v.description || ''}</small></td>
+        <td>${typeLabel(v.type)}</td>
+        <td><strong>${valueDisp}</strong></td>
+        <td>${F.vnd(v.minOrder)}</td>
+        <td><small>${period}</small></td>
+        <td><strong>${usage}</strong></td>
+        <td><span class="badge ${statusClass(v.status)}">${statusLabel(v.status)}</span></td>
+        <td style="text-align:right">
+          <button class="icon-btn" data-edit="${v.id}"><i class="fa-solid fa-pen"></i></button>
+          <button class="icon-btn" data-del="${v.id}"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Modal
+  const modal = document.getElementById('vouModal');
+  const form = document.getElementById('vouForm');
+  function openModal(v){
+    document.getElementById('vouModalTitle').textContent = v ? `Sửa voucher ${v.code}` : 'Tạo voucher';
+    form.reset();
+    if (v) {
+      form.id.value = v.id;
+      form.code.value = v.code;
+      form.type.value = v.type;
+      form.value.value = v.value;
+      form.minOrder.value = v.minOrder;
+      form.startAt.value = v.startAt || '';
+      form.endAt.value = v.endAt || '';
+      form.usageLimit.value = v.usageLimit || '';
+      form.status.value = v.status;
+      form.description.value = v.description || '';
+    } else {
+      form.id.value='';
+      form.status.value = 'active';
+    }
+    modal.hidden = false;
+  }
+  function closeModal(){ modal.hidden = true; }
+
+  modal.addEventListener('click', e => {
+    if (e.target.matches('[data-close-modal]') || e.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', e => { if (e.key==='Escape' && !modal.hidden) closeModal(); });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd);
+    payload.code = (payload.code || '').toUpperCase();
+    payload.usageLimit = payload.usageLimit ? Number(payload.usageLimit) : null;
+    if (payload.id) { S.update(payload.id, payload); window.admToast?.('Đã cập nhật voucher', 'ok'); }
+    else { delete payload.id; S.create(payload); window.admToast?.('Đã tạo voucher', 'ok'); }
+    closeModal(); render();
+  });
+
+  document.getElementById('btnVouNew').addEventListener('click', () => openModal(null));
+
+  document.getElementById('vouTbody').addEventListener('click', e => {
+    const edit = e.target.closest('[data-edit]');
+    if (edit) { const v = S.get(edit.dataset.edit); openModal(v); }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const v = S.get(del.dataset.del);
+      if (v && confirm(`Xoá voucher ${v.code}?`)) { S.remove(v.id); render(); window.admToast?.('Đã xoá', 'ok'); }
+    }
+  });
+
+  document.getElementById('btnVouReset').addEventListener('click', () => {
+    if (confirm('Đặt lại voucher?')) { S.reset(); render(); window.admToast?.('Reset OK', 'ok'); }
+  });
+
+  document.getElementById('vouQ').addEventListener('input', e => { state.q = e.target.value; render(); });
+  document.getElementById('vouStatus').addEventListener('change', e => { state.status = e.target.value; render(); });
+  document.getElementById('vouType').addEventListener('change', e => { state.type = e.target.value; render(); });
+
+  window.addEventListener('dtx:vouchers-updated', render);
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_vouchers')) render(); });
+  render();
+})();
+</script>
+</body></html>

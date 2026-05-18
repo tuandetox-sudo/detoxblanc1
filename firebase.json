@@ -1,0 +1,92 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "api/**",
+      "scripts/**",
+      "tools/**",
+      "docs/**",
+      "PRODUCTION-CHECKLIST.md",
+      "DEPLOY-GOOGLE.md",
+      "**/test/**",
+      "**/*.md",
+      "Dockerfile",
+      "nginx.conf",
+      "cloudbuild.yaml",
+      ".gcloudignore",
+      ".dockerignore"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(html|HTML)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=()" }
+        ]
+      },
+      {
+        "source": "/admin/**",
+        "headers": [
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive, nosnippet" },
+          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/admin-*.html",
+        "headers": [
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive, nosnippet" },
+          { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/assets/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|png|webp|svg|ico|woff2|woff)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=2592000" }
+        ]
+      }
+    ],
+    "rewrites": [
+      { "source": "/admin",       "destination": "/admin.html" },
+      { "source": "/admin/orders",      "destination": "/admin-orders.html" },
+      { "source": "/admin/customers",   "destination": "/admin-customers.html" },
+      { "source": "/admin/inventory",   "destination": "/admin-inventory.html" },
+      { "source": "/admin/products",    "destination": "/admin-products.html" },
+      { "source": "/admin/products/edit", "destination": "/admin-product-edit.html" },
+      { "source": "/admin/collections", "destination": "/admin-collections.html" },
+      { "source": "/admin/articles",    "destination": "/admin-articles.html" },
+      { "source": "/admin/pages",       "destination": "/admin-pages.html" },
+      { "source": "/admin/reviews",     "destination": "/admin-reviews.html" },
+      { "source": "/admin/newsletter",  "destination": "/admin-newsletter.html" },
+      { "source": "/admin/vouchers",    "destination": "/admin-vouchers.html" },
+      { "source": "/admin/returns",     "destination": "/admin-returns.html" },
+      { "source": "/admin/reports",     "destination": "/admin-reports.html" },
+      { "source": "/admin/audit",       "destination": "/admin-audit.html" },
+      { "source": "/admin/users",       "destination": "/admin-users.html" },
+      { "source": "/admin/settings",    "destination": "/admin-settings.html" },
+      { "source": "/admin/dev",         "destination": "/admin-dev.html" },
+      { "source": "/admin/login",       "destination": "/admin-login.html" }
+    ],
+    "redirects": [
+      { "source": "/fake-report.html", "destination": "/admin.html", "type": 301 }
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
+  }
+}

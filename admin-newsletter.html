@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Newsletter — Detoxblanc Admin</title>
+<meta name="description" content="Quản lý subscriber + chiến dịch email marketing." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+<style>
+  .nl-tabs{ display:flex; gap:6px; border-bottom:1px solid var(--a-line); margin-bottom:16px }
+  .nl-tabs button{
+    border:0; background:transparent; padding:10px 16px; cursor:pointer; color:var(--a-ink-3);
+    font-size:13.5px; font-weight:500; border-bottom:2px solid transparent;
+  }
+  .nl-tabs button.active{ color:var(--a-brand-2); border-bottom-color:var(--a-brand-2) }
+  .nl-tab{ display:none } .nl-tab.active{ display:block }
+
+  .camp-card{
+    background:var(--a-card); border:1px solid var(--a-line); border-radius:12px; padding:16px 18px;
+    display:flex; gap:14px; align-items:center; margin-bottom:10px;
+  }
+  .camp-card .cc-meta{ flex:1; min-width:0 }
+  .camp-card strong{ font-size:14.5px; display:block; margin-bottom:4px }
+  .camp-card .small{ font-size:12.5px; color:var(--a-ink-3) }
+  .camp-card .stats{ display:flex; gap:12px; font-size:12.5px; color:var(--a-ink-2); margin-top:6px }
+  .camp-card .stats span b{ color:var(--a-ink); font-weight:600 }
+  .status-pill{
+    padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .status-pill.draft{ background:#FEF3C7; color:#92400E }
+  .status-pill.scheduled{ background:#DBEAFE; color:#1E3A8A }
+  .status-pill.sent{ background:#DCFCE7; color:#166534 }
+  .status-pill.sending{ background:#E0E7FF; color:#3730A3 }
+  .status-pill.failed{ background:#FEE2E2; color:#991B1B }
+</style>
+</head>
+
+<body data-adm-page="newsletter">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Nội dung"},{"label":"Newsletter"}]'
+       data-title="Newsletter"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Newsletter</h1>
+          <p>Quản lý <strong id="nlSubCount">—</strong> subscriber + chiến dịch email marketing. Tích hợp BullMQ queue ở backend.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnNlExport" data-perm="customers:read"><i class="fa-solid fa-file-export"></i> Xuất subscribers</button>
+          <button class="adm-btn primary" id="btnNlNewCamp" data-perm="articles:write"><i class="fa-solid fa-paper-plane"></i> Tạo chiến dịch</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Subscribers</span><strong id="statSubs">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đang opt-in</span><strong id="statOptin" style="color:#16A34A">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã opt-out</span><strong id="statOptout" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Tỉ lệ open (TB)</span><strong id="statOpen">—</strong></div>
+        <div class="stat-card"><span class="lbl">Tỉ lệ click (TB)</span><strong id="statClick">—</strong></div>
+      </div>
+
+      <div class="nl-tabs" style="margin-top:16px">
+        <button class="active" data-tab="campaigns"><i class="fa-solid fa-paper-plane"></i> Chiến dịch (<span id="cntCamp">0</span>)</button>
+        <button data-tab="subscribers"><i class="fa-solid fa-users"></i> Subscriber (<span id="cntSub">0</span>)</button>
+        <button data-tab="templates"><i class="fa-solid fa-envelope"></i> Templates</button>
+      </div>
+
+      <!-- Tab: Campaigns -->
+      <section class="nl-tab active" id="tab-campaigns">
+        <div class="pr-filter-bar card">
+          <div class="field search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" id="campQ" placeholder="Tìm tiêu đề chiến dịch…" />
+          </div>
+          <div class="field"><label>Trạng thái</label>
+            <select id="campStatus">
+              <option value="">Tất cả</option>
+              <option value="draft">Bản nháp</option>
+              <option value="scheduled">Đã lên lịch</option>
+              <option value="sending">Đang gửi</option>
+              <option value="sent">Đã gửi</option>
+              <option value="failed">Thất bại</option>
+            </select>
+          </div>
+        </div>
+        <div id="campList" style="margin-top:12px"></div>
+      </section>
+
+      <!-- Tab: Subscribers -->
+      <section class="nl-tab" id="tab-subscribers">
+        <div class="pr-filter-bar card">
+          <div class="field search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" id="subQ" placeholder="Email, tên…" />
+          </div>
+          <div class="field"><label>Trạng thái</label>
+            <select id="subStatus"><option value="">Tất cả</option><option value="active">Active</option><option value="unsubscribed">Đã opt-out</option><option value="bounced">Bounced</option></select>
+          </div>
+          <div class="field"><label>Nguồn</label>
+            <select id="subSource"><option value="">Tất cả</option><option value="popup">Popup web</option><option value="footer">Footer</option><option value="checkout">Checkout</option><option value="manual">Thủ công</option><option value="import">Import CSV</option></select>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px;overflow:auto">
+          <table class="adm-tbl" id="subTbl"><thead><tr>
+            <th>Email</th><th>Tên</th><th>Nguồn</th><th>Tag</th><th>Đăng ký</th><th>Trạng thái</th><th></th>
+          </tr></thead><tbody id="subBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- Tab: Templates -->
+      <section class="nl-tab" id="tab-templates">
+        <div class="card" style="padding:18px">
+          <p style="margin-top:0; color:var(--a-ink-2)">3 template hệ thống — render từ BullMQ worker (xem <code>api/src/email/</code>):</p>
+          <ul style="line-height:2">
+            <li><code>order.shipped</code> — Khi đơn chuyển sang shipping (kèm trackingCode + carrier)</li>
+            <li><code>order.delivered</code> — Khi đơn delivered (kèm CTA review SP)</li>
+            <li><code>newsletter.broadcast</code> — Template marketing tổng hợp (chiến dịch tự sinh)</li>
+          </ul>
+          <div style="background:#FEF3C7;color:#92400E;padding:12px 14px;border-radius:8px;font-size:13.5px;margin-top:16px">
+            <i class="fa-solid fa-circle-info"></i> Customize template HTML/text bằng cách edit <code>api/src/email/templates/*.tsx</code> rồi build lại. Logic queue + retry đã có sẵn (BullMQ).
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal: tạo chiến dịch -->
+<div class="adm-modal" id="campModal" hidden role="dialog" aria-modal="true">
+  <div class="adm-modal-card" style="max-width:780px">
+    <div class="adm-modal-head"><strong>Tạo chiến dịch newsletter</strong><button class="iconbtn" data-close>&times;</button></div>
+    <div class="adm-modal-body">
+      <div class="field"><label>Tiêu đề <span style="color:#C0392B">*</span></label>
+        <input type="text" id="cmName" maxlength="100" placeholder="Ví dụ: Khuyến mại 8/3" />
+      </div>
+      <div class="field"><label>Subject email <span style="color:#C0392B">*</span></label>
+        <input type="text" id="cmSubject" maxlength="100" placeholder="🌸 Quà tặng 8/3 cho phái đẹp" />
+      </div>
+      <div class="field"><label>Nội dung HTML / Markdown</label>
+        <textarea id="cmBody" rows="8" placeholder="<h1>Chào mừng!</h1>..." style="font-family:'JetBrains Mono';font-size:13px"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Đối tượng</label>
+          <select id="cmAudience">
+            <option value="all">Tất cả subscriber active</option>
+            <option value="vip">Chỉ VIP (≥10M VND)</option>
+            <option value="new">Khách mới (≤30 ngày)</option>
+            <option value="at_risk">At-risk (>60 ngày không mua)</option>
+          </select>
+        </div>
+        <div class="field"><label>Lên lịch gửi</label>
+          <input type="datetime-local" id="cmSchedule" />
+        </div>
+      </div>
+      <div style="background:#DBEAFE;color:#1E3A8A;padding:10px 12px;border-radius:8px;font-size:13px;margin-top:8px">
+        <i class="fa-solid fa-circle-info"></i> Chỉ subscriber có <code>consentEmail=true</code> mới nhận được email này (theo GDPR + Nghị định 13/2023).
+      </div>
+    </div>
+    <div class="adm-modal-foot">
+      <button class="adm-btn" data-close>Huỷ</button>
+      <button class="adm-btn" id="cmDraft" data-perm="articles:write">Lưu nháp</button>
+      <button class="adm-btn primary" id="cmSchedSend" data-perm="articles:write"><i class="fa-solid fa-paper-plane"></i> Đặt lịch gửi</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+
+<script>
+(function(){
+  const SUB_KEY  = 'dtx_admin_nl_subs';
+  const CAMP_KEY = 'dtx_admin_nl_camps';
+
+  // Seed subscribers (lấy từ KH có consentEmail=true + thêm vài subscriber riêng từ popup web)
+  function seedSubs(){
+    const fromCustomers = (window.DTX_ADMIN_CUSTOMERS?.all() || [])
+      .filter(c => c.email && (c.consentEmail !== false))
+      .map(c => ({
+        id: c.id, email: c.email, name: c.name, source: 'checkout',
+        tags: c.tags || [], status: 'active',
+        subscribedAt: c.createdAt || Date.now() - 30*86400000,
+      }));
+    const popups = [
+      { id:'pop-1', email:'mai.linh@gmail.com',     name:'Mai Linh',      source:'popup',  tags:['First-buyer'], status:'active', subscribedAt: Date.now()-2*86400000 },
+      { id:'pop-2', email:'thu.ha@yahoo.com',       name:'Thu Hà',        source:'footer', tags:['Subscribers'], status:'active', subscribedAt: Date.now()-5*86400000 },
+      { id:'pop-3', email:'phamtrang@hotmail.com',  name:'Phạm Trang',    source:'popup',  tags:[], status:'unsubscribed', subscribedAt: Date.now()-30*86400000, unsubAt: Date.now()-3*86400000 },
+      { id:'pop-4', email:'invalid@bounced.com',    name:'Bounced Email', source:'import', tags:[], status:'bounced', subscribedAt: Date.now()-90*86400000 },
+    ];
+    return [...fromCustomers, ...popups];
+  }
+
+  function seedCamps(){
+    return [
+      { id:'c1', name:'Khuyến mại 8/3 — Quà tặng phái đẹp', subject:'🌸 Quà 8/3 — giảm 25% serum Vitamin C', audience:'all', status:'sent',
+        scheduledAt: Date.now()-30*86400000, sentAt: Date.now()-30*86400000, recipients: 1240, opened: 624, clicked: 187, unsubscribed: 12 },
+      { id:'c2', name:'Tháng 4 — Sản phẩm mới', subject:'Ra mắt Toner BHA 2% — đặt trước nhận quà', audience:'all', status:'sent',
+        scheduledAt: Date.now()-7*86400000, sentAt: Date.now()-7*86400000, recipients: 1280, opened: 512, clicked: 98, unsubscribed: 4 },
+      { id:'c3', name:'VIP Recall — KH 60 ngày không mua', subject:'Chúng tôi nhớ bạn 💝 voucher 100k cho lần tới', audience:'at_risk', status:'scheduled',
+        scheduledAt: Date.now()+3*86400000, sentAt: null, recipients: 0, opened: 0, clicked: 0, unsubscribed: 0 },
+      { id:'c4', name:'Newsletter tháng 5 (đang soạn)', subject:'', audience:'all', status:'draft',
+        scheduledAt: null, sentAt: null, recipients: 0, opened: 0, clicked: 0, unsubscribed: 0 },
+    ];
+  }
+
+  function load(key, fallback){
+    try { const v = JSON.parse(localStorage.getItem(key) || 'null'); return Array.isArray(v) && v.length ? v : (save(key, fallback), fallback); }
+    catch(_){ return (save(key, fallback), fallback); }
+  }
+  function save(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(_){} }
+
+  let subs  = load(SUB_KEY,  seedSubs());
+  let camps = load(CAMP_KEY, seedCamps());
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt = ms => !ms ? '—' : new Date(ms).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const pct = (n, d) => d ? Math.round(n/d*100) + '%' : '—';
+
+  function renderStats(){
+    const active = subs.filter(s => s.status === 'active');
+    $('statSubs').textContent  = subs.length.toLocaleString();
+    $('statOptin').textContent = active.length.toLocaleString();
+    $('statOptout').textContent = subs.filter(s => s.status === 'unsubscribed').length;
+    const sent = camps.filter(c => c.status === 'sent');
+    if (sent.length){
+      const totRecip = sent.reduce((s,c)=>s+c.recipients,0);
+      $('statOpen').textContent  = pct(sent.reduce((s,c)=>s+c.opened,0),  totRecip);
+      $('statClick').textContent = pct(sent.reduce((s,c)=>s+c.clicked,0), totRecip);
+    }
+    $('nlSubCount').textContent = subs.length.toLocaleString();
+  }
+
+  function renderCamps(){
+    const q = ($('campQ').value || '').toLowerCase();
+    const st = $('campStatus').value;
+    const list = camps.filter(c => (!q || c.name.toLowerCase().includes(q)) && (!st || c.status === st));
+    $('cntCamp').textContent = camps.length;
+    if (!list.length) { $('campList').innerHTML = '<div class="empty card" style="padding:32px;text-align:center;color:var(--a-ink-3)">Chưa có chiến dịch nào.</div>'; return; }
+    $('campList').innerHTML = list.map(c => `
+      <div class="camp-card" data-id="${esc(c.id)}">
+        <div class="cc-meta">
+          <strong title="${esc(c.name)}">${esc(c.name)}</strong>
+          <div class="small">${esc(c.subject || '— chưa có subject —')}</div>
+          <div class="stats">
+            <span>📬 <b>${c.recipients.toLocaleString()}</b> nhận</span>
+            <span>👁 Open: <b>${pct(c.opened, c.recipients)}</b></span>
+            <span>🔗 Click: <b>${pct(c.clicked, c.recipients)}</b></span>
+            <span>🚫 Unsub: <b>${c.unsubscribed}</b></span>
+            <span>${c.status === 'scheduled' ? '⏰ Lên lịch: ' + fmt(c.scheduledAt) : (c.sentAt ? 'Đã gửi: ' + fmt(c.sentAt) : '—')}</span>
+          </div>
+        </div>
+        <span class="status-pill ${c.status}">${({draft:'Bản nháp',scheduled:'Đã lên lịch',sending:'Đang gửi',sent:'Đã gửi',failed:'Lỗi'})[c.status]}</span>
+        <button class="adm-btn sm" data-act="open"><i class="fa-solid fa-pen"></i></button>
+      </div>
+    `).join('');
+  }
+
+  function renderSubs(){
+    const q = ($('subQ').value || '').toLowerCase();
+    const st = $('subStatus').value, src = $('subSource').value;
+    const list = subs.filter(s =>
+      (!q || (s.email||'').toLowerCase().includes(q) || (s.name||'').toLowerCase().includes(q)) &&
+      (!st || s.status === st) && (!src || s.source === src)
+    );
+    $('cntSub').textContent = subs.length;
+    if (!list.length){ $('subBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--a-ink-3);padding:30px">Không có subscriber khớp lọc.</td></tr>'; return; }
+    $('subBody').innerHTML = list.map(s => `
+      <tr>
+        <td title="${esc(s.email)}">${esc(s.email)}</td>
+        <td title="${esc(s.name||'')}">${esc(s.name || '—')}</td>
+        <td>${esc(s.source || '—')}</td>
+        <td>${(s.tags||[]).map(t=>'<span class="tag">'+esc(t)+'</span>').join(' ') || '—'}</td>
+        <td>${fmt(s.subscribedAt)}</td>
+        <td><span class="status-pill ${s.status === 'active' ? 'sent' : s.status === 'bounced' ? 'failed' : 'draft'}">${s.status}</span></td>
+        <td><button class="iconbtn" title="Force unsubscribe" data-id="${esc(s.id)}" data-act="unsub" data-perm="customers:write"><i class="fa-solid fa-ban"></i></button></td>
+      </tr>
+    `).join('');
+    $('subBody').querySelectorAll('[data-act="unsub"]').forEach(b => b.addEventListener('click', () => {
+      if (!window.DTX_ADMIN_PERMS?.requireOrToast?.('customers:write')) return;
+      const s = subs.find(x => x.id === b.dataset.id); if (!s) return;
+      s.status = 'unsubscribed'; s.unsubAt = Date.now();
+      save(SUB_KEY, subs); renderSubs(); renderStats();
+      window.admToast?.('Đã opt-out khỏi newsletter', 'ok');
+    }));
+  }
+
+  function openCampModal(){
+    if (!window.DTX_ADMIN_PERMS?.requireOrToast?.('articles:write')) return;
+    $('cmName').value=''; $('cmSubject').value=''; $('cmBody').value=''; $('cmAudience').value='all'; $('cmSchedule').value='';
+    $('campModal').hidden = false;
+  }
+
+  function saveCamp(status){
+    const name = $('cmName').value.trim(), subject = $('cmSubject').value.trim();
+    if (!name) return window.admToast?.('Thiếu tiêu đề chiến dịch', 'bad');
+    if (status === 'scheduled' && !$('cmSchedule').value) return window.admToast?.('Chọn thời gian gửi', 'bad');
+    if (status === 'scheduled' && !subject) return window.admToast?.('Thiếu subject email', 'bad');
+
+    const audience = $('cmAudience').value;
+    let recipients = subs.filter(s => s.status === 'active').length;
+    if (audience === 'vip')   recipients = Math.round(recipients * 0.15);
+    if (audience === 'new')   recipients = Math.round(recipients * 0.25);
+    if (audience === 'at_risk') recipients = Math.round(recipients * 0.18);
+
+    camps.unshift({
+      id: 'c-' + Date.now(), name, subject,
+      body: $('cmBody').value, audience, status,
+      scheduledAt: $('cmSchedule').value ? new Date($('cmSchedule').value).getTime() : null,
+      sentAt: null, recipients: status === 'sent' ? recipients : 0,
+      opened: 0, clicked: 0, unsubscribed: 0,
+    });
+    save(CAMP_KEY, camps);
+    $('campModal').hidden = true; renderCamps(); renderStats();
+    window.admToast?.(status === 'scheduled' ? `Đã lên lịch (${recipients} người nhận)` : 'Đã lưu nháp', 'ok');
+  }
+
+  // Tab switching
+  document.querySelectorAll('.nl-tabs button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.nl-tabs button').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.nl-tab').forEach(t => t.classList.toggle('active', t.id === 'tab-' + btn.dataset.tab));
+  }));
+
+  // Bind
+  $('btnNlNewCamp').addEventListener('click', openCampModal);
+  $('cmDraft').addEventListener('click', () => saveCamp('draft'));
+  $('cmSchedSend').addEventListener('click', () => saveCamp('scheduled'));
+  $('btnNlExport').addEventListener('click', () => {
+    const csv = ['email,name,source,status,subscribed_at']
+      .concat(subs.map(s => [s.email,s.name||'',s.source,s.status,new Date(s.subscribedAt).toISOString()].join(','))).join('\n');
+    const blob = new Blob([csv], { type:'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `newsletter-subscribers-${Date.now()}.csv`; a.click();
+  });
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => $('campModal').hidden = true));
+  $('campQ').addEventListener('input', renderCamps);
+  $('campStatus').addEventListener('change', renderCamps);
+  $('subQ').addEventListener('input', renderSubs);
+  $('subStatus').addEventListener('change', renderSubs);
+  $('subSource').addEventListener('change', renderSubs);
+
+  renderCamps(); renderSubs(); renderStats();
+})();
+</script>
+</body>
+</html>

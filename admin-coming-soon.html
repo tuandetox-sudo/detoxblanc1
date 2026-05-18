@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sắp ra mắt — Detoxblanc Admin</title>
+<meta name="robots" content="noindex,nofollow,noarchive" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+<style>
+  .soon-hero{
+    max-width:780px; margin:40px auto; background:var(--a-card); border:1px solid var(--a-line);
+    border-radius:14px; padding:48px 40px; text-align:center; box-shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+  }
+  .soon-hero .icon{
+    width:84px; height:84px; border-radius:50%; background:#FEF3C7; color:#92400E;
+    display:grid; place-items:center; font-size:34px; margin:0 auto 18px;
+  }
+  .soon-hero h1{ margin:0 0 8px; font-size:26px; letter-spacing:-.02em }
+  .soon-hero .lead{ color:var(--a-ink-3); margin:0 0 28px; font-size:15px }
+  .soon-card{
+    text-align:left; background:#F9FAFB; border:1px solid var(--a-line);
+    border-radius:10px; padding:18px 20px; margin:0 0 20px;
+  }
+  html[data-theme="dark"] .soon-card{ background:rgba(255,255,255,.03) }
+  .soon-card h3{ margin:0 0 10px; font-size:14px; color:var(--a-ink); display:flex; align-items:center; gap:8px }
+  .soon-card ul{ margin:0; padding-left:20px; color:var(--a-ink-2); font-size:14px }
+  .soon-card li{ margin:6px 0 }
+  .soon-meta{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; font-size:13px; color:var(--a-ink-3); margin:6px 0 26px }
+  .soon-meta .pill{
+    background:#DCFCE7; color:#166534; padding:3px 10px; border-radius:999px; font-weight:600; font-size:12px;
+  }
+  .soon-actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
+</style>
+</head>
+
+<body data-adm-page="coming-soon">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Sắp ra mắt"}]'
+       data-title="Sắp ra mắt"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+      <div class="soon-hero">
+        <div class="icon" id="featIcon"><i class="fa-solid fa-clock"></i></div>
+        <h1 id="featTitle">Tính năng đang phát triển</h1>
+        <p class="lead" id="featLead">Module này nằm trong roadmap v1.1, dự kiến phát hành sau go-live OMS v1.0.</p>
+
+        <div class="soon-meta">
+          <span class="pill">Roadmap v1.1</span>
+          <span>Dự kiến: <strong id="featEta">Q3 / 2026</strong></span>
+          <span>Trạng thái: <strong>Đang spec</strong></span>
+        </div>
+
+        <div class="soon-card" id="featSpec">
+          <h3><i class="fa-solid fa-list-check" style="color:#2D5DA1"></i> Phạm vi (sẽ build)</h3>
+          <ul id="featScope"></ul>
+        </div>
+
+        <div class="soon-card">
+          <h3><i class="fa-solid fa-circle-info" style="color:#2D5DA1"></i> Trong khi chờ — phương án thay thế</h3>
+          <ul id="featAlt"></ul>
+        </div>
+
+        <div class="soon-actions">
+          <a class="adm-btn primary" href="admin.html"><i class="fa-solid fa-arrow-left"></i> Quay về Dashboard</a>
+          <a class="adm-btn" href="PRODUCTION-CHECKLIST.md" target="_blank"><i class="fa-solid fa-file-lines"></i> Xem roadmap</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+
+<script>
+(function(){
+  const FEATURES = {
+    analytics: {
+      icon: 'chart-line',
+      title: 'Phân tích nâng cao',
+      lead: 'Funnel + cohort + RFM heatmap. Bản v1.0 đã có "Báo cáo" với GMV/AOV/top SP — đủ cho vận hành thường nhật.',
+      eta:  'Q3 / 2026',
+      scope: [
+        'Funnel checkout: view → add-to-cart → checkout → paid (theo nguồn traffic)',
+        'Cohort retention 30/60/90 ngày theo tháng đăng ký',
+        'RFM heatmap 5×5 (Recency × Frequency)',
+        'Custom dashboard cho từng role (BOD / Operations / Marketing)',
+        'Drilldown SKU → variant → batch'
+      ],
+      alt: [
+        'Dùng <a href="admin-reports.html">Báo cáo</a> (GMV / AOV / top SP / cohort cơ bản)',
+        'Xuất CSV → ghép vào Looker Studio / Power BI tạm thời',
+        'Tab "Loyalty" trong drawer KH đã có RFM segment + tier'
+      ],
+    },
+    qr: {
+      icon: 'qrcode',
+      title: 'QR chính hãng',
+      lead: 'In QR code lên tem chai → KH quét xác thực + truy vết batch sản xuất.',
+      eta:  'Q4 / 2026',
+      scope: [
+        'Sinh QR unique cho mỗi đơn vị SP (UUID + signed)',
+        'Endpoint public verify /qr/:code → trả về batch + ngày SX',
+        'Counter quét lần đầu / repeat (chống bóc tem dùng lại)',
+        'Tích hợp máy in nhãn (Zebra / Brother)',
+      ],
+      alt: [
+        'Dùng QR thủ công sinh từ <a href="admin-vouchers.html">Voucher</a> (chỉ public link)',
+        'Inventory movement đã có refType=batch → trace từ database tạm thời'
+      ],
+    },
+    integrations: {
+      icon: 'plug',
+      title: 'Tích hợp ngoài (Integrations)',
+      lead: 'Quản lý API key / webhook cho payment / shipping / marketing platform.',
+      eta:  'Q3 / 2026',
+      scope: [
+        'API key marketplace: VNPAY / MoMo / GHN / GHTK / Viettel Post / J&T',
+        'Webhook outbound: order.created / order.shipped / order.delivered (với HMAC sign + retry)',
+        'OAuth tracking: Google Analytics / Facebook Pixel / TikTok Ads',
+        'Slack / Telegram bot cho alert đơn hàng',
+        'Logs audit cho mỗi integration call',
+      ],
+      alt: [
+        'Cấu hình API key qua biến môi trường (xem <code>.env.example</code> trong api/)',
+        'Webhook out gửi qua BullMQ queue trực tiếp (xem api/src/email)',
+        'GA / Pixel paste vào template public bằng tay'
+      ],
+    },
+  };
+
+  function load(){
+    const params = new URLSearchParams(location.search);
+    const key = params.get('feat') || 'analytics';
+    const f = FEATURES[key] || FEATURES.analytics;
+
+    document.getElementById('featIcon').innerHTML = `<i class="fa-solid fa-${f.icon}"></i>`;
+    document.getElementById('featTitle').textContent = f.title;
+    document.getElementById('featLead').textContent  = f.lead;
+    document.getElementById('featEta').textContent   = f.eta;
+    document.getElementById('featScope').innerHTML = f.scope.map(s => `<li>${s}</li>`).join('');
+    document.getElementById('featAlt').innerHTML   = f.alt.map(s => `<li>${s}</li>`).join('');
+    document.title = `${f.title} — Sắp ra mắt — Detoxblanc Admin`;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+})();
+</script>
+</body>
+</html>

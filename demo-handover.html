@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Detoxblanc OMS — Demo Handover</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --bg:#FAF8F4; --card:#FFFFFF; --line:#E8E4DC;
+    --ink:#1F2937; --muted:#6B7280;
+    --primary:#2D5DA1; --primary-2:#3B6EB6;
+    --good:#16A34A; --warn:#D97706; --bad:#C0392B;
+    --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1180px; margin:0 auto; padding:32px 20px 80px}
+  header{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:24px}
+  header h1{margin:0 0 6px; font-size:28px; letter-spacing:-0.02em}
+  header p{margin:0; color:var(--muted)}
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#DCFCE7; color:#166534}
+  .badge.warn{background:#FEF3C7; color:#92400E}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:18px; margin-bottom:24px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px; box-shadow:var(--shadow)}
+  .card h2{margin:0 0 4px; font-size:18px; display:flex; align-items:center; gap:10px}
+  .card .lead{color:var(--muted); margin:0 0 14px; font-size:13.5px}
+  .card .meta{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px}
+  .pill{font-size:11.5px; padding:3px 8px; border-radius:6px; background:#F3F4F6; color:#374151; font-weight:500}
+  .pill.ok{background:#DCFCE7; color:#166534}
+  .pill.add{background:#DBEAFE; color:#1E3A8A}
+  .pill.fix{background:#FEF3C7; color:#92400E}
+
+  a.btn{display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; font-size:14px; font-weight:600; text-decoration:none; transition:transform .08s ease}
+  a.btn:active{transform:translateY(1px)}
+  a.btn.primary{background:var(--primary); color:#fff}
+  a.btn.primary:hover{background:var(--primary-2)}
+  a.btn.ghost{background:#F3F4F6; color:#1F2937; border:1px solid var(--line)}
+  a.btn.ghost:hover{background:#E5E7EB}
+
+  .block{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px; margin-bottom:18px; box-shadow:var(--shadow)}
+  .block h2{margin:0 0 10px; font-size:18px}
+  .block ul{margin:0; padding-left:20px}
+  .block ul li{margin:4px 0}
+  .block code{background:#F3F4F6; padding:1px 6px; border-radius:4px; font-size:12.5px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  .check-list{list-style:none; padding:0; margin:0}
+  .check-list li{display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line)}
+  .check-list li:last-child{border-bottom:0}
+  .check-list .ico{flex:0 0 24px; height:24px; border-radius:50%; display:grid; place-items:center; color:#fff; font-size:11px; margin-top:1px}
+  .check-list .ico.ok{background:var(--good)}
+  .check-list .ico.add{background:var(--primary)}
+  .check-list b{font-weight:600}
+  .check-list small{display:block; color:var(--muted); font-size:12.5px; margin-top:2px}
+
+  .files{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:8px}
+  .files a{display:flex; align-items:center; gap:8px; padding:9px 11px; background:#F9FAFB; border:1px solid var(--line); border-radius:8px; text-decoration:none; color:#1F2937; font-size:13px}
+  .files a:hover{border-color:var(--primary); background:#fff}
+  .files i{color:var(--muted)}
+
+  .kbd{display:inline-block; padding:2px 6px; background:#1F2937; color:#F9FAFB; border-radius:4px; font-family:ui-monospace,monospace; font-size:11.5px}
+
+  footer{margin-top:32px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+
+  @media (max-width:640px){
+    header{align-items:flex-start}
+    .card a.btn{width:100%; justify-content:center}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <span class="badge"><i class="fa-solid fa-circle-check"></i> v1.0 ready for UAT</span>
+      <h1 style="margin-top:8px">Detoxblanc OMS — Demo &amp; Handover</h1>
+      <p><b>16 trang admin</b> đã hoàn thiện + <b>3 trang trong roadmap v1.1</b> (đã có placeholder + spec). Tất cả mục sidebar đều click được — không còn dead link.</p>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12.5px; color:var(--muted)">Cập nhật</div>
+      <div style="font-weight:600">2026-04-27</div>
+    </div>
+  </header>
+
+  <!-- ===== Tier 1: 3 module nghiệp vụ trọng yếu (vừa chuẩn hoá v1.0) ===== -->
+  <div style="margin:18px 0 8px"><b style="font-size:13px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase">Module nghiệp vụ trọng yếu (v1.0 vận hành thật)</b></div>
+  <div class="grid">
+
+    <div class="card">
+      <h2><i class="fa-solid fa-cart-shopping" style="color:var(--primary)"></i> Đơn hàng</h2>
+      <p class="lead">POS-style admin create · RMA partial/full · Cancel-after-ship · Tracking carrier · State machine 9 trạng thái.</p>
+      <div class="meta">
+        <span class="pill add">NEW · RMA</span>
+        <span class="pill add">NEW · Tracking</span>
+        <span class="pill fix">FIX · oversell</span>
+        <span class="pill ok">Layout-safe</span>
+        <span class="pill ok">RBAC</span>
+      </div>
+      <a class="btn primary" href="admin-orders.html"><i class="fa-solid fa-arrow-right"></i> Mở trang Đơn hàng</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-users" style="color:var(--primary)"></i> Khách hàng</h2>
+      <p class="lead">Drawer 6 tab · RFM segment · Loyalty tier · Communication timeline · Marketing consent · CSV import 3 strategy.</p>
+      <div class="meta">
+        <span class="pill ok">RFM auto</span>
+        <span class="pill ok">Tier 4 cấp</span>
+        <span class="pill add">NEW · Bridge</span>
+        <span class="pill ok">Layout-safe</span>
+        <span class="pill ok">RBAC</span>
+      </div>
+      <a class="btn primary" href="admin-customers.html"><i class="fa-solid fa-arrow-right"></i> Mở trang Khách hàng</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-warehouse" style="color:var(--primary)"></i> Kho hàng</h2>
+      <p class="lead">PO receive (avgCost moving-average) · Physical count · Reservation · Movement ledger · Low-stock alerts · Atomic anti-oversell.</p>
+      <div class="meta">
+        <span class="pill fix">FIX · atomic</span>
+        <span class="pill fix">FIX · product-level</span>
+        <span class="pill add">NEW · count flow</span>
+        <span class="pill ok">Layout-safe</span>
+        <span class="pill ok">RBAC</span>
+      </div>
+      <a class="btn primary" href="admin-inventory.html"><i class="fa-solid fa-arrow-right"></i> Mở trang Kho hàng</a>
+    </div>
+
+  </div>
+
+  <!-- ===== Tier 2: Quản lý content + sản phẩm + voucher ===== -->
+  <div style="margin:28px 0 8px"><b style="font-size:13px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase">Quản lý content &amp; nội dung sản phẩm</b></div>
+  <div class="grid">
+
+    <div class="card">
+      <h2><i class="fa-solid fa-box-open" style="color:var(--primary)"></i> Sản phẩm</h2>
+      <p class="lead">Catalog 34 SKU seed · Bulk edit · Variant matrix · SEO meta · Status draft/active/archived.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <a class="btn primary" href="admin-products.html"><i class="fa-solid fa-arrow-right"></i> Danh sách</a>
+        <a class="btn ghost" href="admin-product-edit.html"><i class="fa-solid fa-pen"></i> Form sửa SP</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-layer-group" style="color:var(--primary)"></i> Bộ sưu tập</h2>
+      <p class="lead">Tạo collection theo tag/rule động · Sort manual · Hiển thị trên homepage/landing.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-collections.html"><i class="fa-solid fa-arrow-right"></i> Mở Bộ sưu tập</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-newspaper" style="color:var(--primary)"></i> Bài viết / Blog</h2>
+      <p class="lead">Editor SEO · Tag · Tác giả · Cover · Schedule publish · Slug + meta description.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-articles.html"><i class="fa-solid fa-arrow-right"></i> Mở Bài viết</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-comments" style="color:var(--primary)"></i> Đánh giá</h2>
+      <p class="lead">Duyệt review từ KH · Phản hồi · Bulk approve pending · Filter theo SKU/sao.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-reviews.html"><i class="fa-solid fa-arrow-right"></i> Mở Đánh giá</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-ticket" style="color:var(--primary)"></i> Voucher / Khuyến mại</h2>
+      <p class="lead">3 type: percent / amount / shipping · Min order · Usage limit · Schedule · Status active/paused/expired.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-vouchers.html"><i class="fa-solid fa-arrow-right"></i> Mở Voucher</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-rotate-left" style="color:var(--primary)"></i> Trả hàng / RMA</h2>
+      <p class="lead">List case RMA · Trạng thái requested → inspecting → approved → refunded · Filter theo lý do.</p>
+      <div class="meta">
+        <span class="pill add">NEW · BE chuẩn</span>
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-returns.html"><i class="fa-solid fa-arrow-right"></i> Mở Trả hàng</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-file-lines" style="color:var(--primary)"></i> Trang tĩnh</h2>
+      <p class="lead"><b>MỚI</b> · Quản lý About / Privacy / Terms / Shipping / FAQ với Markdown editor + SEO meta + footer position.</p>
+      <div class="meta">
+        <span class="pill add">NEW v1.0</span>
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-pages.html"><i class="fa-solid fa-arrow-right"></i> Mở Trang tĩnh</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-envelope-open-text" style="color:var(--primary)"></i> Newsletter</h2>
+      <p class="lead"><b>MỚI</b> · Subscriber list + chiến dịch email · Audience segmentation (VIP/new/at_risk) · BullMQ queue · Open/click stats.</p>
+      <div class="meta">
+        <span class="pill add">NEW v1.0</span>
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">GDPR consent</span>
+      </div>
+      <a class="btn primary" href="admin-newsletter.html"><i class="fa-solid fa-arrow-right"></i> Mở Newsletter</a>
+    </div>
+
+  </div>
+
+  <!-- ===== Tier 3: Trang chức năng (báo cáo, audit, user, cài đặt) ===== -->
+  <div style="margin:28px 0 8px"><b style="font-size:13px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase">Trang chức năng &amp; quản trị hệ thống</b></div>
+  <div class="grid">
+
+    <div class="card">
+      <h2><i class="fa-solid fa-tachometer-alt" style="color:var(--primary)"></i> Dashboard</h2>
+      <p class="lead">Overview KPI 7 ngày · Đơn pending/packing · GMV · AOV · Low-stock · KH VIP.</p>
+      <div class="meta">
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin.html"><i class="fa-solid fa-arrow-right"></i> Mở Dashboard</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> Báo cáo</h2>
+      <p class="lead">Doanh thu theo ngày/tuần/tháng · Top SP · Cohort KH · Xuất CSV.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-reports.html"><i class="fa-solid fa-arrow-right"></i> Mở Báo cáo</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-shield-halved" style="color:var(--primary)"></i> Audit log</h2>
+      <p class="lead">Lịch sử thay đổi đầy đủ · Hash chain verify · Filter theo actor/entity/action · Export CSV.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Hash chain</span>
+      </div>
+      <a class="btn primary" href="admin-audit.html"><i class="fa-solid fa-arrow-right"></i> Mở Audit</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-user-shield" style="color:var(--primary)"></i> Người dùng &amp; Role</h2>
+      <p class="lead">Mời nhân viên · Gán role (5 system roles) · Ma trận quyền 18 permissions · TOTP 2FA.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC source</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-users.html"><i class="fa-solid fa-arrow-right"></i> Mở User</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-gear" style="color:var(--primary)"></i> Cài đặt hệ thống</h2>
+      <p class="lead">Brand · Email SMTP · Payment gateway · Shipping · Loyalty rule · Tax · Maintenance mode.</p>
+      <div class="meta">
+        <span class="pill ok">RBAC</span>
+        <span class="pill ok">Layout-safe</span>
+      </div>
+      <a class="btn primary" href="admin-settings.html"><i class="fa-solid fa-arrow-right"></i> Mở Cài đặt</a>
+    </div>
+
+    <div class="card">
+      <h2><i class="fa-solid fa-laptop-code" style="color:var(--primary)"></i> Dev tools</h2>
+      <p class="lead">Tool nội bộ cho dev: clear cache · seed reset · DB diff · API logs · Toggle DTX_API_MODE.</p>
+      <div class="meta">
+        <span class="pill warn">Internal</span>
+      </div>
+      <a class="btn primary" href="admin-dev.html"><i class="fa-solid fa-arrow-right"></i> Mở Dev tools</a>
+    </div>
+
+  </div>
+
+  <!-- ===== Tier 4: Roadmap v1.1 — minh bạch các mục chưa build ===== -->
+  <div style="margin:28px 0 8px"><b style="font-size:13px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase">Roadmap v1.1 — đang phát triển</b></div>
+  <div class="grid">
+    <div class="card" style="border-left:3px solid var(--warn)">
+      <h2><i class="fa-solid fa-chart-line" style="color:var(--warn)"></i> Phân tích nâng cao</h2>
+      <p class="lead">Funnel checkout · Cohort retention · RFM heatmap. Hiện đã có Báo cáo bản cơ bản đáp ứng vận hành thường nhật.</p>
+      <div class="meta">
+        <span class="pill" style="background:#FEF3C7;color:#92400E">Soon · Q3/2026</span>
+      </div>
+      <a class="btn ghost" href="admin-coming-soon.html?feat=analytics"><i class="fa-solid fa-arrow-right"></i> Xem spec</a>
+    </div>
+    <div class="card" style="border-left:3px solid var(--warn)">
+      <h2><i class="fa-solid fa-qrcode" style="color:var(--warn)"></i> QR chính hãng</h2>
+      <p class="lead">Sinh QR unique cho mỗi đơn vị SP · Verify chống hàng giả · Trace batch sản xuất · Tích hợp máy in nhãn.</p>
+      <div class="meta">
+        <span class="pill" style="background:#FEF3C7;color:#92400E">Soon · Q4/2026</span>
+      </div>
+      <a class="btn ghost" href="admin-coming-soon.html?feat=qr"><i class="fa-solid fa-arrow-right"></i> Xem spec</a>
+    </div>
+    <div class="card" style="border-left:3px solid var(--warn)">
+      <h2><i class="fa-solid fa-plug" style="color:var(--warn)"></i> Tích hợp ngoài</h2>
+      <p class="lead">API key marketplace · Webhook outbound · GA / FB Pixel / TikTok · Slack/Telegram bot · Audit từng call.</p>
+      <div class="meta">
+        <span class="pill" style="background:#FEF3C7;color:#92400E">Soon · Q3/2026</span>
+      </div>
+      <a class="btn ghost" href="admin-coming-soon.html?feat=integrations"><i class="fa-solid fa-arrow-right"></i> Xem spec</a>
+    </div>
+  </div>
+
+  <!-- Tóm tắt 7 nhóm P0 đã xong -->
+  <div class="block">
+    <h2><i class="fa-solid fa-list-check" style="color:var(--good)"></i> 7/7 nhóm P0 đã xử lý</h2>
+    <ul class="check-list">
+      <li>
+        <span class="ico ok"><i class="fa-solid fa-check"></i></span>
+        <div>
+          <b>Layout guards CSS</b> — chống vỡ bố cục khi admin nhập tên SP/địa chỉ/email dài.
+          <small>table truncate + ellipsis · modal overflow-y · word-break mono · sticky modal-foot · mobile 1-col · min-width tables 980/1100.</small>
+        </div>
+      </li>
+      <li>
+        <span class="ico ok"><i class="fa-solid fa-check"></i></span>
+        <div>
+          <b>Inventory atomic + product-level</b> — fix oversell race condition + SP không có variant.
+          <small><code>UPDATE … WHERE (stock-reserved)&gt;=qty</code> trên Postgres → row-lock chống đặt cùng lúc; <code>Product.stock</code> field mới.</small>
+        </div>
+      </li>
+      <li>
+        <span class="ico add"><i class="fa-solid fa-plus"></i></span>
+        <div>
+          <b>RMA / Cancel-after-ship / Tracking</b> — endpoint mới + 2 model schema.
+          <small>State machine 5 trạng thái (requested→inspecting→approved→refunded), refund điểm thưởng tỉ lệ, restock optional.</small>
+        </div>
+      </li>
+      <li>
+        <span class="ico add"><i class="fa-solid fa-plus"></i></span>
+        <div>
+          <b>17 bridge functions FE↔BE</b> — <code>assets/admin-api.js</code>.
+          <small>Orders 7 fn · Customers 11 fn · Inventory 5 fn — đầy đủ create/return/tracking/voucher/loyalty/consent/address/import/merge/receive/count/alerts.</small>
+        </div>
+      </li>
+      <li>
+        <span class="ico add"><i class="fa-solid fa-plus"></i></span>
+        <div>
+          <b>RBAC FE</b> — <code>assets/admin-rbac.js</code> + thuộc tính <code>data-perm</code>.
+          <small>Tự gọi <code>/auth/me</code>, build permissions Set, xoá DOM (chống F12), MutationObserver bắt row mới render.</small>
+        </div>
+      </li>
+      <li>
+        <span class="ico ok"><i class="fa-solid fa-check"></i></span>
+        <div>
+          <b>Rich staging seed</b> — <code>api/prisma/seed-staging.ts</code>.
+          <small>50 KH × 70 đơn × 18 SP × 6 voucher · refuse khi DB trông giống prod.</small>
+        </div>
+      </li>
+      <li>
+        <span class="ico ok"><i class="fa-solid fa-check"></i></span>
+        <div>
+          <b>PRODUCTION-CHECKLIST.md</b> — go-live 4 phase + rollback + monitoring + handover.
+          <small>D-7 chuẩn bị · D-3→D-0 UAT (KB1–KB7) · W1–W2 pilot · W3+ full · 24h fallback.</small>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- File quan trọng -->
+  <div class="block">
+    <h2><i class="fa-solid fa-folder-tree"></i> File trọng yếu cho review</h2>
+    <p class="lead" style="margin:-2px 0 14px">Click để xem source. Đây là những file đã được tạo/sửa quan trọng nhất.</p>
+    <div class="files">
+      <a href="PRODUCTION-CHECKLIST.md" target="_blank"><i class="fa-solid fa-file-lines"></i> PRODUCTION-CHECKLIST.md</a>
+      <a href="api/src/inventory/reservation.ts" target="_blank"><i class="fa-brands fa-js"></i> api/src/inventory/reservation.ts</a>
+      <a href="api/src/routes/orders.ts" target="_blank"><i class="fa-brands fa-js"></i> api/src/routes/orders.ts</a>
+      <a href="api/src/routes/inventory.ts" target="_blank"><i class="fa-brands fa-js"></i> api/src/routes/inventory.ts</a>
+      <a href="api/src/customers/loyalty.ts" target="_blank"><i class="fa-brands fa-js"></i> api/src/customers/loyalty.ts</a>
+      <a href="api/prisma/schema.prisma" target="_blank"><i class="fa-solid fa-database"></i> api/prisma/schema.prisma</a>
+      <a href="api/prisma/seed-staging.ts" target="_blank"><i class="fa-solid fa-seedling"></i> api/prisma/seed-staging.ts</a>
+      <a href="assets/admin-api.js" target="_blank"><i class="fa-brands fa-js"></i> assets/admin-api.js</a>
+      <a href="assets/admin-rbac.js" target="_blank"><i class="fa-solid fa-shield-halved"></i> assets/admin-rbac.js</a>
+      <a href="assets/admin.css" target="_blank"><i class="fa-brands fa-css3-alt"></i> assets/admin.css</a>
+    </div>
+  </div>
+
+  <!-- Quy trình go-live -->
+  <div class="block">
+    <h2><i class="fa-solid fa-rocket" style="color:var(--primary)"></i> Quy trình go-live (4 giai đoạn)</h2>
+    <ul>
+      <li><b>D-7 → D-3 — Chuẩn bị</b>: chạy <code>pnpm prisma migrate dev --name oms_v1_returns_tracking</code>, review SQL, setup staging env vars, install hooks.</li>
+      <li><b>D-3 → D-0 — UAT</b>: deploy staging, chạy <code>prisma:seed:staging</code>, ban vận hành test 7 kịch bản KB1–KB7 (xem checklist mục 3.2).</li>
+      <li><b>W1 → W2 — Pilot</b>: 1 chi nhánh hoặc 1 nhóm KOL, monitor (Sentry + alert rules), so sánh metric.</li>
+      <li><b>W3+ — Full go-live</b>: rollout toàn hệ thống. Suggested date: <b>2026-05-15</b>.</li>
+    </ul>
+    <p style="margin:12px 0 0"><b>Rollback an toàn 24h</b>: đặt <code>DTX_API_MODE=local</code> để FE quay về localStorage; <code>prisma migrate resolve --rolled-back</code> nếu cần.</p>
+  </div>
+
+  <!-- Lưu ý vận hành -->
+  <div class="block">
+    <h2><i class="fa-solid fa-circle-exclamation" style="color:var(--warn)"></i> Lưu ý cho người thật trước khi nhận bàn giao</h2>
+    <ul>
+      <li><b>Nhập SP có dấu / ký tự đặc biệt</b>: layout guards đã set <code>word-break</code> và <code>title=</code> tooltip — hover row sẽ xem được nội dung đầy đủ kể cả khi cell bị truncate.</li>
+      <li><b>Modal có nội dung dài</b>: drawer/modal có <code>overflow-y:auto</code> + <code>position:sticky</code> ở footer → nút Lưu/Huỷ luôn nhìn thấy.</li>
+      <li><b>Mobile (≤720px)</b>: form 2 cột tự sập về 1 cột, table có scroll ngang riêng → không vỡ giao diện.</li>
+      <li><b>Quyền nhân viên</b>: button bị xoá khỏi DOM nếu thiếu <code>data-perm</code> — không phải chỉ ẩn. Mã JS handlers vẫn nên gọi <code>DTX_ADMIN_PERMS.requireOrToast(...)</code> trước khi submit.</li>
+      <li><b>BE là nguồn đúng</b>: tất cả route đều có <code>requirePermission(...)</code>. Nếu KH/admin bypass FE, BE vẫn từ chối với 403.</li>
+    </ul>
+  </div>
+
+  <footer>
+    <div><b>Demo URL</b>: <code>http://127.0.0.1:8080/demo-handover.html</code> &nbsp;·&nbsp; Server: Python http.server (PID hiện tại: <span id="pid">—</span>)</div>
+    <div style="margin-top:6px">Bấm <span class="kbd">Ctrl/⌘ + Click</span> các link để mở tab mới.</div>
+  </footer>
+
+</div>
+
+<script>
+  // Demo mode: cấp permissions wildcard để mọi button hiện đầy đủ
+  // (Production sẽ resolve permissions từ /auth/me thực tế.)
+  try { localStorage.setItem('dtx_admin_perms', JSON.stringify(['*'])); } catch(_){}
+  // Hiện server PID (nếu chạy local)
+  fetch('/').catch(()=>{});
+</script>
+</body>
+</html>

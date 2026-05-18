@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Đổi / trả — Detoxblanc Admin</title>
+<meta name="description" content="Quản lý yêu cầu đổi / trả (RMA): duyệt, nhận hàng, hoàn tiền." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="returns">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Vận hành"},{"label":"Đổi / trả"}]'
+       data-title="Đổi / trả (RMA)"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Đổi / trả (RMA)</h1>
+          <p>Quản lý yêu cầu đổi, trả hàng, hoàn tiền. Quy trình: <strong>Yêu cầu → Duyệt → Nhận hàng → Hoàn tiền → Đóng</strong>.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnRetReset" data-perm="orders:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại seed</button>
+          <button class="adm-btn primary" id="btnRetNew" data-perm="orders:write"><i class="fa-solid fa-plus"></i> Tạo yêu cầu</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng</span><strong id="statRetTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">Yêu cầu mới</span><strong id="statRetNew" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã duyệt</span><strong id="statRetOk">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã nhận</span><strong id="statRetRecv">0</strong></div>
+        <div class="stat-card"><span class="lbl">Hoàn tiền</span><strong id="statRetRefund" style="color:#0F766E">0</strong></div>
+        <div class="stat-card"><span class="lbl">Tổng hoàn</span><strong id="statRetAmount">—</strong></div>
+      </div>
+
+      <div class="pr-filter-bar card">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="retQ" placeholder="Mã RMA, đơn, khách, lý do…" />
+        </div>
+        <div class="field"><select id="retStatus">
+          <option value="">Tất cả trạng thái</option>
+          <option value="requested">Yêu cầu mới</option>
+          <option value="approved">Đã duyệt</option>
+          <option value="received">Đã nhận hàng</option>
+          <option value="refunded">Đã hoàn tiền</option>
+          <option value="rejected">Từ chối</option>
+          <option value="closed">Đã đóng</option>
+        </select></div>
+        <div class="field"><select id="retSort">
+          <option value="new">Mới nhất</option>
+          <option value="old">Cũ nhất</option>
+          <option value="amount-desc">Giá trị ↓</option>
+          <option value="amount-asc">Giá trị ↑</option>
+        </select></div>
+      </div>
+
+      <div class="card">
+        <table class="adm-tbl ret-tbl">
+          <thead>
+            <tr>
+              <th style="width:130px">Mã RMA</th>
+              <th>Đơn / Khách</th>
+              <th>Lý do</th>
+              <th style="text-align:right">Giá trị</th>
+              <th>Trạng thái</th>
+              <th>Ngày</th>
+              <th style="width:280px">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="retBody"></tbody>
+        </table>
+        <div class="empty-state" id="retEmpty" hidden>
+          <i class="fa-solid fa-box-open"></i>
+          <p>Không có yêu cầu đổi / trả nào khớp bộ lọc.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal chi tiết / cập nhật RMA -->
+<div class="adm-modal" id="retModal" hidden>
+  <div class="adm-modal-card" role="dialog" aria-modal="true" aria-labelledby="retModalTitle">
+    <header>
+      <h3 id="retModalTitle">Chi tiết RMA</h3>
+      <button class="icon-btn" id="btnRetClose" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="adm-modal-body" id="retModalBody"></div>
+  </div>
+</div>
+
+<script>
+  try { window.DTX_MODE = localStorage.getItem('dtx_mode') || 'local'; } catch (_) {}
+</script>
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-api.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const S = window.DTX_ADMIN_RETURNS;
+  const F = window.DTX_ADMIN_FMT;
+  const state = { q:'', status:'', sort:'new' };
+
+  const STATUS_LABEL = {
+    requested:'Yêu cầu mới', approved:'Đã duyệt', received:'Đã nhận',
+    refunded:'Đã hoàn tiền', rejected:'Từ chối', closed:'Đã đóng',
+  };
+  const STATUS_CLS = {
+    requested:'warn', approved:'accent', received:'info',
+    refunded:'ok', rejected:'bad', closed:'muted',
+  };
+  // Chuỗi chuyển trạng thái hợp lệ
+  const NEXT = {
+    requested: ['approved', 'rejected'],
+    approved:  ['received', 'rejected'],
+    received:  ['refunded'],
+    refunded:  ['closed'],
+    rejected:  ['closed'],
+    closed:    [],
+  };
+
+  function statusBadge(s){
+    return `<span class="badge ${STATUS_CLS[s] || 'muted'}">${STATUS_LABEL[s] || s}</span>`;
+  }
+
+  function actionButtons(r){
+    const nexts = NEXT[r.status] || [];
+    let html = '';
+    nexts.forEach(ns => {
+      const primary = ns === 'approved' || ns === 'refunded' || ns === 'received';
+      html += `<button class="adm-btn sm ${primary ? 'primary' : ''}" data-next="${ns}" data-id="${r.id}">
+        ${ns === 'approved' ? '<i class="fa-solid fa-check"></i> Duyệt'
+          : ns === 'rejected' ? '<i class="fa-solid fa-xmark"></i> Từ chối'
+          : ns === 'received' ? '<i class="fa-solid fa-box"></i> Đã nhận'
+          : ns === 'refunded' ? '<i class="fa-solid fa-money-bill-wave"></i> Hoàn tiền'
+          : ns === 'closed'   ? '<i class="fa-solid fa-lock"></i> Đóng'
+          : ns}
+      </button>`;
+    });
+    html += `<button class="icon-btn" data-view="${r.id}" title="Chi tiết"><i class="fa-solid fa-eye"></i></button>`;
+    html += `<button class="icon-btn" data-del="${r.id}" title="Xoá"><i class="fa-solid fa-trash"></i></button>`;
+    return html;
+  }
+
+  function render(){
+    const all = S.all();
+    const by = (k) => all.filter(r => r.status === k).length;
+    document.getElementById('statRetTotal').textContent = all.length;
+    document.getElementById('statRetNew').textContent = by('requested');
+    document.getElementById('statRetOk').textContent = by('approved');
+    document.getElementById('statRetRecv').textContent = by('received');
+    document.getElementById('statRetRefund').textContent = by('refunded');
+    const totalRefund = all.filter(r => r.status === 'refunded').reduce((s, r) => s + (r.amount || 0), 0);
+    document.getElementById('statRetAmount').textContent = totalRefund ? F.vnd(totalRefund) : '—';
+
+    const q = state.q.trim().toLowerCase();
+    let list = all.filter(r => {
+      if (q && !(
+        (r.code || '').toLowerCase().includes(q) ||
+        (r.orderCode || '').toLowerCase().includes(q) ||
+        (r.customerName || '').toLowerCase().includes(q) ||
+        (r.reason || '').toLowerCase().includes(q)
+      )) return false;
+      if (state.status && r.status !== state.status) return false;
+      return true;
+    });
+    list.sort((a, b) => {
+      switch (state.sort) {
+        case 'old':          return new Date(a.createdAt) - new Date(b.createdAt);
+        case 'amount-desc':  return (b.amount || 0) - (a.amount || 0);
+        case 'amount-asc':   return (a.amount || 0) - (b.amount || 0);
+        default:             return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+    });
+
+    const body = document.getElementById('retBody');
+    const empty = document.getElementById('retEmpty');
+    if (!list.length) { body.innerHTML = ''; empty.hidden = false; return; }
+    empty.hidden = true;
+
+    body.innerHTML = list.map(r => `
+      <tr data-id="${r.id}">
+        <td><code>${r.code}</code></td>
+        <td>
+          <strong>${r.orderCode || '—'}</strong><br>
+          <small class="muted">${r.customerName || '—'}</small>
+        </td>
+        <td>${r.reason}${r.note ? `<br><small class="muted">${r.note}</small>` : ''}</td>
+        <td style="text-align:right"><strong>${F.vnd(r.amount || 0)}</strong></td>
+        <td>${statusBadge(r.status)}</td>
+        <td><small class="muted">${F.date(r.createdAt)}</small></td>
+        <td class="actions">${actionButtons(r)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function openDetail(r){
+    document.getElementById('retModalTitle').textContent = `RMA ${r.code}`;
+    document.getElementById('retModalBody').innerHTML = `
+      <dl class="kv">
+        <dt>Đơn hàng</dt><dd>${r.orderCode || '—'}</dd>
+        <dt>Khách</dt><dd>${r.customerName || '—'}</dd>
+        <dt>Lý do</dt><dd>${r.reason}</dd>
+        <dt>Ghi chú</dt><dd>${r.note || '<span class="muted">—</span>'}</dd>
+        <dt>Giá trị</dt><dd><strong>${F.vnd(r.amount || 0)}</strong></dd>
+        <dt>Trạng thái</dt><dd>${statusBadge(r.status)}</dd>
+        <dt>Tạo lúc</dt><dd>${F.dt(r.createdAt)}</dd>
+        <dt>Cập nhật</dt><dd>${F.dt(r.updatedAt)}</dd>
+      </dl>
+      <div class="modal-actions">${actionButtons(r)}</div>
+    `;
+    document.getElementById('retModal').hidden = false;
+  }
+  function closeDetail(){ document.getElementById('retModal').hidden = true; }
+
+  // Filters
+  document.getElementById('retQ').addEventListener('input', e => { state.q = e.target.value; render(); });
+  document.getElementById('retStatus').addEventListener('change', e => { state.status = e.target.value; render(); });
+  document.getElementById('retSort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+
+  // Row actions
+  function doTransition(id, next){
+    const r = S.get(id);
+    if (!r) return;
+    if (!(NEXT[r.status] || []).includes(next)) {
+      window.admToast?.('Không thể chuyển trạng thái này', 'warn'); return;
+    }
+    S.update(id, { status: next });
+    window.admToast?.(`Đã cập nhật → ${STATUS_LABEL[next]}`, 'ok');
+    render();
+    const modal = document.getElementById('retModal');
+    if (!modal.hidden) openDetail(S.get(id));
+  }
+
+  document.getElementById('retBody').addEventListener('click', e => {
+    const t = e.target.closest('[data-next], [data-view], [data-del]');
+    if (!t) return;
+    if (t.dataset.next) return doTransition(t.dataset.id, t.dataset.next);
+    if (t.dataset.view) { const r = S.get(t.dataset.view); if (r) openDetail(r); return; }
+    if (t.dataset.del) {
+      const r = S.get(t.dataset.del);
+      if (r && confirm(`Xoá yêu cầu ${r.code}?`)) { S.remove(r.id); render(); window.admToast?.('Đã xoá', 'ok'); }
+    }
+  });
+
+  document.getElementById('retModalBody').addEventListener('click', e => {
+    const t = e.target.closest('[data-next], [data-del]');
+    if (!t) return;
+    if (t.dataset.next) return doTransition(t.dataset.id, t.dataset.next);
+    if (t.dataset.del) {
+      const r = S.get(t.dataset.del);
+      if (r && confirm(`Xoá yêu cầu ${r.code}?`)) { S.remove(r.id); closeDetail(); render(); window.admToast?.('Đã xoá', 'ok'); }
+    }
+  });
+
+  document.getElementById('btnRetClose').addEventListener('click', closeDetail);
+  document.getElementById('retModal').addEventListener('click', e => {
+    if (e.target.id === 'retModal') closeDetail();
+  });
+
+  // Tạo mới nhanh
+  document.getElementById('btnRetNew').addEventListener('click', () => {
+    const orderCode = prompt('Mã đơn hàng liên quan (vd: DTX-25-00123):', 'DTX-25-' + Math.floor(20000 + Math.random()*999));
+    if (!orderCode) return;
+    const customerName = prompt('Tên khách hàng:', 'Khách lẻ') || 'Khách lẻ';
+    const reason = prompt('Lý do đổi / trả:', 'Sản phẩm lỗi') || 'Không rõ lý do';
+    const amount = Number(prompt('Giá trị hoàn (VNĐ):', '450000')) || 0;
+    S.create({
+      code: 'RMA-' + new Date().getFullYear().toString().slice(-2) + '-' + String(Math.floor(1000 + Math.random()*8999)),
+      orderCode, customerName, reason, amount, status: 'requested',
+    });
+    render();
+    window.admToast?.('Đã tạo yêu cầu mới', 'ok');
+  });
+
+  document.getElementById('btnRetReset').addEventListener('click', () => {
+    if (confirm('Đặt lại seed?')) { S.reset(); render(); window.admToast?.('Reset OK', 'ok'); }
+  });
+
+  window.addEventListener('dtx:returns-updated', render);
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_returns')) render(); });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+  render();
+})();
+</script>
+</body></html>

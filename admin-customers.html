@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Khách hàng — Detoxblanc Admin</title>
+<meta name="description" content="Danh sách khách hàng Detoxblanc — phân khúc, tag, xuất CSV." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="customers">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Bán hàng"},{"label":"Khách hàng"}]'
+       data-title="Khách hàng"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Khách hàng</h1>
+          <p>Quản lý <strong id="cusCount">—</strong> khách hàng. Phân khúc theo RFM + tag + chi tiêu.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnCusReset" data-perm="customers:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại</button>
+          <button class="adm-btn" id="btnCusImport" data-perm="customers:write"><i class="fa-solid fa-file-import"></i> Import CSV</button>
+          <button class="adm-btn" id="btnCusExport" data-perm="customers:read"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+          <button class="adm-btn primary" id="btnCusCreate" data-perm="customers:write"><i class="fa-solid fa-plus"></i> Thêm khách hàng</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng khách</span><strong id="statCusTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">VIP</span><strong id="statCusVip">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã rời bỏ</span><strong id="statCusChurn">0</strong></div>
+        <div class="stat-card"><span class="lbl">Chi tiêu TB</span><strong id="statCusClv">—</strong></div>
+      </div>
+
+      <div class="pr-filter-bar card" role="search">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="cusQ" placeholder="Tên, email, SĐT…" aria-label="Tìm khách hàng" />
+        </div>
+        <div class="field"><select id="cusSegment">
+          <option value="">Tất cả phân khúc</option>
+          <option value="new_cus">Khách mới</option>
+          <option value="active">Đang hoạt động</option>
+          <option value="vip">VIP</option>
+          <option value="at_risk">Có nguy cơ</option>
+          <option value="churn">Đã rời bỏ</option>
+          <option value="blacklist">Blacklist</option>
+        </select></div>
+        <div class="field"><select id="cusTier">
+          <option value="">Tất cả tier</option>
+          <option value="bronze">Đồng</option>
+          <option value="silver">Bạc</option>
+          <option value="gold">Vàng</option>
+          <option value="platinum">Bạch kim</option>
+        </select></div>
+        <div class="field"><select id="cusTag"><option value="">Tất cả tag</option></select></div>
+        <div class="field"><select id="cusProv"><option value="">Tất cả tỉnh/TP</option></select></div>
+        <div class="field"><select id="cusSort">
+          <option value="new">Khách mới nhất</option>
+          <option value="spend-desc">Chi tiêu cao → thấp</option>
+          <option value="orders-desc">Đơn nhiều → ít</option>
+          <option value="last-order">Đặt hàng gần đây</option>
+          <option value="name">Tên A→Z</option>
+        </select></div>
+      </div>
+
+      <div class="card">
+        <table class="adm-tbl" id="cusTable">
+          <thead>
+            <tr>
+              <th>Tên</th><th>Liên hệ</th><th>Tỉnh/TP</th>
+              <th>Tier</th><th>Phân khúc</th>
+              <th style="text-align:right">Chi tiêu</th>
+              <th style="text-align:right">Đơn</th>
+              <th>Đặt gần nhất</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cusTbody"></tbody>
+        </table>
+        <div class="empty-state" id="cusEmpty" hidden>
+          <i class="fa-solid fa-user-slash"></i>
+          <p>Không có khách hàng nào khớp bộ lọc.</p>
+        </div>
+      </div>
+
+      <div class="pager" id="cusPager"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Customer detail drawer -->
+<aside class="drawer drawer-wide" id="cusDrawer" hidden aria-hidden="true" aria-labelledby="cusDrawerTitle">
+  <div class="drawer-backdrop" data-close-cus-drawer></div>
+  <div class="drawer-panel">
+    <header>
+      <h3 id="cusDrawerTitle">Chi tiết khách hàng</h3>
+      <button class="drawer-close" data-close-cus-drawer aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <nav class="drawer-tabs" id="cusTabs">
+      <button class="drawer-tab active" data-tab="info"><i class="fa-solid fa-address-card"></i> Thông tin</button>
+      <button class="drawer-tab" data-tab="addresses"><i class="fa-solid fa-location-dot"></i> Địa chỉ</button>
+      <button class="drawer-tab" data-tab="orders"><i class="fa-solid fa-receipt"></i> Đơn hàng</button>
+      <button class="drawer-tab" data-tab="communication"><i class="fa-solid fa-comments"></i> Liên lạc</button>
+      <button class="drawer-tab" data-tab="loyalty"><i class="fa-solid fa-gem"></i> Loyalty</button>
+      <button class="drawer-tab" data-tab="consent"><i class="fa-solid fa-shield-halved"></i> Đồng ý</button>
+    </nav>
+    <div class="drawer-body" id="cusDrawerBody"></div>
+  </div>
+</aside>
+
+<!-- Import CSV modal -->
+<div class="adm-modal" id="cusImportModal" hidden aria-hidden="true">
+  <div class="adm-modal-backdrop" data-close-import></div>
+  <div class="adm-modal-card" role="dialog">
+    <header class="adm-modal-head">
+      <h3><i class="fa-solid fa-file-import"></i> Import khách hàng từ CSV</h3>
+      <button class="adm-btn" data-close-import aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="adm-modal-body">
+      <p class="muted" style="font-size:13px;margin:0 0 10px">
+        CSV cần có header: <code>name,email,phone,province,tags,notes</code>. Tags phân cách bằng <code>|</code>.
+        Dedup theo <b>email</b> hoặc <b>SĐT</b>.
+      </p>
+      <label class="chk" style="gap:10px">
+        Khi trùng: <select id="cusImpStrategy" style="height:32px;border:1px solid var(--a-line);border-radius:6px;padding:0 8px">
+          <option value="skip">Bỏ qua</option>
+          <option value="upsert">Cập nhật (giữ field cũ nếu trống)</option>
+          <option value="overwrite">Ghi đè</option>
+        </select>
+      </label>
+      <input type="file" id="cusImpFile" accept=".csv,text/csv" style="margin-top:10px" />
+      <pre id="cusImpResult" class="muted" style="margin-top:10px;font-size:12px;max-height:200px;overflow:auto"></pre>
+    </div>
+    <footer class="adm-modal-foot">
+      <button class="adm-btn" data-close-import>Huỷ</button>
+      <button class="adm-btn primary" id="cusImpRun"><i class="fa-solid fa-play"></i> Chạy import</button>
+    </footer>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const S = window.DTX_ADMIN_CUSTOMERS;
+  const F = window.DTX_ADMIN_FMT;
+  const state = {
+    page:1, q:'', tag:'', province:'', segment:'', tier:'',
+    sort:'new', perPage:20,
+    currentId: null, activeTab: 'info',
+  };
+
+  function tierPill(t){
+    const cls = { bronze:'tier-bronze', silver:'tier-silver', gold:'tier-gold', platinum:'tier-plat' }[t] || '';
+    return `<span class="tier-pill ${cls}">${S.tierLabel(t)}</span>`;
+  }
+  function segmentBadge(s){
+    const cls = { vip:'ok', at_risk:'warn', churn:'bad', blacklist:'bad', new_cus:'info', active:'muted' }[s] || 'muted';
+    return `<span class="badge ${cls}">${S.segmentLabel(s)}</span>`;
+  }
+
+  function render(){
+    const all = S.all();
+    const tags = new Set(), provs = new Set();
+    all.forEach(c => { (c.tags||[]).forEach(t => tags.add(t)); if (c.province) provs.add(c.province); });
+    syncSelect('cusTag', tags, state.tag);
+    syncSelect('cusProv', provs, state.province);
+
+    const q = state.q.trim().toLowerCase();
+    let list = all.filter(c => {
+      if (q && !(c.name.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').includes(q))) return false;
+      if (state.tag && !c.tags.includes(state.tag)) return false;
+      if (state.province && c.province !== state.province) return false;
+      if (state.segment && c.segment !== state.segment) return false;
+      if (state.tier && c.loyaltyTier !== state.tier) return false;
+      return true;
+    });
+    list.sort((a,b) => {
+      switch(state.sort){
+        case 'spend-desc': return b.spend - a.spend;
+        case 'orders-desc': return b.orders - a.orders;
+        case 'last-order': return new Date(b.lastOrderAt||0) - new Date(a.lastOrderAt||0);
+        case 'name': return a.name.localeCompare(b.name, 'vi');
+        default: return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+    });
+
+    document.getElementById('cusCount').textContent = all.length.toLocaleString('vi-VN');
+    document.getElementById('statCusTotal').textContent = all.length;
+    document.getElementById('statCusVip').textContent = all.filter(c=>c.segment==='vip').length;
+    document.getElementById('statCusChurn').textContent = all.filter(c=>c.segment==='churn').length;
+    const clv = all.length ? Math.round(all.reduce((s,c)=>s+c.spend,0)/all.length) : 0;
+    document.getElementById('statCusClv').textContent = F.vnd(clv);
+
+    const totalPages = Math.max(1, Math.ceil(list.length / state.perPage));
+    if (state.page > totalPages) state.page = totalPages;
+    const slice = list.slice((state.page-1)*state.perPage, state.page*state.perPage);
+
+    const tbody = document.getElementById('cusTbody');
+    const empty = document.getElementById('cusEmpty');
+    if (!slice.length) { tbody.innerHTML=''; empty.hidden=false; }
+    else {
+      empty.hidden = true;
+      tbody.innerHTML = slice.map(c => {
+        const initials = c.name.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase();
+        return `<tr data-id="${c.id}">
+          <td title="${esc(c.name)}"><div class="user-cell"><span class="avatar-sm">${initials}</span><div><strong><a href="#" data-open="${c.id}">${esc(c.name)}</a></strong><small class="muted">${c.dob ? 'DOB: '+esc(c.dob) : 'Tham gia '+F.date(c.createdAt)}</small></div></div></td>
+          <td title="${esc(c.email||'')} · ${esc(c.phone||'')}"><small>${esc(c.email || '—')}<br><span class="muted">${esc(c.phone || '')}</span></small></td>
+          <td title="${esc(c.province||'')}"><small>${esc(c.province || '—')}</small></td>
+          <td>${tierPill(c.loyaltyTier)}</td>
+          <td>${segmentBadge(c.segment)}</td>
+          <td style="text-align:right"><strong>${F.vnd(c.spend)}</strong></td>
+          <td style="text-align:right">${c.orders}</td>
+          <td><small>${c.lastOrderAt ? F.date(c.lastOrderAt) : '—'}</small></td>
+          <td style="text-align:right">
+            <button class="icon-btn" data-open="${c.id}" title="Xem"><i class="fa-solid fa-eye"></i></button>
+            <button class="icon-btn" data-del="${c.id}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    const pager = document.getElementById('cusPager');
+    if (totalPages>1) {
+      let h=''; for (let p=1;p<=totalPages;p++) h += `<button class="${p===state.page?'active':''}" data-page="${p}">${p}</button>`;
+      pager.innerHTML = h;
+    } else pager.innerHTML='';
+  }
+
+  function syncSelect(id, values, current){
+    const el = document.getElementById(id);
+    const first = el.querySelector('option'); el.innerHTML = ''; el.appendChild(first);
+    [...values].sort().forEach(v => {
+      const o = document.createElement('option'); o.value = v; o.textContent = v;
+      if (v === current) o.selected = true;
+      el.appendChild(o);
+    });
+  }
+
+  /* ---- Filters ------------------------------------------------------- */
+  document.getElementById('cusQ').addEventListener('input', e => { state.q = e.target.value; state.page=1; render(); });
+  document.getElementById('cusTag').addEventListener('change', e => { state.tag = e.target.value; state.page=1; render(); });
+  document.getElementById('cusProv').addEventListener('change', e => { state.province = e.target.value; state.page=1; render(); });
+  document.getElementById('cusSegment').addEventListener('change', e => { state.segment = e.target.value; state.page=1; render(); });
+  document.getElementById('cusTier').addEventListener('change', e => { state.tier = e.target.value; state.page=1; render(); });
+  document.getElementById('cusSort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+  document.getElementById('cusPager').addEventListener('click', e => {
+    const b = e.target.closest('[data-page]'); if (b) { state.page = +b.dataset.page; render(); }
+  });
+
+  /* ---- Row actions --------------------------------------------------- */
+  document.getElementById('cusTbody').addEventListener('click', e => {
+    const open = e.target.closest('[data-open]');
+    if (open) { e.preventDefault(); openDrawer(open.dataset.open); return; }
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const c = S.get(del.dataset.del);
+      if (c && confirm(`Xoá khách ${c.name}?`)) { S.remove(c.id); render(); window.admToast?.('Đã xoá', 'ok'); }
+    }
+  });
+
+  /* ═════════════════════ DETAIL DRAWER ═════════════════════ */
+  function openDrawer(id){
+    state.currentId = id; state.activeTab = 'info';
+    const el = document.getElementById('cusDrawer');
+    el.hidden = false; el.setAttribute('aria-hidden', 'false');
+    renderDrawer();
+  }
+  function closeDrawer(){
+    const el = document.getElementById('cusDrawer');
+    el.hidden = true; el.setAttribute('aria-hidden', 'true');
+    state.currentId = null;
+  }
+  document.getElementById('cusDrawer').addEventListener('click', e => {
+    if (e.target.matches('[data-close-cus-drawer]')) closeDrawer();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (!document.getElementById('cusImportModal').hidden) closeImport();
+      else if (!document.getElementById('cusDrawer').hidden) closeDrawer();
+    }
+  });
+  document.getElementById('cusTabs').addEventListener('click', e => {
+    const t = e.target.closest('[data-tab]'); if (!t) return;
+    state.activeTab = t.dataset.tab;
+    document.querySelectorAll('#cusTabs [data-tab]').forEach(b => b.classList.toggle('active', b === t));
+    renderTab();
+  });
+
+  function renderDrawer(){
+    const c = S.get(state.currentId); if (!c) return;
+    document.getElementById('cusDrawerTitle').innerHTML = `${c.name} ${tierPill(c.loyaltyTier)} ${segmentBadge(c.segment)}`;
+    renderTab();
+  }
+
+  function renderTab(){
+    const c = S.get(state.currentId); if (!c) return;
+    const body = document.getElementById('cusDrawerBody');
+    switch(state.activeTab){
+      case 'info':         body.innerHTML = tabInfo(c); bindInfo(c); break;
+      case 'addresses':    body.innerHTML = tabAddresses(c); bindAddresses(c); break;
+      case 'orders':       body.innerHTML = tabOrders(c); break;
+      case 'communication':body.innerHTML = tabCommunication(c); bindCommunication(c); break;
+      case 'loyalty':      body.innerHTML = tabLoyalty(c); bindLoyalty(c); break;
+      case 'consent':      body.innerHTML = tabConsent(c); bindConsent(c); break;
+    }
+  }
+
+  /* ----- Tab: Info ----- */
+  function tabInfo(c){
+    return `
+      <section class="drawer-section">
+        <h4>Thông tin cá nhân</h4>
+        <div class="form-row">
+          <label>Họ tên<input id="fiName" value="${esc(c.name)}" maxlength="120"/></label>
+          <label>Giới tính<select id="fiGender">
+            <option value="" ${!c.gender?'selected':''}>—</option>
+            <option value="female" ${c.gender==='female'?'selected':''}>Nữ</option>
+            <option value="male" ${c.gender==='male'?'selected':''}>Nam</option>
+            <option value="other" ${c.gender==='other'?'selected':''}>Khác</option>
+          </select></label>
+        </div>
+        <div class="form-row">
+          <label>Email<input id="fiEmail" value="${esc(c.email||'')}" type="email" maxlength="120"/></label>
+          <label>SĐT<input id="fiPhone" value="${esc(c.phone||'')}" maxlength="20"/></label>
+        </div>
+        <div class="form-row">
+          <label>Ngày sinh<input id="fiDob" value="${esc(c.dob||'')}" type="date"/></label>
+          <label>Tỉnh/TP<input id="fiProv" value="${esc(c.province||'')}" maxlength="100"/></label>
+        </div>
+        <div class="form-row">
+          <label>Tags (phân cách bằng dấu phẩy)<input id="fiTags" value="${esc((c.tags||[]).join(', '))}" maxlength="300"/></label>
+          <label>Nguồn<select id="fiSource">
+            ${['','web','pos','phone','zalo','fb','tiktok','marketplace'].map(v=>`<option value="${v}" ${c.source===v||(!c.source&&!v)?'selected':''}>${v||'(chưa rõ)'}</option>`).join('')}
+          </select></label>
+        </div>
+        <label>Ghi chú nội bộ<textarea id="fiNotes" rows="3" maxlength="2000">${esc(c.notes||'')}</textarea></label>
+        <div class="form-actions">
+          <button class="adm-btn primary" id="fiSave"><i class="fa-solid fa-check"></i> Lưu</button>
+          <span class="spacer"></span>
+          <small class="muted">Tham gia: ${F.dt(c.createdAt)}</small>
+        </div>
+      </section>`;
+  }
+  function bindInfo(c){
+    document.getElementById('fiSave').addEventListener('click', () => {
+      S.update(c.id, {
+        name: v('fiName') || c.name,
+        gender: v('fiGender') || null,
+        email: v('fiEmail') || null,
+        phone: v('fiPhone'),
+        dob: v('fiDob') || null,
+        province: v('fiProv'),
+        tags: v('fiTags').split(',').map(s=>s.trim()).filter(Boolean),
+        source: v('fiSource') || null,
+        notes: v('fiNotes'),
+      });
+      window.admToast?.('Đã lưu thông tin', 'ok');
+      render(); renderDrawer();
+    });
+  }
+
+  /* ----- Tab: Addresses ----- */
+  function tabAddresses(c){
+    const addrs = c.addresses || [];
+    const rows = addrs.length
+      ? addrs.map((a,idx) => `
+        <li>
+          <div>
+            <strong>${esc(a.label || 'Địa chỉ')}</strong>
+            ${a.isDefault ? '<span class="badge info">Mặc định</span>' : ''}
+            ${a.isBilling ? '<span class="badge muted">Hoá đơn</span>' : ''}
+            <br><small>${esc(a.recipientName || c.name)} · ${esc(a.recipientPhone || c.phone || '')}</small>
+            <br><small class="muted">${esc([a.line1, a.ward, a.district, a.province].filter(Boolean).join(', '))}</small>
+          </div>
+          <div class="addr-actions">
+            ${!a.isDefault ? `<button class="icon-btn" data-addr-default="${idx}" title="Đặt mặc định"><i class="fa-solid fa-star"></i></button>` : ''}
+            <button class="icon-btn" data-addr-edit="${idx}" title="Sửa"><i class="fa-solid fa-pen"></i></button>
+            <button class="icon-btn" data-addr-del="${idx}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </li>`).join('')
+      : `<li class="muted">Chưa có địa chỉ nào</li>`;
+    return `
+      <section class="drawer-section">
+        <h4>Sổ địa chỉ</h4>
+        <ul class="addr-list">${rows}</ul>
+        <button class="adm-btn" id="fiAddrNew"><i class="fa-solid fa-plus"></i> Thêm địa chỉ</button>
+      </section>`;
+  }
+  function bindAddresses(c){
+    const body = document.getElementById('cusDrawerBody');
+    document.getElementById('fiAddrNew').addEventListener('click', () => showAddrForm(c, null));
+    body.querySelectorAll('[data-addr-edit]').forEach(b => b.addEventListener('click', () => showAddrForm(c, Number(b.dataset.addrEdit))));
+    body.querySelectorAll('[data-addr-del]').forEach(b => b.addEventListener('click', () => {
+      const idx = Number(b.dataset.addrDel);
+      if (!confirm('Xoá địa chỉ này?')) return;
+      const addrs = [...(c.addresses||[])]; addrs.splice(idx,1);
+      S.update(c.id, { addresses: addrs });
+      renderTab(); render(); window.admToast?.('Đã xoá địa chỉ', 'ok');
+    }));
+    body.querySelectorAll('[data-addr-default]').forEach(b => b.addEventListener('click', () => {
+      const idx = Number(b.dataset.addrDefault);
+      const addrs = (c.addresses||[]).map((a,i) => ({ ...a, isDefault: i === idx }));
+      S.update(c.id, { addresses: addrs });
+      renderTab(); render(); window.admToast?.('Đã đặt mặc định', 'ok');
+    }));
+  }
+  function showAddrForm(c, idx){
+    const a = idx != null ? (c.addresses[idx] || {}) : {};
+    const html = `
+      <section class="drawer-section">
+        <h4>${idx != null ? 'Sửa địa chỉ' : 'Thêm địa chỉ'}</h4>
+        <div class="form-row">
+          <label>Nhãn<input id="afLabel" value="${esc(a.label||'Nhà riêng')}" maxlength="50"/></label>
+          <label>Người nhận<input id="afName" value="${esc(a.recipientName||c.name||'')}" maxlength="120"/></label>
+        </div>
+        <div class="form-row">
+          <label>SĐT nhận<input id="afPhone" value="${esc(a.recipientPhone||c.phone||'')}" maxlength="20"/></label>
+          <label>Địa chỉ<input id="afLine1" value="${esc(a.line1||'')}" maxlength="200"/></label>
+        </div>
+        <div class="form-row">
+          <label>Phường/Xã<input id="afWard" value="${esc(a.ward||'')}" maxlength="100"/></label>
+          <label>Quận/Huyện<input id="afDistrict" value="${esc(a.district||'')}" maxlength="100"/></label>
+          <label>Tỉnh/TP<input id="afProv" value="${esc(a.province||c.province||'')}" maxlength="100"/></label>
+        </div>
+        <div class="form-row">
+          <label class="chk"><input type="checkbox" id="afDefault" ${a.isDefault?'checked':''}/> Đặt làm mặc định</label>
+          <label class="chk"><input type="checkbox" id="afBilling" ${a.isBilling?'checked':''}/> Địa chỉ hoá đơn</label>
+        </div>
+        <div class="form-actions">
+          <button class="adm-btn primary" id="afSave"><i class="fa-solid fa-check"></i> Lưu</button>
+          <button class="adm-btn" id="afCancel">Huỷ</button>
+        </div>
+      </section>`;
+    document.getElementById('cusDrawerBody').innerHTML = html;
+    document.getElementById('afCancel').addEventListener('click', () => renderTab());
+    document.getElementById('afSave').addEventListener('click', () => {
+      const na = {
+        label: v('afLabel'), recipientName: v('afName'), recipientPhone: v('afPhone'),
+        line1: v('afLine1'), ward: v('afWard'), district: v('afDistrict'), province: v('afProv'),
+        isDefault: document.getElementById('afDefault').checked,
+        isBilling: document.getElementById('afBilling').checked,
+      };
+      let addrs = [...(c.addresses||[])];
+      if (na.isDefault) addrs = addrs.map(x => ({ ...x, isDefault: false }));
+      if (idx != null) addrs[idx] = { ...addrs[idx], ...na };
+      else addrs.push(na);
+      S.update(c.id, { addresses: addrs });
+      renderTab(); render(); window.admToast?.('Đã lưu địa chỉ', 'ok');
+    });
+  }
+
+  /* ----- Tab: Orders ----- */
+  function tabOrders(c){
+    const ords = S.findOrdersFor(c.id);
+    if (!ords.length) return `<section class="drawer-section"><h4>Đơn hàng</h4><p class="muted">Khách chưa có đơn nào (hoặc đơn chưa liên kết).</p></section>`;
+    const rows = ords.slice(0, 50).map(o => `
+      <tr>
+        <td><a href="admin-orders.html#${o.id}" class="mono">${o.code}</a></td>
+        <td><small>${F.date(o.placedAt)}</small></td>
+        <td>${(o.items||[]).map(i=>i.name).slice(0,2).join(', ')}${o.items?.length>2?` +${o.items.length-2}`:''}</td>
+        <td style="text-align:right"><strong>${F.vnd(o.total)}</strong></td>
+        <td><span class="badge ${({pending:'warn',confirmed:'info',packing:'info',shipping:'info',delivered:'ok',cancelled:'bad',returned:'bad'})[o.status]||'muted'}">${window.DTX_ADMIN_ORDERS.statusLabel(o.status)}</span></td>
+      </tr>`).join('');
+    const totalSpent = ords.filter(o=>o.status==='delivered').reduce((s,o)=>s+o.total,0);
+    return `
+      <section class="drawer-section">
+        <h4>Lịch sử đơn · ${ords.length} đơn · đã nhận ${F.vnd(totalSpent)}</h4>
+        <table class="adm-tbl mini">
+          <thead><tr><th>Mã</th><th>Ngày</th><th>Sản phẩm</th><th style="text-align:right">Tổng</th><th>Trạng thái</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </section>`;
+  }
+
+  /* ----- Tab: Communication ----- */
+  function tabCommunication(c){
+    const comms = c.communications || [];
+    const rows = comms.length
+      ? comms.map(x => `
+        <li class="comm-item comm-${x.channel}">
+          <div class="comm-head">
+            <i class="fa-solid fa-${({email:'envelope',sms:'comment-sms',call:'phone',chat:'comments',note:'note-sticky'})[x.channel]||'comment'}"></i>
+            <strong>${esc(x.subject || labelChannel(x.channel))}</strong>
+            <span class="muted">· ${x.direction === 'in' ? 'Khách → ta' : 'Ta → khách'} · ${esc(x.actor||'admin')} · ${F.dt(x.at)}</span>
+          </div>
+          <div class="comm-body">${esc(x.body)}</div>
+        </li>`).join('')
+      : `<li class="muted">Chưa có lịch sử liên lạc</li>`;
+    return `
+      <section class="drawer-section">
+        <h4>Thêm ghi chú / lịch sử liên lạc</h4>
+        <div class="form-row">
+          <label>Kênh<select id="fcChannel">
+            <option value="note">Ghi chú nội bộ</option>
+            <option value="email">Email</option>
+            <option value="sms">SMS</option>
+            <option value="call">Cuộc gọi</option>
+            <option value="chat">Chat</option>
+          </select></label>
+          <label>Hướng<select id="fcDirection">
+            <option value="out">Ta → khách</option>
+            <option value="in">Khách → ta</option>
+          </select></label>
+        </div>
+        <label>Tiêu đề<input id="fcSubject" maxlength="200" placeholder="Vd. Gọi xác nhận đơn"/></label>
+        <label>Nội dung<textarea id="fcBody" rows="3" maxlength="2000"></textarea></label>
+        <div class="form-actions">
+          <button class="adm-btn primary" id="fcAdd"><i class="fa-solid fa-plus"></i> Thêm</button>
+        </div>
+      </section>
+      <section class="drawer-section">
+        <h4>Timeline</h4>
+        <ul class="comm-list">${rows}</ul>
+      </section>`;
+  }
+  function bindCommunication(c){
+    document.getElementById('fcAdd').addEventListener('click', () => {
+      const body = v('fcBody').trim();
+      if (!body) { window.admToast?.('Nhập nội dung trước', 'bad'); return; }
+      S.addCommunication(c.id, {
+        channel: v('fcChannel'),
+        direction: v('fcDirection'),
+        subject: v('fcSubject'),
+        body,
+      });
+      renderTab(); window.admToast?.('Đã thêm vào timeline', 'ok');
+    });
+  }
+  function labelChannel(ch){ return ({ email:'Email', sms:'SMS', call:'Cuộc gọi', chat:'Chat', note:'Ghi chú' })[ch] || ch; }
+
+  /* ----- Tab: Loyalty ----- */
+  function tabLoyalty(c){
+    const progress = tierProgress(c.spend);
+    return `
+      <section class="drawer-section">
+        <h4>Hạng thành viên</h4>
+        <div class="loyalty-box">
+          <div class="loyalty-top">
+            <div>
+              ${tierPill(c.loyaltyTier)}
+              <strong style="font-size:20px;margin-left:6px">${F.vnd(c.spend)}</strong>
+              <small class="muted"> · tổng chi tiêu</small>
+            </div>
+            <div style="text-align:right">
+              <strong style="font-size:16px">${(c.loyaltyPoints||0).toLocaleString('vi-VN')}</strong>
+              <small class="muted"> điểm</small>
+            </div>
+          </div>
+          <div class="loyalty-bar"><div class="loyalty-bar-fill" style="width:${progress.pct}%"></div></div>
+          <small class="muted">${progress.message}</small>
+        </div>
+      </section>
+      <section class="drawer-section">
+        <h4>Điều chỉnh điểm thủ công</h4>
+        <div class="form-row">
+          <label>Delta<input id="flPts" type="number" placeholder="+100 hoặc -50"/></label>
+          <label>Lý do<input id="flReason" maxlength="200" placeholder="Vd. Bù lỗi campaign"/></label>
+        </div>
+        <div class="form-actions">
+          <button class="adm-btn" id="flApply"><i class="fa-solid fa-check"></i> Áp dụng</button>
+          <span class="spacer"></span>
+          <button class="adm-btn" id="flRecompute"><i class="fa-solid fa-rotate"></i> Tính lại tier & phân khúc</button>
+        </div>
+      </section>`;
+  }
+  function bindLoyalty(c){
+    document.getElementById('flApply').addEventListener('click', () => {
+      const delta = Number(v('flPts')) || 0;
+      if (!delta) { window.admToast?.('Nhập số điểm khác 0', 'bad'); return; }
+      const reason = v('flReason') || (delta>0?'Cộng điểm thủ công':'Trừ điểm thủ công');
+      const newPts = Math.max(0, (c.loyaltyPoints||0) + delta);
+      S.update(c.id, { loyaltyPoints: newPts });
+      S.addCommunication(c.id, { channel:'note', direction:'out', subject:`${delta>0?'+':''}${delta} điểm loyalty`, body: reason });
+      renderTab(); window.admToast?.('Đã cập nhật điểm', 'ok');
+    });
+    document.getElementById('flRecompute').addEventListener('click', () => {
+      const tier = S.computeTier(c.spend);
+      const seg = S.computeSegment(c);
+      S.update(c.id, { loyaltyTier: tier, segment: seg });
+      renderDrawer(); render(); window.admToast?.('Đã tính lại', 'ok');
+    });
+  }
+  function tierProgress(spend){
+    const bands = [
+      { to: 2_000_000, name: 'Bạc' },
+      { to: 10_000_000, name: 'Vàng' },
+      { to: 50_000_000, name: 'Bạch kim' },
+      { to: Infinity, name: '—' },
+    ];
+    for (const b of bands) {
+      if (spend < b.to) {
+        const prev = bands[bands.indexOf(b)-1]?.to || 0;
+        const pct = b.to === Infinity ? 100 : Math.round(((spend - prev) / (b.to - prev)) * 100);
+        const left = b.to === Infinity ? 0 : (b.to - spend);
+        return {
+          pct: Math.max(2, Math.min(100, pct)),
+          message: b.to === Infinity
+            ? 'Hạng cao nhất — cảm ơn khách!'
+            : `Còn ${F.vnd(left)} để lên hạng ${b.name}`,
+        };
+      }
+    }
+    return { pct: 100, message: '' };
+  }
+
+  /* ----- Tab: Consent ----- */
+  function tabConsent(c){
+    return `
+      <section class="drawer-section">
+        <h4>Đồng ý nhận thông tin</h4>
+        <ul class="consent-list">
+          <li><label class="chk"><input type="checkbox" id="fcEmail" ${c.consentEmail?'checked':''}/> <b>Email</b> · newsletter, khuyến mãi</label></li>
+          <li><label class="chk"><input type="checkbox" id="fcSms" ${c.consentSms?'checked':''}/> <b>SMS</b> · mã giao dịch, chương trình</label></li>
+          <li><label class="chk"><input type="checkbox" id="fcCall" ${c.consentCall?'checked':''}/> <b>Gọi điện</b> · tư vấn sản phẩm</label></li>
+        </ul>
+        <small class="muted">Cập nhật lần cuối: ${c.consentUpdatedAt ? F.dt(c.consentUpdatedAt) : '—'}</small>
+        <div class="form-actions">
+          <button class="adm-btn primary" id="fcSave"><i class="fa-solid fa-check"></i> Lưu</button>
+        </div>
+      </section>
+      <section class="drawer-section">
+        <h4>Trạng thái tài khoản</h4>
+        <div class="form-row">
+          <label>Segment override<select id="fcSegment">
+            <option value="">(Tự động)</option>
+            ${S.SEGMENTS.map(s => `<option value="${s}" ${c.segment===s?'selected':''}>${S.segmentLabel(s)}</option>`).join('')}
+          </select></label>
+          <label>Trạng thái<select id="fcStatus">
+            ${['active','inactive','suspended'].map(s => `<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
+          </select></label>
+        </div>
+        <div class="form-actions">
+          <button class="adm-btn" id="fcStatusSave"><i class="fa-solid fa-check"></i> Cập nhật</button>
+        </div>
+      </section>`;
+  }
+  function bindConsent(c){
+    document.getElementById('fcSave').addEventListener('click', () => {
+      const patch = {
+        consentEmail: document.getElementById('fcEmail').checked,
+        consentSms: document.getElementById('fcSms').checked,
+        consentCall: document.getElementById('fcCall').checked,
+        consentUpdatedAt: new Date().toISOString(),
+      };
+      S.update(c.id, patch);
+      S.addCommunication(c.id, { channel:'note', direction:'out', subject:'Cập nhật consent',
+        body: `Email=${patch.consentEmail?'✓':'✗'} · SMS=${patch.consentSms?'✓':'✗'} · Call=${patch.consentCall?'✓':'✗'}` });
+      renderTab(); window.admToast?.('Đã lưu đồng ý', 'ok');
+    });
+    document.getElementById('fcStatusSave').addEventListener('click', () => {
+      S.update(c.id, {
+        segment: v('fcSegment') || S.computeSegment(c),
+        status: v('fcStatus'),
+      });
+      renderDrawer(); render(); window.admToast?.('Đã cập nhật trạng thái', 'ok');
+    });
+  }
+
+  /* ═════════════════════ Create / Import / Export ═════════════════════ */
+  document.getElementById('btnCusReset').addEventListener('click', () => {
+    if (confirm('Đặt lại dữ liệu khách hàng?')) { S.reset(); render(); window.admToast?.('Reset OK', 'ok'); }
+  });
+  document.getElementById('btnCusCreate').addEventListener('click', () => {
+    const c = S.create({ name: 'Khách mới', phone: '', email: '', province: '' });
+    openDrawer(c.id); render();
+  });
+  document.getElementById('btnCusExport').addEventListener('click', () => {
+    const all = S.all();
+    const esc = s => '"'+String(s??'').replace(/"/g,'""')+'"';
+    const header = 'Tên,Email,SĐT,Tỉnh,Tags,Tier,PhânKhúc,ChiTiêu,Đơn,ĐiểmLoyalty,TạoLúc,ĐơnGầnNhất';
+    const rows = all.map(c => [c.name,c.email,c.phone,c.province,(c.tags||[]).join('|'),c.loyaltyTier,c.segment,c.spend,c.orders,c.loyaltyPoints,c.createdAt,c.lastOrderAt||''].map(esc).join(','));
+    const csv = '\ufeff' + [header, ...rows].join('\n');
+    const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const a = document.createElement('a'); a.href=url; a.download=`customers-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  /* ---- Import CSV ---- */
+  const impModal = document.getElementById('cusImportModal');
+  function openImport(){ impModal.hidden = false; impModal.setAttribute('aria-hidden','false');
+    document.getElementById('cusImpFile').value=''; document.getElementById('cusImpResult').textContent=''; }
+  function closeImport(){ impModal.hidden = true; impModal.setAttribute('aria-hidden','true'); }
+  document.getElementById('btnCusImport').addEventListener('click', openImport);
+  impModal.addEventListener('click', e => { if (e.target.matches('[data-close-import]')) closeImport(); });
+  document.getElementById('cusImpRun').addEventListener('click', () => {
+    const file = document.getElementById('cusImpFile').files?.[0];
+    const strategy = document.getElementById('cusImpStrategy').value;
+    const out = document.getElementById('cusImpResult');
+    if (!file) { out.textContent = 'Chưa chọn file CSV.'; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const rows = parseCsv(String(reader.result || '')).filter(r => r.name);
+        const all = S.all();
+        const byEmail = new Map(all.filter(c=>c.email).map(c=>[c.email.toLowerCase(),c]));
+        const byPhone = new Map(all.filter(c=>c.phone).map(c=>[c.phone,c]));
+        let created=0, updated=0, skipped=0;
+        for (const r of rows) {
+          const existing =
+            (r.email && byEmail.get(r.email.toLowerCase())) ||
+            (r.phone && byPhone.get(r.phone));
+          if (existing) {
+            if (strategy === 'skip') { skipped++; continue; }
+            const patch = strategy === 'overwrite'
+              ? { ...r, tags: (r.tags||'').split('|').filter(Boolean) }
+              : {
+                name: existing.name || r.name,
+                email: existing.email || r.email,
+                phone: existing.phone || r.phone,
+                province: existing.province || r.province,
+                notes: existing.notes || r.notes,
+                tags: existing.tags?.length ? existing.tags : (r.tags||'').split('|').filter(Boolean),
+              };
+            S.update(existing.id, patch); updated++;
+          } else {
+            S.create({ name: r.name, email: r.email||null, phone: r.phone||'', province: r.province||'',
+              notes: r.notes||'', tags: (r.tags||'').split('|').filter(Boolean) });
+            created++;
+          }
+        }
+        out.textContent = `Xong — tạo ${created}, cập nhật ${updated}, bỏ qua ${skipped}.`;
+        render();
+      } catch (e) { out.textContent = 'Lỗi đọc CSV: ' + (e?.message || e); }
+    };
+    reader.readAsText(file, 'utf-8');
+  });
+
+  function parseCsv(text){
+    const lines = text.replace(/\r/g,'').split('\n').filter(l => l.trim());
+    if (!lines.length) return [];
+    const header = splitCsvLine(lines[0]).map(s => s.trim().toLowerCase());
+    return lines.slice(1).map(l => {
+      const cols = splitCsvLine(l);
+      const r = {};
+      header.forEach((h, i) => r[h] = (cols[i]||'').trim());
+      return r;
+    });
+  }
+  function splitCsvLine(line){
+    const out = []; let cur=''; let inQ=false;
+    for (let i=0;i<line.length;i++){
+      const ch = line[i];
+      if (inQ) {
+        if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') inQ = false;
+        else cur += ch;
+      } else {
+        if (ch === ',') { out.push(cur); cur=''; }
+        else if (ch === '"') inQ = true;
+        else cur += ch;
+      }
+    }
+    out.push(cur); return out;
+  }
+
+  /* ---- Helpers ---- */
+  function v(id){ return document.getElementById(id)?.value ?? ''; }
+  function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+  window.addEventListener('dtx:customers-updated', render);
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_customers')) render(); });
+  render();
+})();
+</script>
+</body></html>

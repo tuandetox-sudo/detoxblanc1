@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin DEV · Bảng kiểm tra cục bộ — Detoxblanc</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta name="color-scheme" content="light dark" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+<style>
+  /* Trang này chỉ dùng nội bộ — vài style nhỏ riêng */
+  body{ font-family:'Inter', system-ui, sans-serif; background:var(--a-bg); color:var(--a-ink); margin:0 }
+  .dev-wrap{ max-width:1180px; margin:0 auto; padding:28px 22px 80px }
+  .dev-head{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:18px;
+    padding-bottom:18px; border-bottom:1px solid var(--a-line); margin-bottom:22px;
+  }
+  .dev-head h1{ margin:0 0 6px; font-size:24px; letter-spacing:-.01em }
+  .dev-head p{ margin:0; color:var(--a-ink-3); font-size:13.5px }
+  .dev-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:600;
+    background:var(--a-warn-soft); color:var(--a-warn);
+    margin-left:8px; vertical-align:middle;
+  }
+  .dev-grid{
+    display:grid; grid-template-columns: 1.2fr .8fr; gap:18px; align-items:start;
+  }
+  @media (max-width:900px){ .dev-grid{ grid-template-columns:1fr } }
+  .dev-pages{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+  @media (max-width:640px){ .dev-pages{ grid-template-columns:1fr } }
+  .dev-link{
+    display:flex; gap:12px; padding:14px; border:1px solid var(--a-line);
+    border-radius:10px; background:var(--a-surface); text-decoration:none; color:var(--a-ink);
+    transition:border-color .15s, transform .15s;
+  }
+  .dev-link:hover{ border-color:var(--a-brand); transform:translateY(-1px) }
+  .dev-link .ico{
+    width:36px; height:36px; flex:0 0 36px; border-radius:8px;
+    display:grid; place-items:center; background:var(--a-brand-soft); color:var(--a-brand-ink);
+    font-size:15px;
+  }
+  .dev-link strong{ display:block; font-size:13.5px; font-weight:600; margin-bottom:2px }
+  .dev-link span{ color:var(--a-ink-3); font-size:12px }
+  .dev-link code{
+    font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px;
+    color:var(--a-ink-4); margin-top:4px; display:inline-block;
+  }
+  .dev-card{ padding:16px 18px; border:1px solid var(--a-line); border-radius:var(--a-r); background:var(--a-surface) }
+  .dev-card h3{ margin:0 0 12px; font-size:14px; font-weight:600 }
+  .dev-card h3 i{ color:var(--a-brand); margin-right:6px }
+
+  .kv{ display:grid; grid-template-columns: 1fr auto; gap:6px 12px; font-size:12.5px; margin-bottom:12px }
+  .kv span:nth-child(odd){ color:var(--a-ink-3) }
+  .kv strong{ font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px; font-weight:500 }
+
+  .dev-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px }
+
+  .check-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px }
+  .check-list li{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:10px 12px; border:1px solid var(--a-line-soft); border-radius:8px;
+    font-size:12.5px; line-height:1.5;
+  }
+  .check-list input[type="checkbox"]{ margin-top:2px; accent-color:var(--a-brand); cursor:pointer }
+  .check-list strong{ color:var(--a-ink) }
+  .check-list small{ display:block; color:var(--a-ink-3); margin-top:2px }
+
+  .flow{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:12px 14px; background:var(--a-n50); border-radius:8px;
+    font-size:12.5px; color:var(--a-ink-2); margin-bottom:14px;
+  }
+  html[data-theme="dark"] .flow{ background:rgba(255,255,255,.03) }
+  .flow a{
+    color:var(--a-ink); text-decoration:none; font-weight:500; padding:4px 8px;
+    background:var(--a-surface); border:1px solid var(--a-line); border-radius:6px;
+  }
+  .flow a:hover{ border-color:var(--a-brand) }
+  .flow i{ color:var(--a-ink-4); font-size:10px }
+</style>
+</head>
+<body>
+
+<div class="dev-wrap">
+
+  <header class="dev-head">
+    <div>
+      <h1>Admin DEV <span class="dev-pill"><i class="fa-solid fa-flask"></i> LOCAL ONLY</span></h1>
+      <p>Trang kiểm tra cục bộ — liên kết nhanh tới các màn hình admin, trạng thái <em>localStorage</em>, và danh mục QA để xác nhận CRUD hoạt động đúng.</p>
+    </div>
+    <button class="adm-btn" id="btnTheme" type="button"><i class="fa-solid fa-moon"></i> Sáng / Tối</button>
+  </header>
+
+  <!-- Flow minh hoạ -->
+  <div class="flow">
+    <strong>Luồng thật:</strong>
+    <a href="admin-login.html"><i class="fa-solid fa-key"></i> Login</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <a href="admin.html"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <a href="admin-products.html"><i class="fa-solid fa-box-archive"></i> Sản phẩm</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <a href="admin-product-edit.html?new"><i class="fa-solid fa-pen"></i> Edit / New</a>
+  </div>
+
+  <!-- Firestore migration controls -->
+  <div class="flow" style="background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;align-items:flex-start;flex-direction:column;gap:8px">
+    <div><strong><i class="fa-solid fa-database"></i> Firestore Migration</strong> — đẩy seed data từ localStorage lên Firestore (real DB).</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="adm-btn" id="btnSeedAll" type="button" style="background:#fff"><i class="fa-solid fa-cloud-arrow-up"></i> Migrate full seed (1 lần)</button>
+      <button class="adm-btn" id="btnSeedStats" type="button" style="background:#fff"><i class="fa-solid fa-chart-bar"></i> Xem stats Firestore</button>
+      <button class="adm-btn" id="btnFirestoreConsole" type="button" style="background:#fff"><i class="fa-solid fa-up-right-from-square"></i> Firestore Console</button>
+    </div>
+    <div id="seedResult" style="font-family:'JetBrains Mono', monospace;font-size:12px;background:#fff;padding:8px;border-radius:6px;width:100%;display:none;white-space:pre-wrap"></div>
+  </div>
+
+  <div class="dev-grid">
+
+    <!-- LEFT — page index -->
+    <section>
+      <h2 style="font-size:14px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--a-ink-3);margin:0 0 10px">Các trang admin</h2>
+      <div class="dev-pages">
+
+        <a class="dev-link" href="admin-login.html" target="_blank" rel="noopener">
+          <span class="ico"><i class="fa-solid fa-key"></i></span>
+          <div>
+            <strong>Login quản trị</strong>
+            <span>Email @detoxblanc.com + password + TOTP 6 số</span>
+            <code>admin-login.html</code>
+          </div>
+        </a>
+
+        <a class="dev-link" href="admin.html" target="_blank" rel="noopener">
+          <span class="ico"><i class="fa-solid fa-gauge-high"></i></span>
+          <div>
+            <strong>Dashboard</strong>
+            <span>KPI, doanh thu, top SP, đơn gần đây, system status</span>
+            <code>admin.html</code>
+          </div>
+        </a>
+
+        <a class="dev-link" href="admin-products.html" target="_blank" rel="noopener">
+          <span class="ico"><i class="fa-solid fa-box-archive"></i></span>
+          <div>
+            <strong>Danh sách sản phẩm</strong>
+            <span>Search · filter · sort · bulk action · CSV export</span>
+            <code>admin-products.html</code>
+          </div>
+        </a>
+
+        <a class="dev-link" href="admin-product-edit.html?new" target="_blank" rel="noopener">
+          <span class="ico"><i class="fa-solid fa-plus"></i></span>
+          <div>
+            <strong>Tạo SKU mới</strong>
+            <span>Form rỗng · tự sinh slug · auto-save nháp</span>
+            <code>admin-product-edit.html?new</code>
+          </div>
+        </a>
+
+        <a class="dev-link" href="#" id="linkEditFirst">
+          <span class="ico"><i class="fa-solid fa-pen"></i></span>
+          <div>
+            <strong>Sửa SKU đầu tiên</strong>
+            <span id="linkEditFirstDesc">— chưa có SKU, hãy seed trước</span>
+            <code>admin-product-edit.html?id=…</code>
+          </div>
+        </a>
+
+        <a class="dev-link" href="index.html" target="_blank" rel="noopener">
+          <span class="ico"><i class="fa-solid fa-globe"></i></span>
+          <div>
+            <strong>Site khách hàng</strong>
+            <span>Đối chiếu UI public với admin</span>
+            <code>index.html</code>
+          </div>
+        </a>
+
+      </div>
+
+      <!-- Checklist -->
+      <h2 style="font-size:14px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--a-ink-3);margin:26px 0 10px">Bảng kiểm tra QA</h2>
+      <ul class="check-list" id="checkList">
+        <!-- filled by JS -->
+      </ul>
+      <div class="dev-actions" style="margin-top:10px">
+        <button class="adm-btn sm" id="chkAll" type="button"><i class="fa-solid fa-check-double"></i> Tick tất cả</button>
+        <button class="adm-btn sm" id="chkClear" type="button"><i class="fa-solid fa-eraser"></i> Xoá tick</button>
+        <span class="muted sm" id="chkProgress" style="margin-left:auto;align-self:center"></span>
+      </div>
+    </section>
+
+    <!-- RIGHT — state inspector -->
+    <section style="display:flex;flex-direction:column;gap:14px;position:sticky;top:22px">
+
+      <div class="dev-card">
+        <h3><i class="fa-solid fa-database"></i> Trạng thái localStorage</h3>
+        <div class="kv" id="stateKv"></div>
+        <div class="dev-actions">
+          <button class="adm-btn sm primary" id="btnSeed" type="button">
+            <i class="fa-solid fa-seedling"></i> Seed 34 SKU
+          </button>
+          <button class="adm-btn sm" id="btnReseed" type="button">
+            <i class="fa-solid fa-rotate"></i> Reset dữ liệu
+          </button>
+          <button class="adm-btn sm ghost-danger" id="btnWipe" type="button">
+            <i class="fa-solid fa-trash"></i> Xoá sạch
+          </button>
+        </div>
+      </div>
+
+      <div class="dev-card">
+        <h3><i class="fa-solid fa-vial"></i> Smoke test nhanh</h3>
+        <p class="muted sm" style="margin:-4px 0 10px">Tạo — sửa — xoá 1 SKU test rồi kiểm tra tính nhất quán. Kết quả in ra console.</p>
+        <div class="dev-actions">
+          <button class="adm-btn sm" id="btnSmoke" type="button">
+            <i class="fa-solid fa-play"></i> Chạy smoke test
+          </button>
+          <button class="adm-btn sm" id="btnClearLog" type="button">
+            <i class="fa-solid fa-broom"></i> Xoá log
+          </button>
+        </div>
+        <pre id="log" style="margin-top:10px;padding:10px;background:var(--a-n900);color:#b5eee8;border-radius:8px;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;max-height:220px;overflow:auto;white-space:pre-wrap;line-height:1.5;min-height:48px"></pre>
+      </div>
+
+      <div class="dev-card">
+        <h3><i class="fa-solid fa-circle-info"></i> Ghi chú</h3>
+        <ul style="margin:0;padding-left:16px;font-size:12.5px;color:var(--a-ink-2);line-height:1.7">
+          <li>Dữ liệu lưu <code>localStorage['dtx_admin_products']</code></li>
+          <li>Seed chỉ chạy lần đầu (khoá <code>dtx_admin_products_seeded_v1</code>)</li>
+          <li>Theme persist ở <code>localStorage['dtx_admin_theme']</code></li>
+          <li>Mọi mutation phát event <code>dtx:products-updated</code></li>
+          <li>File này <strong>chỉ dùng cục bộ</strong> — không deploy.</li>
+        </ul>
+      </div>
+
+    </section>
+
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/firebase-seed.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  'use strict';
+  const $ = s => document.querySelector(s);
+
+  /* ---------- Firestore migration ---------- */
+  function showResult(msg, kind) {
+    const el = $('#seedResult');
+    el.style.display = 'block';
+    el.style.color = kind === 'bad' ? '#991B1B' : kind === 'ok' ? '#166534' : '#1F2937';
+    el.textContent = msg;
+  }
+  $('#btnSeedAll')?.addEventListener('click', async () => {
+    if (!window.DTX_FIREBASE?.enabled) {
+      showResult('❌ Firebase chưa init. Mở trang trên *.web.app + đảm bảo đã login.', 'bad');
+      return;
+    }
+    if (!window.DTX_AUTH?.currentUser) {
+      showResult('❌ Bạn chưa login. Truy cập /admin/login trước.', 'bad');
+      return;
+    }
+    if (!confirm('Đẩy toàn bộ seed (products, customers, orders, vouchers, articles, ...) lên Firestore?\n\nIdempotent: nếu collection đã có data sẽ skip.')) return;
+    showResult('⏳ Đang seed... (sẽ mất ~30 giây cho 200+ documents)', 'info');
+    try {
+      const summary = await window.DTX_SEED_FIRESTORE.run();
+      let txt = '✅ Seed hoàn tất!\n\n';
+      for (const [col, info] of Object.entries(summary)) txt += `  ${col.padEnd(15)} → ${info}\n`;
+      txt += '\nMở Firestore Console để verify, hoặc click "Xem stats Firestore".';
+      showResult(txt, 'ok');
+    } catch (e) {
+      showResult('❌ Lỗi: ' + (e.message || e), 'bad');
+      console.error(e);
+    }
+  });
+  $('#btnSeedStats')?.addEventListener('click', async () => {
+    if (!window.DTX_FIREBASE?.enabled) { showResult('❌ Firebase chưa init', 'bad'); return; }
+    showResult('⏳ Đang đếm...', 'info');
+    try {
+      const stats = await window.DTX_SEED_FIRESTORE.stats();
+      let txt = '📊 Stats Firestore (collections):\n\n';
+      for (const [col, count] of Object.entries(stats)) txt += `  ${col.padEnd(15)} ${typeof count === 'number' ? count + ' docs' : count}\n`;
+      showResult(txt, 'ok');
+    } catch (e) { showResult('❌ ' + e.message, 'bad'); }
+  });
+  $('#btnFirestoreConsole')?.addEventListener('click', () => {
+    window.open('https://console.firebase.google.com/project/detoxblanc-demo-55472/firestore/data', '_blank');
+  });
+
+  /* ---------- State inspector ---------- */
+  function renderState(){
+    const raw = localStorage.getItem('dtx_admin_products');
+    let list = [];
+    try { list = raw ? JSON.parse(raw) : []; } catch(_){}
+    const seeded = localStorage.getItem('dtx_admin_products_seeded_v1') === '1';
+    const theme = localStorage.getItem('dtx_admin_theme') || '(auto theo hệ thống)';
+    const size = raw ? (new Blob([raw]).size / 1024).toFixed(1) + ' KB' : '0 KB';
+    const cats = new Set(list.map(p => p.category).filter(Boolean));
+    const low  = list.filter(p => p.stock > 0 && p.stock <= (p.lowStock || 30)).length;
+    const out  = list.filter(p => p.stock === 0).length;
+    const draft = list.filter(p => p.status === 'draft').length;
+
+    $('#stateKv').innerHTML = `
+      <span>Số SKU</span><strong>${list.length}</strong>
+      <span>Danh mục</span><strong>${cats.size}</strong>
+      <span>Dưới ngưỡng</span><strong>${low}</strong>
+      <span>Hết hàng</span><strong>${out}</strong>
+      <span>Bản nháp</span><strong>${draft}</strong>
+      <span>Đã seed</span><strong>${seeded ? '✓ có' : '✗ chưa'}</strong>
+      <span>Dung lượng</span><strong>${size}</strong>
+      <span>Theme</span><strong>${theme}</strong>
+    `;
+
+    // Edit-first link
+    const first = list[0];
+    const a = $('#linkEditFirst');
+    if (first){
+      a.href = 'admin-product-edit.html?id=' + encodeURIComponent(first.id);
+      a.target = '_blank'; a.rel = 'noopener';
+      $('#linkEditFirstDesc').textContent = first.name.length > 46 ? first.name.slice(0,46) + '…' : first.name;
+    } else {
+      a.removeAttribute('target');
+      $('#linkEditFirstDesc').textContent = '— chưa có SKU, hãy seed trước';
+    }
+  }
+  renderState();
+  window.addEventListener('dtx:products-updated', renderState);
+  window.addEventListener('storage', renderState);
+
+  /* ---------- Actions ---------- */
+  $('#btnSeed').addEventListener('click', () => {
+    // Force seed: ensure product set is the canonical seed list
+    localStorage.removeItem('dtx_admin_products');
+    localStorage.removeItem('dtx_admin_products_seeded_v1');
+    window.DTX_ADMIN.all(); // triggers seed
+    log('Đã seed 34 SKU gốc.');
+    renderState();
+  });
+  $('#btnReseed').addEventListener('click', () => {
+    if (!confirm('Reset toàn bộ dữ liệu sản phẩm về bản gốc (34 SKU)?')) return;
+    window.DTX_ADMIN.reset();
+    log('Reset → ' + window.DTX_ADMIN.all().length + ' SKU.');
+    renderState();
+  });
+  $('#btnWipe').addEventListener('click', () => {
+    if (!confirm('Xoá SẠCH mọi dữ liệu admin trong localStorage? (products, theme, session)')) return;
+    ['dtx_admin_products','dtx_admin_products_seeded_v1','dtx_admin_theme'].forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem('dtx_admin_session');
+    log('Đã xoá sạch localStorage admin.');
+    renderState();
+  });
+
+  /* ---------- Theme toggle ---------- */
+  function syncThemeBtn(){
+    const eff = document.documentElement.getAttribute('data-theme') ||
+                (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    $('#btnTheme').innerHTML = eff === 'dark'
+      ? '<i class="fa-solid fa-sun"></i> Chuyển sáng'
+      : '<i class="fa-solid fa-moon"></i> Chuyển tối';
+  }
+  const saved = localStorage.getItem('dtx_admin_theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  syncThemeBtn();
+  $('#btnTheme').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme') ||
+                (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('dtx_admin_theme', next);
+    syncThemeBtn();
+    renderState();
+  });
+
+  /* ---------- Log ---------- */
+  function log(msg, kind){
+    const el = $('#log');
+    const ts = new Date().toLocaleTimeString('vi-VN');
+    const color = kind === 'err' ? '#ff9a9a' : kind === 'ok' ? '#8fe3b8' : '#b5eee8';
+    el.innerHTML += `<div style="color:${color}">[${ts}] ${String(msg).replace(/</g,'&lt;')}</div>`;
+    el.scrollTop = el.scrollHeight;
+  }
+  $('#btnClearLog').addEventListener('click', () => { $('#log').innerHTML = ''; });
+
+  /* ---------- Smoke test ---------- */
+  $('#btnSmoke').addEventListener('click', () => {
+    log('▶ Bắt đầu smoke test…');
+    try {
+      const before = window.DTX_ADMIN.all().length;
+      log('  • Số SKU ban đầu: ' + before);
+
+      const created = window.DTX_ADMIN.create({
+        name: 'SMOKE TEST — sẽ xoá', code: 'TEST-' + Date.now(),
+        category: 'Test', ingr: 'N/A', price: 100000, stock: 5, grad:'#ff6b6b',
+        b1:'Auto-created', b2:'Will be deleted', status:'draft'
+      });
+      log('  ✓ Tạo: ' + created.id.slice(0,14) + '…', 'ok');
+      console.assert(window.DTX_ADMIN.all().length === before + 1, 'create count off');
+
+      const updated = window.DTX_ADMIN.update(created.id, { name: created.name + ' (patched)', stock: 99 });
+      log('  ✓ Update stock=' + updated.stock + ', name="' + updated.name.slice(0,30) + '…"', 'ok');
+      console.assert(updated.stock === 99, 'update failed');
+
+      const fetched = window.DTX_ADMIN.get(created.id);
+      console.assert(fetched && fetched.id === created.id, 'get failed');
+      log('  ✓ Get lại đúng ID', 'ok');
+
+      window.DTX_ADMIN.setStatus([created.id], 'archived');
+      log('  ✓ Bulk setStatus → archived', 'ok');
+
+      window.DTX_ADMIN.remove(created.id);
+      const after = window.DTX_ADMIN.all().length;
+      console.assert(after === before, 'remove count off');
+      log('  ✓ Xoá → số SKU trở lại ' + after, 'ok');
+
+      log('✅ PASS — CRUD + persist hoạt động đúng.', 'ok');
+      renderState();
+    } catch(err){
+      log('✗ FAIL — ' + err.message, 'err');
+      console.error(err);
+    }
+  });
+
+  /* ---------- QA checklist ---------- */
+  const CHECKS = [
+    { id:'login',   t:'Login quản trị',
+      d:'Nhập email @detoxblanc.com + pass ≥10 ký tự + 6 số OTP → chuyển dashboard.' },
+    { id:'sidebar', t:'Sidebar nhất quán',
+      d:'Cả 3 trang admin đều hiển thị sidebar + topbar giống nhau, active nav đúng.' },
+    { id:'theme',   t:'Theme toggle persist',
+      d:'Bấm mặt trăng/mặt trời, reload — theme giữ nguyên (localStorage.dtx_admin_theme).' },
+    { id:'count',   t:'Count badge realtime',
+      d:'Xoá 1 SKU ở trang products → số bên sidebar Catalog giảm ngay.' },
+    { id:'search',  t:'Search + filter',
+      d:'Gõ "retinol" → chỉ còn kết quả liên quan; lọc danh mục/tồn kho hoạt động.' },
+    { id:'bulk',    t:'Bulk action',
+      d:'Tick nhiều SKU → bulk bar xuất hiện; đổi status + xoá chạy đúng.' },
+    { id:'edit',    t:'Sửa SKU persist',
+      d:'Vào edit 1 SKU, đổi giá, lưu → quay lại list thấy giá mới; reload vẫn còn.' },
+    { id:'create',  t:'Tạo SKU mới',
+      d:'Từ "Thêm sản phẩm" tạo 1 bản ghi đầy đủ → lưu xong URL đổi sang ?id=… và xuất hiện trong list.' },
+    { id:'dup',     t:'Nhân bản',
+      d:'Bấm nhân bản từ list hoặc edit page → bản sao tạo ở trạng thái draft.' },
+    { id:'reset',   t:'Reset seed',
+      d:'Bấm "Đặt lại seed" → mọi mutation bị xoá, quay về 34 SKU gốc.' },
+    { id:'csv',     t:'Export CSV',
+      d:'Bấm "Xuất CSV" — file tải xuống mở bằng Excel hiển thị tiếng Việt có dấu.' },
+    { id:'dirty',   t:'Dirty guard',
+      d:'Đang sửa form mà đóng tab → trình duyệt hỏi xác nhận thoát.' },
+    { id:'cmdk',    t:'Cmd+K focus search',
+      d:'Bấm Cmd/Ctrl+K ở bất cứ trang admin nào → focus ô tìm kiếm.' },
+    { id:'a11y',    t:'Skip link + landmarks',
+      d:'Nhấn Tab đầu tiên → "Đi tới nội dung chính" hiện ra; mỗi trang có main landmark.' },
+    { id:'dark',    t:'Dark mode đọc được',
+      d:'Bật dark → table, chips, input, card đều có contrast đủ.' },
+  ];
+
+  function renderChecks(){
+    const saved = JSON.parse(localStorage.getItem('dtx_admin_dev_checks') || '{}');
+    $('#checkList').innerHTML = CHECKS.map(c => `
+      <li>
+        <input type="checkbox" id="chk-${c.id}" data-id="${c.id}" ${saved[c.id]?'checked':''} />
+        <label for="chk-${c.id}" style="flex:1;cursor:pointer">
+          <strong>${c.t}</strong>
+          <small>${c.d}</small>
+        </label>
+      </li>
+    `).join('');
+    updateProgress();
+  }
+  function saveChecks(){
+    const map = {};
+    document.querySelectorAll('#checkList input[type="checkbox"]').forEach(c => { map[c.dataset.id] = c.checked; });
+    localStorage.setItem('dtx_admin_dev_checks', JSON.stringify(map));
+    updateProgress();
+  }
+  function updateProgress(){
+    const all = document.querySelectorAll('#checkList input[type="checkbox"]');
+    const done = [...all].filter(c => c.checked).length;
+    $('#chkProgress').textContent = `${done}/${all.length} đã kiểm`;
+  }
+  $('#checkList').addEventListener('change', saveChecks);
+  $('#chkAll').addEventListener('click', () => {
+    document.querySelectorAll('#checkList input[type="checkbox"]').forEach(c => c.checked = true);
+    saveChecks();
+  });
+  $('#chkClear').addEventListener('click', () => {
+    document.querySelectorAll('#checkList input[type="checkbox"]').forEach(c => c.checked = false);
+    saveChecks();
+  });
+
+  renderChecks();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+# Detoxblanc OMS — Apache config (cPanel / Plesk / shared hosting)
+# Đặt file này ở thư mục public_html (hoặc root web)
+
+# ──────────────────────────────────────────────────────────────
+# Default page
+# ──────────────────────────────────────────────────────────────
+DirectoryIndex index.html
+Options -Indexes
+
+# ──────────────────────────────────────────────────────────────
+# URL rewrite — clean admin URLs
+# ──────────────────────────────────────────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Clean admin URLs: /admin/orders → /admin-orders.html
+  RewriteRule ^admin/?$               admin.html               [L]
+  RewriteRule ^admin/login$           admin-login.html         [L]
+  RewriteRule ^admin/orders$          admin-orders.html        [L]
+  RewriteRule ^admin/customers$       admin-customers.html     [L]
+  RewriteRule ^admin/inventory$       admin-inventory.html     [L]
+  RewriteRule ^admin/products$        admin-products.html      [L]
+  RewriteRule ^admin/products/edit$   admin-product-edit.html  [L]
+  RewriteRule ^admin/collections$     admin-collections.html   [L]
+  RewriteRule ^admin/articles$        admin-articles.html      [L]
+  RewriteRule ^admin/pages$           admin-pages.html         [L]
+  RewriteRule ^admin/reviews$         admin-reviews.html       [L]
+  RewriteRule ^admin/newsletter$      admin-newsletter.html    [L]
+  RewriteRule ^admin/vouchers$        admin-vouchers.html      [L]
+  RewriteRule ^admin/returns$         admin-returns.html       [L]
+  RewriteRule ^admin/reports$         admin-reports.html       [L]
+  RewriteRule ^admin/audit$           admin-audit.html         [L]
+  RewriteRule ^admin/users$           admin-users.html         [L]
+  RewriteRule ^admin/settings$        admin-settings.html      [L]
+  RewriteRule ^admin/dev$             admin-dev.html           [L]
+
+  # Clean public URLs: /about → /about.html (nếu file tồn tại)
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+)$ $1.html [L]
+
+  # 404 fallback
+  ErrorDocument 404 /404.html
+</IfModule>
+
+# ──────────────────────────────────────────────────────────────
+# Security headers
+# ──────────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+  # Admin pages: ngặt hơn
+  <FilesMatch "^admin-[a-z0-9-]+\.html$">
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+    Header always set Cache-Control "no-store, no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Static assets: cache mạnh
+  <FilesMatch "\.(css|js|woff2|woff|ttf|svg|png|jpg|jpeg|webp|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # HTML: cache ngắn (dễ rollout update)
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=300, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ──────────────────────────────────────────────────────────────
+# GZIP compression (giảm 60-70% bandwidth)
+# ──────────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml application/xml
+</IfModule>
+
+# ──────────────────────────────────────────────────────────────
+# MIME types (đề phòng host thiếu)
+# ──────────────────────────────────────────────────────────────
+AddType image/svg+xml .svg
+AddType image/webp .webp
+AddType font/woff2 .woff2
+AddType font/woff .woff
+AddType application/json .json
+
+# ──────────────────────────────────────────────────────────────
+# Block sensitive files
+# ──────────────────────────────────────────────────────────────
+<FilesMatch "^(\.env|\.git|\.dockerignore|\.gcloudignore|\.firebaserc|cloudbuild\.yaml|Dockerfile|nginx\.conf|README.*\.md|PRODUCTION-CHECKLIST\.md|DEPLOY-.*\.md)$">
+  Require all denied
+</FilesMatch>

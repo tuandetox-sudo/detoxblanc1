@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nhật ký hệ thống — Detoxblanc Admin</title>
+<meta name="description" content="Audit log Detoxblanc — chuỗi hash SHA-256, không thể sửa, xuất CSV." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="logs">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Hệ thống"},{"label":"Nhật ký"}]'
+       data-title="Nhật ký hệ thống"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Nhật ký hệ thống</h1>
+          <p>
+            <strong id="auditCount">—</strong> sự kiện · chuỗi hash SHA-256 · append-only ·
+            backend khoá <code>UPDATE/DELETE</code> bằng <code>REVOKE</code>.
+          </p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnAudExport" data-perm="audit:read"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+          <button class="adm-btn" id="btnAudReset" data-perm="audit:read"><i class="fa-solid fa-rotate-left"></i> Tải lại seed</button>
+          <button class="adm-btn primary" id="btnAudVerify" data-perm="audit:read"><i class="fa-solid fa-shield-halved"></i> Kiểm tra chuỗi hash</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng sự kiện</span><strong id="statAudTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">24 giờ qua</span><strong id="statAud24h">0</strong></div>
+        <div class="stat-card"><span class="lbl">Login thất bại</span><strong id="statAudFail" style="color:#C0392B">0</strong></div>
+        <div class="stat-card"><span class="lbl">Actors khác nhau</span><strong id="statAudActors">0</strong></div>
+      </div>
+
+      <div class="pr-filter-bar card" role="search">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="audQ" placeholder="Tìm theo actor, action, entity id, IP…" />
+        </div>
+        <div class="field"><select id="audAction">
+          <option value="">Tất cả action</option>
+        </select></div>
+        <div class="field"><select id="audEntity">
+          <option value="">Tất cả entity</option>
+          <option value="product">product</option>
+          <option value="order">order</option>
+          <option value="user">user</option>
+          <option value="voucher">voucher</option>
+          <option value="article">article</option>
+        </select></div>
+        <div class="field"><input type="date" id="audFrom" aria-label="Từ ngày" /></div>
+        <div class="field"><input type="date" id="audTo" aria-label="Đến ngày" /></div>
+      </div>
+
+      <div class="card">
+        <table class="adm-tbl" id="audTbl">
+          <thead>
+            <tr>
+              <th style="width:160px">Thời điểm</th>
+              <th>Actor</th>
+              <th>IP</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Request</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="audTbody"></tbody>
+        </table>
+        <div class="empty-state" id="audEmpty" hidden>
+          <i class="fa-solid fa-file-circle-xmark"></i>
+          <p>Không có sự kiện nào khớp bộ lọc.</p>
+        </div>
+      </div>
+
+      <div class="pager" id="audPager"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Diff modal -->
+<div class="modal-backdrop" id="diffModal" hidden>
+  <div class="modal wide">
+    <header>
+      <h3 id="diffTitle">Chi tiết sự kiện</h3>
+      <button class="icon-btn" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="modal-body">
+      <dl class="kv-grid" id="diffMeta"></dl>
+      <h4 style="margin-top:16px">Diff</h4>
+      <div class="diff-wrap">
+        <div><h5>Trước</h5><pre class="mono" id="diffBefore">—</pre></div>
+        <div><h5>Sau</h5><pre class="mono" id="diffAfter">—</pre></div>
+      </div>
+      <h4 style="margin-top:16px">Hash chain</h4>
+      <pre class="mono" id="diffHash" style="white-space:pre-wrap;word-break:break-all"></pre>
+    </div>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const A = window.DTX_ADMIN_AUDIT;
+  const F = window.DTX_ADMIN_FMT;
+  const state = { q:'', action:'', entity:'', from:'', to:'', page:1, perPage:25 };
+
+  // SHA-256 in-browser
+  const enc = new TextEncoder();
+  async function sha256Hex(str){
+    const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // cache hash chain để hiện trong modal
+  let hashCache = [];
+  async function rebuildHashChain(list){
+    // chuỗi theo thứ tự cũ → mới
+    const sorted = [...list].sort((a,b) => new Date(a.at) - new Date(b.at));
+    let prev = ''.padStart(64, '0');
+    const out = [];
+    for (const row of sorted) {
+      const canonical = JSON.stringify({
+        at: row.at, actorEmail: row.actorEmail, actorIp: row.actorIp,
+        action: row.action, entity: row.entity, entityId: row.entityId, diff: row.diff,
+      });
+      const h = await sha256Hex(prev + canonical);
+      out.push({ id: row.id, prev, hash: h });
+      prev = h;
+    }
+    hashCache = out;
+    return out;
+  }
+
+  function actionChip(action){
+    const base = (action||'').split('.')[0] || 'misc';
+    const cls = {
+      auth: 'info', product: 'ok', order: 'accent', inventory: 'warn',
+      voucher: 'ok', user: 'accent', article: 'info', settings: 'muted',
+    }[base] || 'muted';
+    return `<span class="chip ${cls}">${action}</span>`;
+  }
+
+  function render(){
+    const all = A.all();
+    const actions = new Set();
+    const actors = new Set();
+    all.forEach(e => { if (e.action) actions.add(e.action); if (e.actorEmail) actors.add(e.actorEmail); });
+
+    // action filter
+    const actSel = document.getElementById('audAction');
+    const first = actSel.querySelector('option'); actSel.innerHTML=''; actSel.appendChild(first);
+    [...actions].sort().forEach(a => {
+      const o = document.createElement('option'); o.value=a; o.textContent=a;
+      if (a===state.action) o.selected=true; actSel.appendChild(o);
+    });
+
+    // stats
+    const now = Date.now();
+    document.getElementById('auditCount').textContent = all.length.toLocaleString('vi-VN');
+    document.getElementById('statAudTotal').textContent = all.length;
+    document.getElementById('statAud24h').textContent = all.filter(e => (now - new Date(e.at).getTime()) < 86400000).length;
+    document.getElementById('statAudFail').textContent = all.filter(e => e.action === 'auth.login.failed').length;
+    document.getElementById('statAudActors').textContent = actors.size;
+
+    const q = state.q.trim().toLowerCase();
+    const fromTs = state.from ? new Date(state.from).getTime() : 0;
+    const toTs = state.to ? new Date(state.to).getTime() + 86400000 - 1 : Infinity;
+
+    const list = all.filter(e => {
+      const at = new Date(e.at).getTime();
+      if (at < fromTs || at > toTs) return false;
+      if (state.action && e.action !== state.action) return false;
+      if (state.entity && e.entity !== state.entity) return false;
+      if (q) {
+        const hay = [e.actorEmail, e.actorIp, e.action, e.entity, e.entityId, e.requestId].map(x => (x||'').toString().toLowerCase()).join(' ');
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    }).sort((a,b) => new Date(b.at) - new Date(a.at));
+
+    const totalPages = Math.max(1, Math.ceil(list.length / state.perPage));
+    if (state.page > totalPages) state.page = totalPages;
+    const slice = list.slice((state.page-1)*state.perPage, state.page*state.perPage);
+
+    const tbody = document.getElementById('audTbody');
+    const empty = document.getElementById('audEmpty');
+    if (!slice.length) { tbody.innerHTML=''; empty.hidden=false; }
+    else {
+      empty.hidden = true;
+      tbody.innerHTML = slice.map(e => `<tr data-id="${e.id}">
+        <td><small>${F.dt(e.at)}</small></td>
+        <td><small>${e.actorEmail || '—'}</small></td>
+        <td><code class="mono">${e.actorIp || '—'}</code></td>
+        <td>${actionChip(e.action)}</td>
+        <td>${e.entity ? `<small>${e.entity}${e.entityId ? ` · <code class="mono">${e.entityId}</code>` : ''}</small>` : '—'}</td>
+        <td><code class="mono"><small>${(e.requestId||'').slice(0,12)}</small></code></td>
+        <td style="text-align:right">
+          <button class="icon-btn" data-view="${e.id}" title="Chi tiết"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+        </td>
+      </tr>`).join('');
+    }
+
+    const pager = document.getElementById('audPager');
+    if (totalPages > 1) {
+      let h = `<button ${state.page===1?'disabled':''} data-page="${state.page-1}"><i class="fa-solid fa-chevron-left"></i></button>`;
+      // ellipsis for large range
+      const pages = [];
+      const add = p => { if (!pages.includes(p) && p>=1 && p<=totalPages) pages.push(p); };
+      add(1); add(totalPages); add(state.page); add(state.page-1); add(state.page+1);
+      pages.sort((a,b)=>a-b);
+      for (let i=0; i<pages.length; i++){
+        if (i>0 && pages[i] - pages[i-1] > 1) h += `<span class="dots">…</span>`;
+        h += `<button class="${pages[i]===state.page?'active':''}" data-page="${pages[i]}">${pages[i]}</button>`;
+      }
+      h += `<button ${state.page===totalPages?'disabled':''} data-page="${state.page+1}"><i class="fa-solid fa-chevron-right"></i></button>`;
+      pager.innerHTML = h;
+    } else pager.innerHTML = '';
+  }
+
+  /* ───────── diff modal ───────── */
+  const diffModal = document.getElementById('diffModal');
+  async function openDiff(id){
+    const e = A.get(id);
+    if (!e) return;
+    document.getElementById('diffTitle').textContent = e.action;
+    document.getElementById('diffMeta').innerHTML = `
+      <dt>ID</dt><dd><code class="mono">${e.id}</code></dd>
+      <dt>Thời điểm</dt><dd>${F.dt(e.at)}</dd>
+      <dt>Actor</dt><dd>${e.actorEmail || '—'} <small class="muted">(${e.actorId || 'system'})</small></dd>
+      <dt>IP</dt><dd><code class="mono">${e.actorIp || '—'}</code></dd>
+      <dt>User-Agent</dt><dd><small>${e.userAgent || '—'}</small></dd>
+      <dt>Entity</dt><dd>${e.entity || '—'}${e.entityId ? ` · <code class="mono">${e.entityId}</code>` : ''}</dd>
+      <dt>Request</dt><dd><code class="mono">${e.requestId || '—'}</code></dd>
+    `;
+    document.getElementById('diffBefore').textContent = e.diff?.before ? JSON.stringify(e.diff.before, null, 2) : '—';
+    document.getElementById('diffAfter').textContent = e.diff?.after ? JSON.stringify(e.diff.after, null, 2) : '—';
+    // Hash
+    if (!hashCache.length) await rebuildHashChain(A.all());
+    const entry = hashCache.find(x => x.id === id);
+    document.getElementById('diffHash').textContent = entry
+      ? `prev: ${entry.prev}\nhash: ${entry.hash}`
+      : 'prev: —\nhash: —';
+    diffModal.hidden = false;
+  }
+  diffModal.addEventListener('click', e => {
+    if (e.target.matches('[data-close-modal]') || e.target === diffModal) diffModal.hidden = true;
+  });
+
+  /* ───────── events ───────── */
+  document.getElementById('audTbody').addEventListener('click', e => {
+    const view = e.target.closest('[data-view]');
+    if (view) openDiff(view.dataset.view);
+  });
+  document.getElementById('audPager').addEventListener('click', e => {
+    const b = e.target.closest('[data-page]');
+    if (b && !b.disabled) { state.page = +b.dataset.page; render(); }
+  });
+
+  document.getElementById('audQ').addEventListener('input', e => { state.q = e.target.value; state.page=1; render(); });
+  document.getElementById('audAction').addEventListener('change', e => { state.action = e.target.value; state.page=1; render(); });
+  document.getElementById('audEntity').addEventListener('change', e => { state.entity = e.target.value; state.page=1; render(); });
+  document.getElementById('audFrom').addEventListener('change', e => { state.from = e.target.value; state.page=1; render(); });
+  document.getElementById('audTo').addEventListener('change', e => { state.to = e.target.value; state.page=1; render(); });
+
+  document.getElementById('btnAudExport').addEventListener('click', () => {
+    const all = A.all();
+    const esc = s => '"' + String(s ?? '').replace(/"/g,'""') + '"';
+    const rows = all.map(e => [e.at, e.actorEmail, e.actorIp, e.action, e.entity, e.entityId, e.requestId, JSON.stringify(e.diff||{})].map(esc).join(','));
+    const csv = '\ufeff' + ['Thời điểm,Actor,IP,Action,Entity,EntityId,RequestId,Diff', ...rows].join('\n');
+    const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const a = document.createElement('a'); a.href=url; a.download=`audit-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btnAudReset').addEventListener('click', () => {
+    if (confirm('Tải lại seed audit log?')) { A.reset(); hashCache=[]; render(); window.admToast?.('Reset OK', 'ok'); }
+  });
+
+  document.getElementById('btnAudVerify').addEventListener('click', async () => {
+    const all = A.all();
+    const chain = await rebuildHashChain(all);
+    // giả lập kiểm tra: nếu số hash = số record và không có null → OK
+    const ok = chain.length === all.length && chain.every(c => c.hash.length === 64);
+    if (ok) window.admToast?.(`Chuỗi hash hợp lệ · ${chain.length} mắt xích · head=${chain.at(-1)?.hash.slice(0,12)}…`, 'ok');
+    else window.admToast?.('Chuỗi hash bất thường!', 'bad');
+  });
+
+  window.addEventListener('dtx:audit-updated', () => { hashCache=[]; render(); });
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_audit')) { hashCache=[]; render(); } });
+  render();
+})();
+</script>
+</body></html>

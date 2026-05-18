@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bài viết — Detoxblanc Admin</title>
+<meta name="description" content="Quản lý journal Detoxblanc — draft, lên lịch, publish." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css?v=2" />
+<style>
+  /* === Layout grid theo style admin-orders/customers === */
+  .art-toolbar{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    background:var(--a-card); padding:12px 14px;
+    border:1px solid var(--a-line); border-radius:10px; margin-bottom:14px;
+  }
+  .art-toolbar .field{ flex:1; min-width:200px }
+  .art-toolbar .field input,
+  .art-toolbar .field select{
+    width:100%; padding:8px 10px; border:1px solid var(--a-line);
+    border-radius:7px; background:var(--a-surface); color:var(--a-ink); font:inherit; font-size:13.5px;
+  }
+  .art-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(310px, 1fr));
+    gap:14px; margin-top:0;
+  }
+  .ar-card{
+    background:var(--a-card); border:1px solid var(--a-line); border-radius:12px;
+    padding:14px 16px; display:flex; flex-direction:column; gap:10px;
+    transition:border-color .12s, box-shadow .12s;
+  }
+  .ar-card:hover{ border-color:var(--a-brand); box-shadow:0 2px 8px rgba(0,0,0,.04) }
+  .ar-card .top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+  .ar-card .chip{
+    background:var(--a-brand-soft); color:var(--a-brand-2);
+    font-size:11.5px; padding:2px 9px; border-radius:999px; font-weight:500;
+  }
+  .ar-card .badge{
+    font-size:11px; padding:2px 8px; border-radius:5px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.04em; margin-left:auto;
+  }
+  .ar-card .badge.published{ background:#DCFCE7; color:#166534 }
+  .ar-card .badge.draft{     background:#FEF3C7; color:#92400E }
+  .ar-card .badge.scheduled{ background:#DBEAFE; color:#1E3A8A }
+  .ar-card .badge.archived{  background:#E5E7EB; color:#374151 }
+  .ar-card h3{
+    margin:0; font-size:15px; line-height:1.4; font-weight:600;
+    word-break:break-word; overflow-wrap:break-word;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    min-height:42px;
+  }
+  .ar-card p.excerpt{
+    margin:0; font-size:13px; color:var(--a-ink-2); line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+    min-height:60px;
+  }
+  .ar-card .foot{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-top:10px; border-top:1px dashed var(--a-line);
+    font-size:12px; color:var(--a-ink-3);
+  }
+  .ar-card .foot .meta{ display:flex; align-items:center; gap:8px }
+  .ar-card .foot .acts{ display:flex; gap:4px }
+  .ar-card .foot .acts button{
+    width:30px; height:30px; border-radius:6px; border:1px solid var(--a-line);
+    background:var(--a-surface); color:var(--a-ink-2); cursor:pointer;
+    display:grid; place-items:center; transition:all .1s;
+  }
+  .ar-card .foot .acts button:hover{ background:var(--a-brand-soft); color:var(--a-brand); border-color:var(--a-brand) }
+  .ar-card .foot .acts button.danger:hover{ background:#FEE2E2; color:#991B1B; border-color:#FCA5A5 }
+
+  /* === Editor modal nội dung === */
+  .editor-grid{ display:grid; grid-template-columns:1fr 320px; gap:18px }
+  @media (max-width:880px){ .editor-grid{ grid-template-columns:1fr } }
+  .editor-grid .field{ margin-bottom:12px }
+  .editor-grid .field label.lbl{ display:block; font-size:12.5px; font-weight:500; color:var(--a-ink-2); margin-bottom:5px }
+  .editor-grid .field input,
+  .editor-grid .field select,
+  .editor-grid .field textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--a-line);
+    border-radius:7px; background:var(--a-surface); color:var(--a-ink);
+    font:inherit; font-size:13.5px; transition:border-color .12s;
+  }
+  .editor-grid .field input:focus,
+  .editor-grid .field select:focus,
+  .editor-grid .field textarea:focus{
+    outline:0; border-color:var(--a-brand);
+    box-shadow:0 0 0 3px var(--a-brand-soft);
+  }
+  .editor-grid .field textarea{ resize:vertical; min-height:80px; font-family:inherit }
+  .editor-grid .field textarea.mono{ font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12.5px; line-height:1.55; min-height:340px }
+  .editor-grid .field .hint{ font-size:11.5px; color:var(--a-ink-3); margin-top:3px }
+  .row-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+  @media (max-width:560px){ .row-2{ grid-template-columns:1fr } }
+
+  /* === Empty state khi không có bài viết === */
+  .ar-empty{
+    text-align:center; padding:60px 24px; color:var(--a-ink-3);
+    background:var(--a-card); border:1px dashed var(--a-line); border-radius:12px;
+  }
+  .ar-empty i{ font-size:38px; display:block; margin-bottom:12px; color:var(--a-ink-4) }
+  .ar-empty h3{ margin:0 0 6px; color:var(--a-ink); font-size:16px }
+  .ar-empty p{ margin:0 0 14px; font-size:13.5px }
+</style>
+</head>
+
+<body data-adm-page="articles">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Nội dung"},{"label":"Bài viết"}]'
+       data-title="Bài viết"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Bài viết</h1>
+          <p>Biên tập journal — <strong id="artCount">—</strong> bài. Hỗ trợ Markdown, lên lịch publish, SEO meta.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnArtReset" data-perm="articles:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại seed</button>
+          <button class="adm-btn primary" id="btnArtNew" data-perm="articles:write"><i class="fa-solid fa-plus"></i> Viết bài mới</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng bài</span><strong id="statTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã publish</span><strong id="statPub" style="color:#16A34A">0</strong></div>
+        <div class="stat-card"><span class="lbl">Bản nháp</span><strong id="statDraft" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Lên lịch</span><strong id="statSched" style="color:#2D5DA1">0</strong></div>
+        <div class="stat-card"><span class="lbl">Tổng lượt xem</span><strong id="statViews">—</strong></div>
+      </div>
+
+      <div class="art-toolbar">
+        <div class="field">
+          <input type="search" id="artQ" placeholder="🔎 Tiêu đề, tác giả, chủ đề…" />
+        </div>
+        <div class="field" style="max-width:170px">
+          <select id="artStatus">
+            <option value="">Tất cả trạng thái</option>
+            <option value="published">Đã publish</option>
+            <option value="scheduled">Lên lịch</option>
+            <option value="draft">Bản nháp</option>
+            <option value="archived">Lưu trữ</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:200px">
+          <select id="artCat">
+            <option value="">Tất cả chủ đề</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="artGrid" class="art-grid"></div>
+      <div id="artEmpty" class="ar-empty" hidden>
+        <i class="fa-solid fa-newspaper"></i>
+        <h3>Không có bài viết khớp lọc</h3>
+        <p>Thử thay đổi từ khoá hoặc trạng thái.</p>
+        <button class="adm-btn primary" id="btnEmptyNew" data-perm="articles:write"><i class="fa-solid fa-plus"></i> Viết bài mới</button>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Editor modal — modern .adm-modal system -->
+<div class="adm-modal" id="artEditor" hidden role="dialog" aria-modal="true" aria-labelledby="artEditorTitle">
+  <div class="adm-modal-card" style="max-width:1080px">
+    <div class="adm-modal-head">
+      <strong id="artEditorTitle">Viết bài mới</strong>
+      <button class="iconbtn" data-close>&times;</button>
+    </div>
+    <div class="adm-modal-body">
+      <form id="artForm" onsubmit="return false">
+        <input type="hidden" name="id" />
+        <div class="editor-grid">
+          <div class="editor-main">
+            <div class="field">
+              <label class="lbl" for="aeTitle">Tiêu đề <span style="color:#C0392B">*</span></label>
+              <input id="aeTitle" name="title" required maxlength="120" placeholder="Ví dụ: Niacinamide 10% — hoạt chất đa năng cho da hỗn hợp" />
+            </div>
+            <div class="field">
+              <label class="lbl" for="aeExcerpt">Tóm tắt</label>
+              <textarea id="aeExcerpt" name="excerpt" rows="2" maxlength="300" placeholder="1-2 câu mở đầu, hiển thị ở grid card và mạng xã hội."></textarea>
+              <div class="hint">Tối đa 300 ký tự. Hiện ở danh sách + meta description fallback.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="aeBody">Nội dung (Markdown)</label>
+              <textarea id="aeBody" name="body" class="mono" rows="14" placeholder="# Tiêu đề&#10;&#10;Đoạn mở bài...&#10;&#10;## Mục 1&#10;..."></textarea>
+              <div class="hint">Hỗ trợ Markdown cơ bản. Bấm "Xem trước" để render thử.</div>
+            </div>
+          </div>
+          <aside class="editor-side">
+            <div class="field">
+              <label class="lbl" for="aeStatus">Trạng thái</label>
+              <select id="aeStatus" name="status">
+                <option value="draft">Bản nháp</option>
+                <option value="scheduled">Lên lịch</option>
+                <option value="published">Publish ngay</option>
+                <option value="archived">Lưu trữ</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl" for="aePublishedAt">Ngày publish</label>
+              <input type="date" id="aePublishedAt" name="publishedAt" />
+              <div class="hint">Bắt buộc nếu trạng thái = Lên lịch / Publish.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="aeSlug">Slug (URL)</label>
+              <input id="aeSlug" name="slug" class="mono" maxlength="120" placeholder="tu-dong-tu-tieu-de" />
+              <div class="hint">Để trống = tự sinh từ tiêu đề.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="aeAuthor">Tác giả</label>
+              <input id="aeAuthor" name="author" maxlength="80" />
+            </div>
+            <div class="field">
+              <label class="lbl" for="aeCategory">Chủ đề</label>
+              <input id="aeCategory" name="category" maxlength="60" placeholder="Khoa học làm đẹp, Hướng dẫn..." list="aeCatList" />
+              <datalist id="aeCatList"></datalist>
+            </div>
+            <div class="field">
+              <label class="lbl" for="aeSeoTitle">SEO title</label>
+              <input id="aeSeoTitle" name="seoTitle" maxlength="70" />
+              <div class="hint">Tối đa 70 ký tự. Trống = dùng tiêu đề.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="aeSeoDesc">SEO description</label>
+              <textarea id="aeSeoDesc" name="seoDesc" rows="3" maxlength="160"></textarea>
+              <div class="hint">Tối đa 160 ký tự. Trống = dùng tóm tắt.</div>
+            </div>
+          </aside>
+        </div>
+      </form>
+    </div>
+    <div class="adm-modal-foot">
+      <button class="adm-btn" data-close>Huỷ</button>
+      <button class="adm-btn" id="aePreview"><i class="fa-solid fa-eye"></i> Xem trước</button>
+      <button class="adm-btn primary" id="aeSave" data-perm="articles:write"><i class="fa-solid fa-check"></i> Lưu bài</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+
+<script>
+(function(){
+  const S = window.DTX_ADMIN_ARTICLES;
+  const F = window.DTX_ADMIN_FMT;
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const state = { q:'', status:'', cat:'' };
+
+  if (!S) {
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div style="position:fixed;top:0;left:0;right:0;background:#FEE2E2;color:#991B1B;padding:10px;text-align:center;z-index:9999;font-weight:600">⚠ DTX_ADMIN_ARTICLES chưa load — kiểm tra assets/admin-data-ext.js</div>');
+    return;
+  }
+
+  const STATUS_LABEL = { draft:'Bản nháp', scheduled:'Lên lịch', published:'Đã publish', archived:'Lưu trữ' };
+  const fmtDate = d => !d ? '—' : (F?.date ? F.date(d) : new Date(d).toLocaleDateString('vi-VN'));
+
+  function render(){
+    const all = S.all();
+    $('artCount').textContent = all.length;
+    $('statTotal').textContent = all.length;
+    $('statPub').textContent   = all.filter(a => a.status==='published').length;
+    $('statDraft').textContent = all.filter(a => a.status==='draft').length;
+    $('statSched').textContent = all.filter(a => a.status==='scheduled').length;
+    $('statViews').textContent = all.reduce((s,a)=>s+(a.views||0),0).toLocaleString('vi-VN');
+
+    // Categories
+    const cats = [...new Set(all.map(a => a.category).filter(Boolean))].sort();
+    const catSel = $('artCat');
+    const cur = catSel.value;
+    catSel.innerHTML = '<option value="">Tất cả chủ đề</option>' +
+      cats.map(c => `<option value="${esc(c)}"${c===cur?' selected':''}>${esc(c)}</option>`).join('');
+    $('aeCatList').innerHTML = cats.map(c => `<option value="${esc(c)}">`).join('');
+
+    const q = state.q.trim().toLowerCase();
+    const list = all.filter(a => {
+      if (q && !((a.title||'').toLowerCase().includes(q) || (a.author||'').toLowerCase().includes(q) || (a.category||'').toLowerCase().includes(q))) return false;
+      if (state.status && a.status !== state.status) return false;
+      if (state.cat && a.category !== state.cat) return false;
+      return true;
+    }).sort((a,b) => new Date(b.updatedAt || b.publishedAt || 0) - new Date(a.updatedAt || a.publishedAt || 0));
+
+    if (!list.length) { $('artGrid').innerHTML = ''; $('artEmpty').hidden = false; return; }
+    $('artEmpty').hidden = true;
+
+    $('artGrid').innerHTML = list.map(a => `
+      <article class="ar-card" data-id="${esc(a.id)}">
+        <div class="top">
+          <span class="chip">${esc(a.category || 'Chưa phân loại')}</span>
+          <span class="badge ${a.status}">${STATUS_LABEL[a.status] || a.status}</span>
+        </div>
+        <h3 title="${esc(a.title)}">${esc(a.title)}</h3>
+        <p class="excerpt">${esc(a.excerpt || 'Chưa có tóm tắt')}</p>
+        <div class="foot">
+          <div class="meta">
+            <i class="fa-solid fa-user"></i> ${esc(a.author || '—')}
+            <span style="color:var(--a-line);">·</span>
+            <i class="fa-solid fa-eye"></i> ${(a.views||0).toLocaleString('vi-VN')}
+            ${a.publishedAt ? `<span style="color:var(--a-line);">·</span>${fmtDate(a.publishedAt)}` : ''}
+          </div>
+          <div class="acts">
+            <button title="Sửa" data-act="edit" data-perm="articles:write"><i class="fa-solid fa-pen"></i></button>
+            <button title="Xoá" data-act="del" class="danger" data-perm="articles:write"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      </article>
+    `).join('');
+
+    // Bind row actions
+    $('artGrid').querySelectorAll('.ar-card').forEach(card => {
+      const id = card.dataset.id;
+      card.querySelector('[data-act="edit"]')?.addEventListener('click', () => openEditor(S.get(id)));
+      card.querySelector('[data-act="del"]')?.addEventListener('click', () => {
+        if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+        const a = S.get(id);
+        if (a && confirm(`Xoá bài "${a.title}"?`)) {
+          S.remove(a.id); render();
+          window.admToast?.('Đã xoá bài viết', 'ok');
+        }
+      });
+    });
+  }
+
+  function slugify(s){
+    return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80);
+  }
+
+  function openEditor(a){
+    if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+    const isNew = !a;
+    const data = a || {
+      id:'', title:'', slug:'', author:'Detoxblanc Team', category:'',
+      status:'draft', body:'', excerpt:'',
+      seoTitle:'', seoDesc:'', publishedAt:null,
+    };
+    $('artEditorTitle').textContent = isNew ? 'Viết bài mới' : `Sửa: ${data.title}`;
+    $('artForm').elements.id.value      = data.id || '';
+    $('aeTitle').value      = data.title || '';
+    $('aeSlug').value       = data.slug || '';
+    $('aeAuthor').value     = data.author || '';
+    $('aeCategory').value   = data.category || '';
+    $('aeStatus').value     = data.status || 'draft';
+    $('aeExcerpt').value    = data.excerpt || '';
+    $('aeBody').value       = data.body || '';
+    $('aeSeoTitle').value   = data.seoTitle || '';
+    $('aeSeoDesc').value    = data.seoDesc || '';
+    $('aePublishedAt').value = data.publishedAt ? String(data.publishedAt).slice(0,10) : '';
+
+    $('artEditor').hidden = false;
+    setTimeout(() => $('aeTitle').focus(), 60);
+  }
+
+  function closeEditor(){ $('artEditor').hidden = true; }
+
+  function save(){
+    if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+    const title = $('aeTitle').value.trim();
+    if (!title) { window.admToast?.('Thiếu tiêu đề', 'bad'); $('aeTitle').focus(); return; }
+
+    const status = $('aeStatus').value;
+    const publishedAt = $('aePublishedAt').value || null;
+    if ((status === 'scheduled' || status === 'published') && !publishedAt) {
+      window.admToast?.('Cần ngày publish khi chọn Lên lịch / Publish', 'bad'); $('aePublishedAt').focus(); return;
+    }
+
+    const id = $('artForm').elements.id.value;
+    const slug = $('aeSlug').value.trim() || slugify(title);
+    const data = {
+      title, slug,
+      author:    $('aeAuthor').value.trim() || 'Detoxblanc Team',
+      category:  $('aeCategory').value.trim() || 'Chưa phân loại',
+      status,
+      excerpt:   $('aeExcerpt').value.trim(),
+      body:      $('aeBody').value,
+      seoTitle:  $('aeSeoTitle').value.trim(),
+      seoDesc:   $('aeSeoDesc').value.trim(),
+      publishedAt,
+    };
+
+    // Slug uniqueness
+    const existing = S.all().find(a => a.slug === slug && a.id !== id);
+    if (existing) { window.admToast?.(`Slug "${slug}" đã tồn tại`, 'bad'); $('aeSlug').focus(); return; }
+
+    if (id) { S.update(id, data); window.admToast?.('Đã cập nhật bài viết', 'ok'); }
+    else    { S.create(data);     window.admToast?.('Đã tạo bài viết', 'ok'); }
+    closeEditor(); render();
+  }
+
+  function preview(){
+    const title = $('aeTitle').value.trim() || 'Bản xem trước';
+    const body  = $('aeBody').value || '';
+    // Markdown rất gọn (heading + bold + italic + paragraph + line break)
+    const html = body
+      .replace(/[<>]/g, c => ({'<':'&lt;','>':'&gt;'}[c]))
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm,  '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm,   '<h1>$1</h1>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g,    '<em>$1</em>')
+      .replace(/\n\n+/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    const w = window.open('', '_blank');
+    if (!w) { window.admToast?.('Trình duyệt chặn popup', 'warn'); return; }
+    w.document.write(`<!doctype html><meta charset="utf-8">
+<base href="/"><title>${esc(title)} — Preview</title>
+      <body style="max-width:760px;margin:40px auto;padding:0 20px;font:15px/1.7 system-ui">
+        <div style="padding:8px 12px;background:#FEF3C7;color:#92400E;border-radius:8px;margin-bottom:16px;font-size:13px">
+          ⚠ Bản xem trước nội bộ — chưa publish.
+        </div>
+        <h1>${esc(title)}</h1>
+        <p style="color:#666">${esc($('aeAuthor').value || '')} · ${esc($('aeCategory').value || '')}</p>
+        <p>${html}</p>
+      </body>`);
+  }
+
+  // Bind handlers
+  $('btnArtNew').addEventListener('click', () => openEditor(null));
+  $('btnArtReset').addEventListener('click', () => {
+    if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+    if (confirm('Đặt lại bài viết về seed gốc?')) { S.reset(); render(); window.admToast?.('Đã reset seed', 'ok'); }
+  });
+  $('btnEmptyNew')?.addEventListener('click', () => openEditor(null));
+  $('aeSave').addEventListener('click', save);
+  $('aePreview').addEventListener('click', preview);
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeEditor));
+  $('artEditor').addEventListener('click', e => { if (e.target.id === 'artEditor') closeEditor(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !$('artEditor').hidden) closeEditor();
+  });
+
+  // Title → auto-slug khi slug đang trống
+  $('aeTitle').addEventListener('input', () => {
+    if (!$('aeSlug').value.trim()) $('aeSlug').placeholder = slugify($('aeTitle').value) || 'tu-dong-tu-tieu-de';
+  });
+
+  $('artQ').addEventListener('input', e => { state.q = e.target.value; render(); });
+  $('artStatus').addEventListener('change', e => { state.status = e.target.value; render(); });
+  $('artCat').addEventListener('change', e => { state.cat = e.target.value; render(); });
+
+  window.addEventListener('dtx:articles-updated', render);
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_articles')) render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

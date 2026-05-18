@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kho hàng — Detoxblanc Admin</title>
+<meta name="description" content="Theo dõi tồn kho Detoxblanc, cảnh báo ngưỡng an toàn, điều chỉnh thủ công." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="inventory">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Sản phẩm"},{"label":"Kho hàng"}]'
+       data-title="Kho hàng"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Kho hàng</h1>
+          <p>Tồn thực tế, giữ hàng (reserved), khả dụng, giá vốn TB. Nhập kho qua PO, kiểm kê định kỳ, lịch sử movement đầy đủ.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnInvExport" data-perm="inventory:read"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+          <button class="adm-btn" id="btnInvMovements" data-perm="inventory:read"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử movement</button>
+          <button class="adm-btn" id="btnInvCount" data-perm="inventory:write"><i class="fa-solid fa-clipboard-check"></i> Kiểm kê</button>
+          <button class="adm-btn primary" id="btnInvReceive" data-perm="inventory:write"><i class="fa-solid fa-truck-ramp-box"></i> Nhập kho (PO)</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng SKU</span><strong id="invTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">Hết hàng</span><strong id="invOut" style="color:#C0392B">0</strong></div>
+        <div class="stat-card"><span class="lbl">Thấp ngưỡng</span><strong id="invLow" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đang giữ</span><strong id="invReserved">0</strong></div>
+        <div class="stat-card"><span class="lbl">Giá trị tồn</span><strong id="invValue">—</strong></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="inv-tabs">
+        <button class="inv-tab active" data-inv-tab="all"><i class="fa-solid fa-boxes-stacked"></i> Tất cả</button>
+        <button class="inv-tab" data-inv-tab="alerts"><i class="fa-solid fa-triangle-exclamation"></i> Cảnh báo <span class="inv-tab-count" id="invAlertCount">0</span></button>
+        <button class="inv-tab" data-inv-tab="reserved"><i class="fa-solid fa-hand"></i> Đang giữ</button>
+      </div>
+
+      <div class="pr-filter-bar card">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="invQ" placeholder="Mã SKU, tên sản phẩm…" />
+        </div>
+        <div class="field"><select id="invState">
+          <option value="">Tất cả trạng thái</option>
+          <option value="out">Hết hàng</option>
+          <option value="low">Thấp ngưỡng</option>
+          <option value="ok">Còn hàng</option>
+        </select></div>
+        <div class="field"><select id="invCat"><option value="">Tất cả danh mục</option></select></div>
+        <div class="field"><select id="invSort">
+          <option value="alert">Ưu tiên cảnh báo</option>
+          <option value="stock-asc">Tồn thấp → cao</option>
+          <option value="stock-desc">Tồn cao → thấp</option>
+          <option value="reserved-desc">Giữ nhiều → ít</option>
+          <option value="value-desc">Giá trị tồn cao → thấp</option>
+        </select></div>
+      </div>
+
+      <div class="card">
+        <table class="adm-tbl" id="invTbl">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Sản phẩm</th><th>Danh mục</th>
+              <th style="text-align:right">Ngưỡng</th>
+              <th style="text-align:right">Tồn</th>
+              <th style="text-align:right">Giữ</th>
+              <th style="text-align:right">Khả dụng</th>
+              <th style="text-align:right">Giá vốn TB</th>
+              <th>Trạng thái</th>
+              <th style="width:220px">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="invTbody"></tbody>
+        </table>
+        <div class="empty-state" id="invEmpty" hidden>
+          <i class="fa-solid fa-box-open"></i><p>Không có SKU khớp bộ lọc.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Receive (PO) modal -->
+<div class="adm-modal" id="invRcvModal" hidden aria-hidden="true">
+  <div class="adm-modal-backdrop" data-close-rcv></div>
+  <div class="adm-modal-card adm-modal-lg" role="dialog">
+    <header class="adm-modal-head">
+      <h3><i class="fa-solid fa-truck-ramp-box"></i> Nhập kho (Purchase Order)</h3>
+      <button class="adm-btn" data-close-rcv aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="adm-modal-body">
+      <div class="form-row">
+        <label>Mã PO / Nhà cung cấp<input id="rcvPoCode" maxlength="50" placeholder="Vd. PO-2026-042"/></label>
+        <label>Ghi chú<input id="rcvNote" maxlength="200"/></label>
+      </div>
+
+      <h4 style="margin:14px 0 6px;font-size:12.5px">Sản phẩm nhập</h4>
+      <div class="prod-picker">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="rcvSearch" type="search" placeholder="Tìm SP để thêm vào phiếu nhập…"/>
+        </div>
+        <div class="prod-results" id="rcvResults" hidden></div>
+      </div>
+
+      <table class="adm-tbl item-tbl" id="rcvTbl" style="margin-top:10px">
+        <thead><tr>
+          <th>SKU / Sản phẩm</th>
+          <th style="width:80px;text-align:right">Tồn</th>
+          <th style="width:90px">SL nhập</th>
+          <th style="width:120px">Đơn giá nhập</th>
+          <th style="width:110px;text-align:right">Thành tiền</th>
+          <th style="width:34px"></th>
+        </tr></thead>
+        <tbody id="rcvBody"><tr><td colspan="6" class="muted" style="text-align:center;padding:16px">Chưa có dòng — tìm SP để thêm</td></tr></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:right"><strong>Tổng cộng</strong></td>
+            <td style="text-align:right"><strong id="rcvTotal">0₫</strong></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <footer class="adm-modal-foot">
+      <button class="adm-btn" data-close-rcv>Huỷ</button>
+      <button class="adm-btn primary" id="rcvSubmit"><i class="fa-solid fa-check"></i> Nhập kho</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Count (Physical count) modal -->
+<div class="adm-modal" id="invCntModal" hidden aria-hidden="true">
+  <div class="adm-modal-backdrop" data-close-cnt></div>
+  <div class="adm-modal-card adm-modal-lg" role="dialog">
+    <header class="adm-modal-head">
+      <h3><i class="fa-solid fa-clipboard-check"></i> Kiểm kê vật lý</h3>
+      <button class="adm-btn" data-close-cnt aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="adm-modal-body">
+      <p class="muted" style="font-size:13px;margin:0 0 10px">
+        Nhập số lượng <b>thực đếm</b> cho từng SKU. Hệ thống sẽ tạo movement <code>count</code> với delta để audit.
+        Chỉ điền ô mà bạn vừa đếm — ô trống sẽ bỏ qua.
+      </p>
+      <table class="adm-tbl item-tbl">
+        <thead><tr>
+          <th>SKU</th><th>Sản phẩm</th>
+          <th style="width:90px;text-align:right">Hệ thống</th>
+          <th style="width:100px">Thực đếm</th>
+          <th style="width:90px;text-align:right">Delta</th>
+        </tr></thead>
+        <tbody id="cntBody"></tbody>
+      </table>
+      <label style="margin-top:10px">Ghi chú phiên kiểm<input id="cntNote" maxlength="200" placeholder="Vd. Kiểm kê cuối tháng 04/2026"/></label>
+    </div>
+    <footer class="adm-modal-foot">
+      <button class="adm-btn" data-close-cnt>Huỷ</button>
+      <button class="adm-btn primary" id="cntSubmit"><i class="fa-solid fa-check"></i> Áp dụng kiểm kê</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Movement history drawer -->
+<aside class="drawer drawer-wide" id="movDrawer" hidden aria-hidden="true">
+  <div class="drawer-backdrop" data-close-mov></div>
+  <div class="drawer-panel">
+    <header>
+      <h3 id="movTitle">Lịch sử movement</h3>
+      <button class="drawer-close" data-close-mov><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="drawer-body">
+      <div class="form-row" style="margin-bottom:10px">
+        <label>Lý do<select id="movReason">
+          <option value="">Tất cả</option>
+          <option value="receive">Nhập kho</option>
+          <option value="sale">Bán</option>
+          <option value="adjust">Điều chỉnh</option>
+          <option value="reserve">Giữ hàng</option>
+          <option value="release">Huỷ giữ</option>
+          <option value="count">Kiểm kê</option>
+          <option value="return">Hoàn trả</option>
+        </select></label>
+        <label>Từ ngày<input id="movFrom" type="date"/></label>
+        <label>Đến ngày<input id="movTo" type="date"/></label>
+      </div>
+      <table class="adm-tbl mini" id="movTbl">
+        <thead><tr>
+          <th>Thời gian</th><th>SP</th><th>Lý do</th>
+          <th style="text-align:right">SL</th>
+          <th style="text-align:right">Trước → Sau</th>
+          <th>Ref</th><th>Actor</th>
+        </tr></thead>
+        <tbody id="movTbody"></tbody>
+      </table>
+      <div class="empty-state" id="movEmpty" hidden style="padding:20px"><p>Chưa có movement.</p></div>
+    </div>
+  </div>
+</aside>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const PR = window.DTX_ADMIN;
+  const INV = window.DTX_ADMIN_INVENTORY;
+  const F = window.DTX_ADMIN_FMT;
+  const state = { q:'', invState:'', cat:'', sort:'alert', tab:'all' };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+  /* ═════════════════════ MAIN TABLE ═════════════════════ */
+  function render(){
+    const products = PR.all();
+    const summary = INV.summary(products);
+    const alerts = INV.alerts(products);
+    $('invTotal').textContent = summary.total;
+    $('invOut').textContent = summary.out;
+    $('invLow').textContent = summary.low;
+    $('invReserved').textContent = summary.reservedTotal.toLocaleString('vi-VN');
+    $('invValue').textContent = F.vnd(summary.inventoryValue);
+    $('invAlertCount').textContent = alerts.out.length + alerts.low.length;
+
+    const cats = new Set();
+    products.forEach(p => p.category && cats.add(p.category));
+    const catSel = $('invCat');
+    const first = catSel.querySelector('option'); catSel.innerHTML=''; catSel.appendChild(first);
+    [...cats].sort().forEach(c => {
+      const o = document.createElement('option'); o.value=c; o.textContent=c;
+      if (c===state.cat) o.selected=true; catSel.appendChild(o);
+    });
+
+    const q = state.q.trim().toLowerCase();
+    let items = INV.forProducts(products);
+    // Tab filter
+    if (state.tab === 'alerts') items = items.filter(x => x.state !== 'ok');
+    if (state.tab === 'reserved') items = items.filter(x => x.reserved > 0);
+    // Field filter
+    items = items.filter(x => {
+      if (q && !(x.code.toLowerCase().includes(q) || x.name.toLowerCase().includes(q))) return false;
+      if (state.invState && x.state !== state.invState) return false;
+      if (state.cat && x.category !== state.cat) return false;
+      return true;
+    });
+    // Sort
+    items.sort((a,b) => {
+      switch(state.sort){
+        case 'stock-asc':   return a.stock - b.stock;
+        case 'stock-desc':  return b.stock - a.stock;
+        case 'reserved-desc': return b.reserved - a.reserved;
+        case 'value-desc':  return b.inventoryValue - a.inventoryValue;
+        default: {
+          const rank = s => s==='out'?0 : s==='low'?1 : 2;
+          return rank(a.state) - rank(b.state);
+        }
+      }
+    });
+
+    const tbody = $('invTbody');
+    const empty = $('invEmpty');
+    if (!items.length) { tbody.innerHTML=''; empty.hidden=false; return; }
+    empty.hidden = true;
+    tbody.innerHTML = items.map(it => {
+      const cls = it.state==='out' ? 'bad' : it.state==='low' ? 'warn' : 'ok';
+      const label = it.state==='out' ? 'Hết' : it.state==='low' ? 'Thấp' : 'Đủ';
+      return `<tr data-id="${it.id}">
+        <td title="${esc(it.code)}"><code class="mono">${esc(it.code)}</code></td>
+        <td title="${esc(it.name)}"><strong>${esc(it.name)}</strong></td>
+        <td title="${esc(it.category||'')}"><small>${esc(it.category || '—')}</small></td>
+        <td style="text-align:right"><small>${it.lowStock}</small></td>
+        <td style="text-align:right"><strong>${it.stock}</strong></td>
+        <td style="text-align:right">${it.reserved > 0 ? `<span class="pill" style="background:#fef3c7;color:#92400e;padding:1px 8px;border-radius:999px;font-size:11px">${it.reserved}</span>` : '<small class="muted">—</small>'}</td>
+        <td style="text-align:right"><strong style="color:${it.available <= it.lowStock ? '#C0392B' : 'inherit'}">${it.available}</strong></td>
+        <td style="text-align:right"><small class="muted">${it.avgCost ? F.vnd(it.avgCost) : '—'}</small></td>
+        <td><span class="badge ${cls}">${label}</span></td>
+        <td>
+          <div class="stock-adjust">
+            <button class="icon-btn" data-adj="${it.id}" data-delta="-1" title="−1"><i class="fa-solid fa-minus"></i></button>
+            <input type="number" data-inp="${it.id}" value="${it.stock}" min="0" aria-label="Tồn mới"/>
+            <button class="icon-btn" data-adj="${it.id}" data-delta="1" title="+1"><i class="fa-solid fa-plus"></i></button>
+            <button class="adm-btn sm" data-set="${it.id}" title="Đặt tồn"><i class="fa-solid fa-check"></i></button>
+            <button class="icon-btn" data-history="${it.id}" title="Lịch sử"><i class="fa-solid fa-clock-rotate-left"></i></button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  $('invQ').addEventListener('input', e => { state.q = e.target.value; render(); });
+  $('invState').addEventListener('change', e => { state.invState = e.target.value; render(); });
+  $('invCat').addEventListener('change', e => { state.cat = e.target.value; render(); });
+  $('invSort').addEventListener('change', e => { state.sort = e.target.value; render(); });
+
+  document.querySelectorAll('[data-inv-tab]').forEach(t => {
+    t.addEventListener('click', () => {
+      state.tab = t.dataset.invTab;
+      document.querySelectorAll('[data-inv-tab]').forEach(b => b.classList.toggle('active', b === t));
+      render();
+    });
+  });
+
+  $('invTbody').addEventListener('click', e => {
+    const adj = e.target.closest('[data-adj]');
+    if (adj) {
+      const res = INV.adjust(adj.dataset.adj, +adj.dataset.delta, 'adjust', 'Quick +/- button');
+      if (res) window.admToast?.(`${res.before} → ${res.after}`, 'ok');
+      render(); return;
+    }
+    const set = e.target.closest('[data-set]');
+    if (set) {
+      const id = set.dataset.set;
+      const inp = document.querySelector(`[data-inp="${id}"]`);
+      const target = Math.max(0, +inp.value);
+      const p = PR.get(id); if (!p) return;
+      const delta = target - p.stock;
+      if (delta === 0) { window.admToast?.('Không thay đổi', 'muted'); return; }
+      const res = INV.adjust(id, delta, 'adjust', `Set to ${target}`);
+      if (res) window.admToast?.(`Đặt tồn = ${res.after}`, 'ok');
+      render(); return;
+    }
+    const hist = e.target.closest('[data-history]');
+    if (hist) { openMovDrawer(hist.dataset.history); return; }
+  });
+
+  $('btnInvExport').addEventListener('click', () => {
+    const items = INV.forProducts(PR.all());
+    const esc2 = s => '"'+String(s??'').replace(/"/g,'""')+'"';
+    const rows = items.map(x => [x.code,x.name,x.category,x.lowStock,x.stock,x.reserved,x.available,x.avgCost,x.inventoryValue,x.state].map(esc2).join(','));
+    const csv = '\ufeff' + ['SKU,Tên,DanhMục,Ngưỡng,Tồn,Giữ,KhảDụng,GiáVốnTB,GiáTrịTồn,TrạngThái', ...rows].join('\n');
+    const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const a = document.createElement('a'); a.href=url; a.download=`inventory-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  /* ═════════════════════ RECEIVE (PO) ═════════════════════ */
+  const rcv = { lines: [] };       // [{productId, name, code, stock, qty, unitCost}]
+  const rcvModal = $('invRcvModal');
+  function openRcv(){
+    rcv.lines = [];
+    $('rcvPoCode').value = 'PO-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-4);
+    $('rcvNote').value = '';
+    $('rcvSearch').value = ''; $('rcvResults').hidden = true;
+    renderRcvLines();
+    rcvModal.hidden = false; rcvModal.setAttribute('aria-hidden','false');
+  }
+  function closeRcv(){ rcvModal.hidden = true; rcvModal.setAttribute('aria-hidden','true'); }
+  rcvModal.addEventListener('click', e => { if (e.target.matches('[data-close-rcv]')) closeRcv(); });
+  $('btnInvReceive').addEventListener('click', openRcv);
+
+  let rcvTimer = null;
+  $('rcvSearch').addEventListener('input', e => {
+    clearTimeout(rcvTimer);
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) { $('rcvResults').hidden = true; return; }
+    rcvTimer = setTimeout(() => {
+      const all = PR.all();
+      const results = all.filter(p =>
+        (p.name||'').toLowerCase().includes(q) || (p.code||'').toLowerCase().includes(q)
+      ).slice(0, 10);
+      const box = $('rcvResults');
+      box.innerHTML = results.length
+        ? results.map(p => `<div class="prod-result" data-rcv-pick="${p.id}">
+            <strong>${esc(p.name)}</strong>
+            <small>${esc(p.code)} · Tồn ${p.stock} · Giá ${F.vnd(p.price)}</small>
+          </div>`).join('')
+        : `<div class="prod-result muted">Không có SP khớp</div>`;
+      box.hidden = false;
+    }, 150);
+  });
+  $('rcvResults').addEventListener('click', e => {
+    const row = e.target.closest('[data-rcv-pick]'); if (!row) return;
+    const p = PR.get(row.dataset.rcvPick); if (!p) return;
+    if (!rcv.lines.find(l => l.productId === p.id)) {
+      rcv.lines.push({ productId: p.id, name: p.name, code: p.code, stock: p.stock, qty: 1, unitCost: p.avgCost || Math.round(p.price * 0.6) });
+    }
+    $('rcvSearch').value = ''; $('rcvResults').hidden = true; $('rcvSearch').focus();
+    renderRcvLines();
+  });
+
+  function renderRcvLines(){
+    const body = $('rcvBody');
+    if (!rcv.lines.length) {
+      body.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center;padding:16px">Chưa có dòng — tìm SP để thêm</td></tr>`;
+      $('rcvTotal').textContent = F.vnd(0);
+      return;
+    }
+    body.innerHTML = rcv.lines.map((l, idx) => `
+      <tr>
+        <td><strong>${esc(l.name)}</strong><br><small class="muted mono">${esc(l.code)}</small></td>
+        <td style="text-align:right"><small>${l.stock}</small></td>
+        <td><input type="number" min="1" value="${l.qty}" data-rcv-qty="${idx}" style="width:70px"/></td>
+        <td><input type="number" min="0" value="${l.unitCost}" data-rcv-cost="${idx}" style="width:100px"/></td>
+        <td style="text-align:right"><strong>${F.vnd(l.qty * l.unitCost)}</strong></td>
+        <td><button class="icon-btn" data-rcv-rm="${idx}" title="Xoá"><i class="fa-solid fa-trash"></i></button></td>
+      </tr>`).join('');
+    const total = rcv.lines.reduce((s,l)=>s + l.qty * l.unitCost, 0);
+    $('rcvTotal').textContent = F.vnd(total);
+  }
+  $('rcvBody').addEventListener('input', e => {
+    const q = e.target.closest('[data-rcv-qty]');
+    if (q) { rcv.lines[+q.dataset.rcvQty].qty = Math.max(1, +q.value || 1); renderRcvLines(); }
+    const c = e.target.closest('[data-rcv-cost]');
+    if (c) { rcv.lines[+c.dataset.rcvCost].unitCost = Math.max(0, +c.value || 0); renderRcvLines(); }
+  });
+  $('rcvBody').addEventListener('click', e => {
+    const r = e.target.closest('[data-rcv-rm]');
+    if (r) { rcv.lines.splice(+r.dataset.rcvRm, 1); renderRcvLines(); }
+  });
+  $('rcvSubmit').addEventListener('click', () => {
+    if (!rcv.lines.length) { window.admToast?.('Thêm ít nhất 1 dòng', 'bad'); return; }
+    const poCode = $('rcvPoCode').value.trim() || ('PO-' + Date.now());
+    const note = $('rcvNote').value.trim();
+    const { poId, results } = INV.receiveBulk(
+      rcv.lines.map(l => ({ productId: l.productId, qty: l.qty, unitCost: l.unitCost })),
+      { refId: poCode, note }
+    );
+    const totalQty = rcv.lines.reduce((s,l)=>s+l.qty, 0);
+    window.admToast?.(`Nhập ${totalQty} SP vào ${results.length} SKU (${poCode})`, 'ok');
+    closeRcv(); render();
+  });
+
+  /* ═════════════════════ COUNT (physical) ═════════════════════ */
+  const cntModal = $('invCntModal');
+  $('btnInvCount').addEventListener('click', () => {
+    const items = INV.forProducts(PR.all()).sort((a,b) => a.code.localeCompare(b.code));
+    $('cntBody').innerHTML = items.map(it => `
+      <tr data-cnt-row="${it.id}">
+        <td><code class="mono">${esc(it.code)}</code></td>
+        <td><strong>${esc(it.name)}</strong></td>
+        <td style="text-align:right"><span data-sys="${it.id}">${it.stock}</span></td>
+        <td><input type="number" min="0" data-cnt="${it.id}" placeholder="Đếm…" style="width:80px"/></td>
+        <td style="text-align:right"><span data-delta="${it.id}" class="muted">—</span></td>
+      </tr>`).join('');
+    $('cntNote').value = '';
+    cntModal.hidden = false; cntModal.setAttribute('aria-hidden','false');
+  });
+  function closeCnt(){ cntModal.hidden = true; cntModal.setAttribute('aria-hidden','true'); }
+  cntModal.addEventListener('click', e => { if (e.target.matches('[data-close-cnt]')) closeCnt(); });
+  $('cntBody').addEventListener('input', e => {
+    const inp = e.target.closest('[data-cnt]');
+    if (!inp) return;
+    const id = inp.dataset.cnt;
+    const sys = Number($('invTbody').querySelector(`[data-inp="${id}"]`)?.value ?? PR.get(id)?.stock ?? 0);
+    const v = inp.value === '' ? null : Number(inp.value);
+    const dEl = document.querySelector(`[data-delta="${id}"]`);
+    if (v == null) { dEl.textContent = '—'; dEl.className = 'muted'; }
+    else {
+      const delta = v - sys;
+      dEl.textContent = (delta > 0 ? '+' : '') + delta;
+      dEl.className = delta > 0 ? 'ok-text' : delta < 0 ? 'bad-text' : 'muted';
+    }
+  });
+  $('cntSubmit').addEventListener('click', () => {
+    const note = $('cntNote').value.trim() || 'Kiểm kê định kỳ';
+    const inputs = document.querySelectorAll('[data-cnt]');
+    let applied = 0;
+    inputs.forEach(inp => {
+      if (inp.value === '') return;
+      const id = inp.dataset.cnt;
+      const res = INV.count({ productId: id, counted: Number(inp.value), note });
+      if (res) applied++;
+    });
+    if (!applied) { window.admToast?.('Không có ô nào được đếm', 'muted'); return; }
+    window.admToast?.(`Áp dụng kiểm kê ${applied} SKU`, 'ok');
+    closeCnt(); render();
+  });
+
+  /* ═════════════════════ MOVEMENT HISTORY DRAWER ═════════════════════ */
+  const movDrawer = $('movDrawer');
+  const movState = { productId: null, reason: '', from: '', to: '' };
+  function openMovDrawer(productId){
+    movState.productId = productId || null;
+    movState.reason = ''; movState.from = ''; movState.to = '';
+    $('movReason').value = ''; $('movFrom').value = ''; $('movTo').value = '';
+    const p = productId ? PR.get(productId) : null;
+    $('movTitle').textContent = p ? `Lịch sử movement — ${p.name}` : 'Lịch sử movement — Tất cả';
+    movDrawer.hidden = false; movDrawer.setAttribute('aria-hidden','false');
+    renderMov();
+  }
+  function closeMov(){ movDrawer.hidden = true; movDrawer.setAttribute('aria-hidden','true'); }
+  movDrawer.addEventListener('click', e => { if (e.target.matches('[data-close-mov]')) closeMov(); });
+  $('btnInvMovements').addEventListener('click', () => openMovDrawer(null));
+  ['movReason','movFrom','movTo'].forEach(id => $(id).addEventListener('change', e => {
+    movState[id.replace('mov','').toLowerCase()] = e.target.value; renderMov();
+  }));
+  function renderMov(){
+    let list = INV.movements.all();
+    if (movState.productId) list = list.filter(m => m.productId === movState.productId);
+    if (movState.reason) list = list.filter(m => m.reason === movState.reason);
+    if (movState.from) { const f = new Date(movState.from).getTime(); list = list.filter(m => new Date(m.createdAt).getTime() >= f); }
+    if (movState.to)   { const t = new Date(movState.to).getTime() + 86400000; list = list.filter(m => new Date(m.createdAt).getTime() < t); }
+    const body = $('movTbody');
+    const empty = $('movEmpty');
+    if (!list.length) { body.innerHTML = ''; empty.hidden = false; return; }
+    empty.hidden = true;
+    body.innerHTML = list.slice(0, 200).map(m => {
+      const p = PR.get(m.productId);
+      const cls = m.qty > 0 ? 'ok' : m.qty < 0 ? 'bad' : 'muted';
+      return `<tr>
+        <td><small>${F.dt(m.createdAt)}</small></td>
+        <td><strong>${p ? esc(p.name) : '—'}</strong><br><small class="mono muted">${p ? esc(p.code) : ''}</small></td>
+        <td><span class="badge ${cls}">${INV.reasonLabel(m.reason)}</span></td>
+        <td style="text-align:right"><strong>${m.qty > 0 ? '+' : ''}${m.qty}</strong></td>
+        <td style="text-align:right"><small>${m.before} → ${m.after}</small></td>
+        <td><small class="mono muted">${m.refType ? esc(m.refType) + (m.refId ? ':'+esc(m.refId) : '') : '—'}</small></td>
+        <td><small>${esc(m.actor || '—')}</small></td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!rcvModal.hidden) closeRcv();
+    else if (!cntModal.hidden) closeCnt();
+    else if (!movDrawer.hidden) closeMov();
+  });
+
+  window.addEventListener('dtx:products-updated', () => { render(); if (!movDrawer.hidden) renderMov(); });
+  window.addEventListener('dtx:movements-updated', () => { if (!movDrawer.hidden) renderMov(); });
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_products') || e.key?.startsWith('dtx_admin_inv_movements')) render(); });
+  render();
+})();
+</script>
+</body></html>

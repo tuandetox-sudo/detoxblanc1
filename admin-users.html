@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Người dùng · RBAC — Detoxblanc Admin</title>
+<meta name="description" content="Quản lý tài khoản nội bộ Detoxblanc — vai trò, quyền, 2FA, khoá phiên." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+</head>
+
+<body data-adm-page="users">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Hệ thống"},{"label":"Người dùng · RBAC"}]'
+       data-title="Người dùng · RBAC"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Người dùng · RBAC</h1>
+          <p>Quản lý <strong id="usrCount">—</strong> tài khoản nội bộ. 5 vai trò, 18 quyền nguyên tử, bắt buộc TOTP cho Owner.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnUsrReset" data-perm="users:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại</button>
+          <button class="adm-btn" id="btnUsrMatrix" data-perm="users:read"><i class="fa-solid fa-table-cells"></i> Ma trận quyền</button>
+          <button class="adm-btn primary" id="btnUsrInvite" data-perm="users:write"><i class="fa-solid fa-user-plus"></i> Mời người dùng</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng user</span><strong id="statUsrTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">Owner / Admin</span><strong id="statUsrAdmin">0</strong></div>
+        <div class="stat-card"><span class="lbl">Bật TOTP</span><strong id="statUsrTotp" style="color:#0F766E">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đang chờ mời</span><strong id="statUsrInv" style="color:#D97706">0</strong></div>
+      </div>
+
+      <div class="pr-filter-bar card" role="search">
+        <div class="field search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" id="usrQ" placeholder="Tên, email…" aria-label="Tìm người dùng" />
+        </div>
+        <div class="field"><select id="usrRole">
+          <option value="">Tất cả vai trò</option>
+        </select></div>
+        <div class="field"><select id="usrStatus">
+          <option value="">Tất cả trạng thái</option>
+          <option value="active">Đang hoạt động</option>
+          <option value="invited">Đang chờ mời</option>
+          <option value="suspended">Đã khoá</option>
+        </select></div>
+        <div class="field"><select id="usrTotp">
+          <option value="">2FA — tất cả</option>
+          <option value="on">Đã bật TOTP</option>
+          <option value="off">Chưa bật TOTP</option>
+        </select></div>
+      </div>
+
+      <div class="card">
+        <table class="adm-tbl" id="usrTable">
+          <thead>
+            <tr>
+              <th>Người dùng</th>
+              <th>Email</th>
+              <th>Vai trò</th>
+              <th>2FA</th>
+              <th>Trạng thái</th>
+              <th>Lần đăng nhập gần nhất</th>
+              <th style="width:180px"></th>
+            </tr>
+          </thead>
+          <tbody id="usrTbody"></tbody>
+        </table>
+        <div class="empty-state" id="usrEmpty" hidden>
+          <i class="fa-solid fa-user-slash"></i>
+          <p>Không có user nào khớp bộ lọc.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Invite / Edit modal -->
+<div class="modal-backdrop" id="usrModal" hidden>
+  <div class="modal">
+    <header>
+      <h3 id="usrModalTitle">Mời người dùng</h3>
+      <button class="icon-btn" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <form id="usrForm" class="modal-body">
+      <input type="hidden" name="id" />
+      <div class="row-2">
+        <label><span>Tên hiển thị*</span><input name="name" required maxlength="80"/></label>
+        <label><span>Email*</span><input type="email" name="email" required maxlength="120" class="mono"/></label>
+      </div>
+      <fieldset class="role-grid" id="usrRoleSet">
+        <legend>Vai trò</legend>
+        <!-- checkboxes tạo động -->
+      </fieldset>
+      <div class="role-perms-preview muted" id="usrPermsPreview">
+        <small>Chọn vai trò để xem quyền hiệu lực.</small>
+      </div>
+      <div class="row-2">
+        <label class="chk"><input type="checkbox" name="totp" /> <span>Yêu cầu TOTP (2FA)</span></label>
+        <label><span>Trạng thái</span>
+          <select name="status">
+            <option value="active">Đang hoạt động</option>
+            <option value="invited">Đang chờ mời</option>
+            <option value="suspended">Đã khoá</option>
+          </select>
+        </label>
+      </div>
+      <footer>
+        <button type="button" class="adm-btn" data-close-modal>Huỷ</button>
+        <button type="submit" class="adm-btn primary"><i class="fa-solid fa-check"></i> Lưu</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- Matrix modal -->
+<div class="modal-backdrop" id="matrixModal" hidden>
+  <div class="modal wide">
+    <header>
+      <h3>Ma trận quyền (vai trò × permission)</h3>
+      <button class="icon-btn" data-close-modal aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="modal-body">
+      <p class="muted"><small>Ma trận chỉ đọc — sao lưu từ bảng <code>role_permissions</code> backend. Đồng bộ với <code>api/prisma/seed.ts</code>.</small></p>
+      <div class="matrix-wrap">
+        <table class="adm-tbl matrix-tbl" id="matrixTbl"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  const S = window.DTX_ADMIN_USERS;
+  const A = window.DTX_ADMIN_AUDIT;
+  const F = window.DTX_ADMIN_FMT;
+  const state = { q:'', role:'', status:'', totp:'' };
+
+  function roleChip(r){
+    const cls = r==='owner' ? 'accent' : r==='admin' ? 'info' : '';
+    return `<span class="chip ${cls}">${r}</span>`;
+  }
+  function statusBadge(s){
+    const map = { active:['ok','Đang hoạt động'], invited:['warn','Đang chờ mời'], suspended:['bad','Đã khoá'] };
+    const [cls,lbl] = map[s] || ['muted', s];
+    return `<span class="badge ${cls}">${lbl}</span>`;
+  }
+
+  function render(){
+    const all = S.all();
+    // populate role filter
+    const roleSel = document.getElementById('usrRole');
+    const first = roleSel.querySelector('option'); roleSel.innerHTML=''; roleSel.appendChild(first);
+    S.ROLES.forEach(r => {
+      const o = document.createElement('option'); o.value=r.key; o.textContent=r.name;
+      if (r.key===state.role) o.selected=true; roleSel.appendChild(o);
+    });
+
+    // stats
+    document.getElementById('usrCount').textContent = all.length;
+    document.getElementById('statUsrTotal').textContent = all.length;
+    document.getElementById('statUsrAdmin').textContent = all.filter(u => u.roles.includes('owner') || u.roles.includes('admin')).length;
+    document.getElementById('statUsrTotp').textContent = all.filter(u => u.totp).length;
+    document.getElementById('statUsrInv').textContent = all.filter(u => u.status === 'invited').length;
+
+    const q = state.q.trim().toLowerCase();
+    const list = all.filter(u => {
+      if (q && !(u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))) return false;
+      if (state.role && !u.roles.includes(state.role)) return false;
+      if (state.status && u.status !== state.status) return false;
+      if (state.totp === 'on' && !u.totp) return false;
+      if (state.totp === 'off' && u.totp) return false;
+      return true;
+    });
+
+    const tbody = document.getElementById('usrTbody');
+    const empty = document.getElementById('usrEmpty');
+    if (!list.length) { tbody.innerHTML=''; empty.hidden=false; return; }
+    empty.hidden = true;
+    tbody.innerHTML = list.map(u => {
+      const initials = u.name.split(' ').slice(-2).map(w=>w[0]).join('').toUpperCase();
+      const rolesHtml = u.roles.map(roleChip).join(' ');
+      const totpHtml = u.totp
+        ? '<span class="badge ok" title="TOTP đã bật"><i class="fa-solid fa-shield-halved"></i> TOTP</span>'
+        : '<span class="badge warn" title="Chưa bật 2FA"><i class="fa-solid fa-shield"></i> Tắt</span>';
+      const last = u.lastLoginAt ? F.dt(u.lastLoginAt) : '<span class="muted">Chưa từng</span>';
+      const isOwner = u.roles.includes('owner');
+      return `<tr data-id="${u.id}">
+        <td><div class="user-cell"><span class="avatar-sm">${initials}</span><div><strong>${u.name}</strong><small class="muted">Tạo ${F.date(u.createdAt)}</small></div></div></td>
+        <td><code class="mono">${u.email}</code></td>
+        <td>${rolesHtml}</td>
+        <td>${totpHtml}</td>
+        <td>${statusBadge(u.status)}</td>
+        <td><small>${last}</small></td>
+        <td style="text-align:right">
+          <button class="icon-btn" data-edit="${u.id}" title="Chỉnh sửa"><i class="fa-solid fa-pen"></i></button>
+          <button class="icon-btn" data-totp="${u.id}" title="Reset TOTP"><i class="fa-solid fa-key"></i></button>
+          <button class="icon-btn" data-logout="${u.id}" title="Huỷ phiên"><i class="fa-solid fa-right-from-bracket"></i></button>
+          <button class="icon-btn" data-toggle="${u.id}" title="${u.status==='active' ? 'Khoá' : 'Mở khoá'}"><i class="fa-solid ${u.status==='active' ? 'fa-lock' : 'fa-lock-open'}"></i></button>
+          ${isOwner ? '' : `<button class="icon-btn" data-del="${u.id}" title="Xoá"><i class="fa-solid fa-trash"></i></button>`}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* ───────── Invite / Edit modal ───────── */
+  const modal = document.getElementById('usrModal');
+  const form = document.getElementById('usrForm');
+  const preview = document.getElementById('usrPermsPreview');
+
+  function buildRoleCheckboxes(selected = []){
+    const set = document.getElementById('usrRoleSet');
+    set.innerHTML = '<legend>Vai trò</legend>' + S.ROLES.map(r => `
+      <label class="role-opt">
+        <input type="checkbox" name="role" value="${r.key}" ${selected.includes(r.key) ? 'checked' : ''}/>
+        <div>
+          <strong>${r.name}</strong>
+          <small class="muted">${r.description}</small>
+        </div>
+      </label>
+    `).join('');
+  }
+
+  function updatePreview(){
+    const selected = [...form.querySelectorAll('input[name="role"]:checked')].map(el => el.value);
+    if (!selected.length) { preview.innerHTML = '<small>Chọn vai trò để xem quyền hiệu lực.</small>'; return; }
+    const perms = S.permissionsFor(selected);
+    preview.innerHTML = `<small><strong>${perms.length} quyền hiệu lực:</strong> ${perms.map(p => `<code class="mono">${p}</code>`).join(' ')}</small>`;
+  }
+
+  function openModal(u){
+    document.getElementById('usrModalTitle').textContent = u ? `Sửa ${u.name}` : 'Mời người dùng';
+    form.reset();
+    buildRoleCheckboxes(u ? u.roles : ['support']);
+    if (u) {
+      form.id.value = u.id;
+      form.name.value = u.name;
+      form.email.value = u.email;
+      form.email.readOnly = true;
+      form.totp.checked = !!u.totp;
+      form.status.value = u.status;
+    } else {
+      form.id.value = '';
+      form.email.readOnly = false;
+      form.totp.checked = true;
+      form.status.value = 'invited';
+    }
+    updatePreview();
+    modal.hidden = false;
+    setTimeout(() => form.name.focus(), 50);
+  }
+  function closeModal(){ modal.hidden = true; }
+
+  modal.addEventListener('click', e => {
+    if (e.target.matches('[data-close-modal]') || e.target === modal) closeModal();
+  });
+  form.addEventListener('change', e => { if (e.target.name === 'role') updatePreview(); });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const roles = fd.getAll('role');
+    if (!roles.length) { window.admToast?.('Chọn tối thiểu 1 vai trò', 'bad'); return; }
+    const payload = {
+      name: fd.get('name').toString().trim(),
+      email: fd.get('email').toString().trim().toLowerCase(),
+      roles,
+      totp: fd.get('totp') === 'on',
+      status: fd.get('status'),
+    };
+    // Owner bắt buộc TOTP (chính sách)
+    if (roles.includes('owner') && !payload.totp) {
+      if (!confirm('Owner nên bật TOTP. Vẫn tiếp tục?')) return;
+    }
+    const id = fd.get('id');
+    if (id) {
+      S.update(id, payload);
+      A.create({
+        action: 'user.update', actorEmail: 'tuan@detoxblanc.com',
+        entity: 'user', entityId: id,
+        diff: { after: { roles: payload.roles, totp: payload.totp, status: payload.status } },
+      });
+      window.admToast?.('Đã cập nhật người dùng', 'ok');
+    } else {
+      const created = S.create(payload);
+      A.create({
+        action: 'user.invite', actorEmail: 'tuan@detoxblanc.com',
+        entity: 'user', entityId: created.id,
+        diff: { after: { email: payload.email, roles: payload.roles } },
+      });
+      window.admToast?.(`Đã gửi lời mời tới ${payload.email}`, 'ok');
+    }
+    closeModal();
+    render();
+  });
+
+  /* ───────── Matrix modal ───────── */
+  const matrixModal = document.getElementById('matrixModal');
+  function buildMatrix(){
+    const head = '<thead><tr><th>Permission</th>' + S.ROLES.map(r => `<th class="rot">${r.name}</th>`).join('') + '</tr></thead>';
+    const rows = S.PERMISSIONS.map(p => {
+      const cells = S.ROLES.map(r => {
+        const has = (S.ROLE_PERMS[r.key] || []).includes(p);
+        return `<td class="cell-${has ? 'on' : 'off'}">${has ? '<i class="fa-solid fa-check"></i>' : ''}</td>`;
+      }).join('');
+      return `<tr><td><code class="mono">${p}</code></td>${cells}</tr>`;
+    }).join('');
+    document.getElementById('matrixTbl').innerHTML = head + '<tbody>' + rows + '</tbody>';
+  }
+  document.getElementById('btnUsrMatrix').addEventListener('click', () => {
+    buildMatrix();
+    matrixModal.hidden = false;
+  });
+  matrixModal.addEventListener('click', e => {
+    if (e.target.matches('[data-close-modal]') || e.target === matrixModal) matrixModal.hidden = true;
+  });
+
+  /* ───────── Row actions ───────── */
+  document.getElementById('usrTbody').addEventListener('click', e => {
+    const edit = e.target.closest('[data-edit]');
+    if (edit) { openModal(S.get(edit.dataset.edit)); return; }
+
+    const resetTotp = e.target.closest('[data-totp]');
+    if (resetTotp) {
+      const u = S.get(resetTotp.dataset.totp);
+      if (!u) return;
+      if (!confirm(`Reset TOTP của ${u.email}? Người dùng sẽ phải cấu hình lại Authenticator.`)) return;
+      S.update(u.id, { totp: false });
+      A.create({ action: 'user.totp.reset', actorEmail: 'tuan@detoxblanc.com', entity: 'user', entityId: u.id });
+      window.admToast?.('Đã reset TOTP', 'ok');
+      render();
+    }
+
+    const logout = e.target.closest('[data-logout]');
+    if (logout) {
+      const u = S.get(logout.dataset.logout);
+      if (!u) return;
+      if (!confirm(`Huỷ toàn bộ phiên của ${u.email}?`)) return;
+      A.create({ action: 'user.sessions.revoke', actorEmail: 'tuan@detoxblanc.com', entity: 'user', entityId: u.id });
+      window.admToast?.(`Đã huỷ phiên của ${u.email}`, 'ok');
+    }
+
+    const toggle = e.target.closest('[data-toggle]');
+    if (toggle) {
+      const u = S.get(toggle.dataset.toggle);
+      if (!u) return;
+      if (u.roles.includes('owner') && u.status === 'active') {
+        window.admToast?.('Không thể khoá Owner', 'bad');
+        return;
+      }
+      const next = u.status === 'active' ? 'suspended' : 'active';
+      S.update(u.id, { status: next });
+      A.create({
+        action: next === 'suspended' ? 'user.suspend' : 'user.activate',
+        actorEmail: 'tuan@detoxblanc.com',
+        entity: 'user', entityId: u.id,
+        diff: { before: { status: u.status }, after: { status: next } },
+      });
+      window.admToast?.(next === 'suspended' ? 'Đã khoá tài khoản' : 'Đã mở khoá', 'ok');
+      render();
+    }
+
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const u = S.get(del.dataset.del);
+      if (!u) return;
+      if (u.roles.includes('owner')) { window.admToast?.('Không thể xoá Owner', 'bad'); return; }
+      if (!confirm(`Xoá vĩnh viễn ${u.email}?`)) return;
+      S.remove(u.id);
+      A.create({ action: 'user.delete', actorEmail: 'tuan@detoxblanc.com', entity: 'user', entityId: u.id });
+      window.admToast?.('Đã xoá', 'ok');
+      render();
+    }
+  });
+
+  document.getElementById('btnUsrInvite').addEventListener('click', () => openModal(null));
+  document.getElementById('btnUsrReset').addEventListener('click', () => {
+    if (confirm('Đặt lại danh sách user về seed?')) { S.reset(); render(); window.admToast?.('Reset OK', 'ok'); }
+  });
+
+  document.getElementById('usrQ').addEventListener('input', e => { state.q = e.target.value; render(); });
+  document.getElementById('usrRole').addEventListener('change', e => { state.role = e.target.value; render(); });
+  document.getElementById('usrStatus').addEventListener('change', e => { state.status = e.target.value; render(); });
+  document.getElementById('usrTotp').addEventListener('change', e => { state.totp = e.target.value; render(); });
+
+  window.addEventListener('dtx:users-updated', render);
+  window.addEventListener('storage', e => { if (e.key?.startsWith('dtx_admin_users')) render(); });
+  render();
+})();
+</script>
+</body></html>

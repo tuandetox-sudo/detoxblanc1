@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Detoxblanc OMS — Biên bản bàn giao chốt</title>
+<meta name="description" content="Tổng hợp toàn bộ nội dung đã chốt cho dự án Detoxblanc OMS v1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --bg:#FAF8F4; --card:#FFFFFF; --line:#E8E4DC; --line-soft:#F0EBE3;
+    --ink:#1F2937; --ink-2:#374151; --ink-3:#6B7280; --ink-4:#9CA3AF;
+    --primary:#2D5DA1; --primary-2:#3B6EB6; --primary-soft:#E8EFF9;
+    --good:#16A34A; --good-bg:#DCFCE7; --good-fg:#166534;
+    --warn:#D97706; --warn-bg:#FEF3C7; --warn-fg:#92400E;
+    --bad:#C0392B; --bad-bg:#FEE2E2; --bad-fg:#991B1B;
+    --info:#1E3A8A; --info-bg:#DBEAFE;
+    --code-bg:#F3F4F6;
+    --shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.04);
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:80px}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1200px; margin:0 auto; padding:0 20px}
+  a{color:var(--primary); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:var(--code-bg); padding:1px 6px; border-radius:4px; font-size:.9em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{background:#0F172A; color:#E2E8F0; padding:14px 18px; border-radius:10px;
+    overflow-x:auto; font-size:13px; line-height:1.55; margin:10px 0}
+  pre code{background:transparent; color:inherit; padding:0; font-size:13px}
+  table{width:100%; border-collapse:collapse; margin:10px 0; background:var(--card)}
+  table th,table td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--line); font-size:14px}
+  table th{background:var(--code-bg); font-weight:600; font-size:12.5px;
+    text-transform:uppercase; letter-spacing:.04em; color:var(--ink-2)}
+  table tr:last-child td{border-bottom:0}
+  ul,ol{margin:8px 0 8px 22px; padding:0}
+  li{margin:4px 0}
+  hr{border:0; border-top:1px solid var(--line); margin:32px 0}
+
+  /* Header */
+  .hero{background:linear-gradient(135deg,#0F1F1C,#1B3935);
+    color:#fff; padding:48px 0 36px; margin-bottom:0}
+  .hero .wrap{display:flex; justify-content:space-between; align-items:flex-end;
+    gap:20px; flex-wrap:wrap}
+  .hero h1{margin:6px 0 8px; font-size:32px; font-weight:700; letter-spacing:-.02em}
+  .hero .badge-wrap{margin-bottom:8px}
+  .hero p{margin:0; opacity:.85; font-size:15.5px; max-width:760px}
+  .hero .meta{text-align:right; font-size:13px; opacity:.7}
+  .hero .meta strong{display:block; color:#fff; opacity:1; font-size:18px}
+  .hero-badge{display:inline-flex; align-items:center; gap:7px; padding:5px 12px;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+    border-radius:999px; font-size:12.5px; font-weight:600; letter-spacing:.02em}
+  .hero-badge.ok{background:#16A34A; border-color:transparent}
+
+  /* Sticky TOC */
+  nav.toc{position:sticky; top:0; z-index:30; background:var(--bg);
+    border-bottom:1px solid var(--line); backdrop-filter:saturate(180%) blur(8px);
+    -webkit-backdrop-filter:saturate(180%) blur(8px); margin-bottom:24px}
+  nav.toc .wrap{display:flex; gap:4px; overflow-x:auto; padding:8px 20px}
+  nav.toc a{padding:7px 13px; font-size:13px; color:var(--ink-2);
+    border-radius:8px; white-space:nowrap; font-weight:500;
+    transition:background .12s}
+  nav.toc a:hover{background:var(--primary-soft); color:var(--primary); text-decoration:none}
+  nav.toc a.section-num{background:var(--code-bg); color:var(--ink-3);
+    font-family:ui-monospace,monospace; font-size:11px; padding:7px 9px}
+
+  /* Sections */
+  section{margin-bottom:38px; scroll-margin-top:80px}
+  section > h2{font-size:22px; font-weight:700; letter-spacing:-.01em;
+    margin:0 0 14px; padding-bottom:10px; border-bottom:2px solid var(--primary);
+    display:flex; align-items:center; gap:10px}
+  section > h2 .num{background:var(--primary); color:#fff; width:30px; height:30px;
+    border-radius:8px; display:grid; place-items:center; font-size:14px;
+    font-family:ui-monospace,monospace; flex-shrink:0}
+  section > h2 small{margin-left:auto; font-size:12px; color:var(--ink-3);
+    font-weight:500; letter-spacing:.04em; text-transform:uppercase}
+  section h3{font-size:17px; font-weight:600; margin:22px 0 8px; color:var(--ink)}
+  section h4{font-size:14px; font-weight:600; margin:16px 0 6px; color:var(--ink-2);
+    text-transform:uppercase; letter-spacing:.04em}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+    padding:20px 22px; box-shadow:var(--shadow); margin:12px 0}
+  .card-tight{padding:14px 18px}
+
+  .grid{display:grid; gap:14px}
+  .grid-2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+  .grid-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .grid-4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+
+  /* Pills */
+  .pill{display:inline-block; padding:2px 9px; border-radius:999px;
+    font-size:11.5px; font-weight:600; letter-spacing:.02em;
+    background:var(--code-bg); color:var(--ink-2)}
+  .pill.ok{background:var(--good-bg); color:var(--good-fg)}
+  .pill.add{background:var(--info-bg); color:var(--info)}
+  .pill.fix{background:var(--warn-bg); color:var(--warn-fg)}
+  .pill.bad{background:var(--bad-bg); color:var(--bad-fg)}
+  .pill-row{display:flex; gap:6px; flex-wrap:wrap; margin:6px 0}
+
+  /* Stat */
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px}
+  .stat .lbl{font-size:11.5px; color:var(--ink-3); font-weight:500;
+    text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px}
+  .stat strong{font-size:24px; font-weight:700; color:var(--ink); display:block;
+    font-family:ui-monospace,monospace; letter-spacing:-.01em}
+  .stat .sub{font-size:11.5px; color:var(--ink-3); margin-top:2px}
+
+  /* Check list */
+  .check-list{list-style:none; padding:0; margin:0}
+  .check-list li{display:flex; align-items:flex-start; gap:11px;
+    padding:10px 0; border-bottom:1px dashed var(--line)}
+  .check-list li:last-child{border-bottom:0}
+  .check-list .ico{flex-shrink:0; width:26px; height:26px; border-radius:50%;
+    display:grid; place-items:center; color:#fff; font-size:11px; margin-top:1px;
+    background:var(--good)}
+  .check-list .ico.add{background:var(--primary)}
+  .check-list .ico.fix{background:var(--warn)}
+  .check-list b{font-weight:600; color:var(--ink)}
+  .check-list small{display:block; color:var(--ink-3); font-size:13px;
+    margin-top:3px; line-height:1.5}
+
+  /* Module cards */
+  .mod-card{background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+    padding:18px 20px; transition:transform .08s ease, box-shadow .12s}
+  .mod-card:hover{transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,.06)}
+  .mod-card h3{margin:0 0 4px; font-size:16px; font-weight:600;
+    display:flex; align-items:center; gap:9px}
+  .mod-card h3 i{width:32px; height:32px; border-radius:8px; background:var(--primary-soft);
+    color:var(--primary); display:grid; place-items:center; font-size:13px}
+  .mod-card .lead{color:var(--ink-3); margin:6px 0 12px; font-size:13.5px; line-height:1.5}
+
+  /* Phase timeline */
+  .phase{display:flex; gap:14px; padding:14px 0;
+    border-bottom:1px solid var(--line)}
+  .phase:last-child{border-bottom:0}
+  .phase .day{flex-shrink:0; width:96px; padding:6px 0; text-align:center;
+    background:var(--primary-soft); color:var(--primary); border-radius:8px;
+    font-weight:700; font-size:13.5px; height:fit-content}
+  .phase h4{margin:0 0 4px; font-size:15px; font-weight:600;
+    color:var(--ink); text-transform:none; letter-spacing:0}
+
+  /* Boxed callouts */
+  .callout{background:var(--info-bg); border-left:3px solid var(--info);
+    padding:12px 16px; border-radius:6px; margin:10px 0; font-size:13.5px;
+    color:var(--info)}
+  .callout.warn{background:var(--warn-bg); border-color:var(--warn); color:var(--warn-fg)}
+  .callout.ok{background:var(--good-bg); border-color:var(--good); color:var(--good-fg)}
+  .callout strong{color:inherit}
+
+  /* Footer */
+  footer{margin-top:60px; padding:30px 0; border-top:1px solid var(--line);
+    color:var(--ink-3); font-size:13px; text-align:center; background:var(--card)}
+
+  @media (max-width:680px){
+    .hero{padding:32px 0 28px}
+    .hero h1{font-size:24px}
+    .hero .meta{text-align:left; width:100%}
+    section > h2{font-size:18px}
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+    nav.toc .wrap{padding:6px 14px}
+    nav.toc a{font-size:12px; padding:6px 10px}
+  }
+  @media print{
+    nav.toc{display:none}
+    .hero{background:#1B3935; color:#fff; -webkit-print-color-adjust:exact}
+    section{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <span class="hero-badge ok"><i class="fa-solid fa-circle-check"></i> v1.0 — đã chốt</span>
+      <h1>Detoxblanc OMS — Biên bản bàn giao</h1>
+      <p>Tổng hợp toàn bộ nội dung đã chốt cho dự án Detoxblanc Order Management System. Tài liệu này thay thế mọi bản nháp trước đó.</p>
+    </div>
+    <div class="meta">
+      <strong>05/2026</strong>
+      v1.0 production-ready<br>
+      47 trang HTML · 9 JS · 3 CSS<br>
+      Bản FE-only deploy được ngay
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a class="section-num" href="#s1">§1</a>
+    <a href="#s1">Tổng quan</a>
+    <a class="section-num" href="#s2">§2</a>
+    <a href="#s2">Scope v1.0</a>
+    <a class="section-num" href="#s3">§3</a>
+    <a href="#s3">P0 hoàn tất</a>
+    <a class="section-num" href="#s4">§4</a>
+    <a href="#s4">47 trang HTML</a>
+    <a class="section-num" href="#s5">§5</a>
+    <a href="#s5">Bug đã fix</a>
+    <a class="section-num" href="#s6">§6</a>
+    <a href="#s6">URL routing</a>
+    <a class="section-num" href="#s7">§7</a>
+    <a href="#s7">Deploy Google</a>
+    <a class="section-num" href="#s8">§8</a>
+    <a href="#s8">Hosting truyền thống</a>
+    <a class="section-num" href="#s9">§9</a>
+    <a href="#s9">Go-live 4 phase</a>
+    <a class="section-num" href="#s10">§10</a>
+    <a href="#s10">Rollback + Monitor</a>
+    <a class="section-num" href="#s11">§11</a>
+    <a href="#s11">Roadmap v1.1</a>
+    <a class="section-num" href="#s12">§12</a>
+    <a href="#s12">Bàn giao</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- §1. TỔNG QUAN -->
+<section id="s1">
+  <h2><span class="num">1</span> Tổng quan dự án <small>Project overview</small></h2>
+
+  <div class="grid grid-4">
+    <div class="stat"><div class="lbl">Trang HTML</div><strong>47</strong><div class="sub">27 public + 20 admin</div></div>
+    <div class="stat"><div class="lbl">JS modules</div><strong>9</strong><div class="sub">2,400+ dòng FE</div></div>
+    <div class="stat"><div class="lbl">CSS</div><strong>3</strong><div class="sub">~3,500 dòng</div></div>
+    <div class="stat"><div class="lbl">Backend routes</div><strong>40+</strong><div class="sub">Fastify + Prisma</div></div>
+    <div class="stat"><div class="lbl">Schema models</div><strong>20+</strong><div class="sub">Postgres + RBAC</div></div>
+    <div class="stat"><div class="lbl">P0 đã fix</div><strong>7/7</strong><div class="sub">100% complete</div></div>
+    <div class="stat"><div class="lbl">Bug critical</div><strong>5</strong><div class="sub">đã đóng</div></div>
+    <div class="stat"><div class="lbl">Zip bàn giao</div><strong>395 KB</strong><div class="sub">75 file</div></div>
+  </div>
+
+  <h3>Mục tiêu kinh doanh</h3>
+  <ul>
+    <li><b>Public site</b> để KH tìm hiểu thương hiệu, xem SP, đặt hàng (27 trang gồm trang chủ, danh mục, chi tiết SP, checkout, blog, FAQ, pháp lý...)</li>
+    <li><b>Admin console</b> để vận hành: quản lý đơn hàng, kho, KH, sản phẩm, voucher, blog, đánh giá, audit, RBAC (20 trang)</li>
+    <li><b>Backend</b> Fastify + Prisma + PostgreSQL phục vụ FE (40+ endpoint, đã có Dockerfile + docker-compose)</li>
+  </ul>
+
+  <h3>Trạng thái hiện tại</h3>
+  <div class="callout ok"><strong>✅ FE-only mode chạy được ngay</strong> — không cần deploy backend. Mọi data dùng JS seed sẵn (`assets/data/products.js`, `assets/admin-data*.js`). Phù hợp UAT, demo cho stakeholder, training nhân viên.</div>
+  <div class="callout"><strong>📋 Backend</strong> đã có code sẵn sàng (folder `api/`) — cần Cloud SQL/Postgres + Memorystore Redis + secrets để deploy. Hướng dẫn chi tiết trong §7 và file <code>DEPLOY-GOOGLE.md</code>.</div>
+</section>
+
+<!-- §2. SCOPE -->
+<section id="s2">
+  <h2><span class="num">2</span> Scope v1.0 đã chốt <small>What's in / out</small></h2>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3 style="color:var(--good)"><i class="fa-solid fa-check"></i> Đã build (in v1.0)</h3>
+      <ul>
+        <li><b>Đơn hàng</b>: POS-style admin create · 9 trạng thái state machine · RMA partial/full · Cancel-after-ship · Tracking carrier</li>
+        <li><b>Khách hàng</b>: RFM segment auto · Loyalty tier (4 cấp) · Communication timeline · Marketing consent (GDPR) · CSV import (3 strategy)</li>
+        <li><b>Kho</b>: PO receive với moving-average cost · Physical count · Reservation atomic chống oversell · Movement ledger · Low-stock alerts</li>
+        <li><b>Catalog</b>: 18+ SP seed · Variants · Categories · Collections · Bulk edit · SEO meta</li>
+        <li><b>Voucher</b>: 3 type (percent, amount, shipping) · Min order · Usage limit · Schedule</li>
+        <li><b>Content</b>: Blog (Markdown editor) · Trang tĩnh (About/Privacy/Terms/Shipping/FAQ) · Reviews · Newsletter</li>
+        <li><b>Hệ thống</b>: RBAC 5 roles × 18 permissions · Audit log với hash chain · Reports (GMV/AOV/top SP)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 style="color:var(--warn)"><i class="fa-solid fa-clock"></i> Roadmap v1.1 (Soon)</h3>
+      <ul>
+        <li><b>Phân tích nâng cao</b>: Funnel checkout · Cohort retention · RFM heatmap · Custom dashboard / role (Q3/2026)</li>
+        <li><b>QR chính hãng</b>: Sinh QR unique cho mỗi unit · Verify chống hàng giả · Trace batch (Q4/2026)</li>
+        <li><b>Tích hợp ngoài</b>: VNPAY/MoMo/GHN/GHTK · Webhook outbound · GA/Pixel · Slack bot (Q3/2026)</li>
+      </ul>
+      <p class="callout warn">Các mục này có placeholder UI tại <code>admin-coming-soon.html?feat=…</code> với spec đầy đủ + phương án thay thế tạm thời.</p>
+    </div>
+  </div>
+</section>
+
+<!-- §3. P0 -->
+<section id="s3">
+  <h2><span class="num">3</span> 7 nhóm P0 đã hoàn tất <small>Critical fixes</small></h2>
+
+  <ul class="check-list">
+    <li>
+      <span class="ico"><i class="fa-solid fa-check"></i></span>
+      <div>
+        <b>Layout guards CSS</b> — chống vỡ bố cục khi admin nhập dữ liệu thật
+        <small>~150 dòng CSS: table truncate + ellipsis · modal overflow-y:auto · word-break cho mono/code/email · sticky modal-foot · mobile 1-col · min-width tables 980/1100px · title= tooltip cho cell bị cắt</small>
+      </div>
+    </li>
+    <li>
+      <span class="ico fix"><i class="fa-solid fa-wrench"></i></span>
+      <div>
+        <b>Inventory atomic + product-level stock</b> — fix race condition oversell + SP không có variant
+        <small>Postgres <code>UPDATE … WHERE (stock-reserved) ≥ qty</code> đảm bảo atomic. Thêm field <code>Product.stock</code>. Fix <code>commitStock</code>/<code>receiveStock</code>/<code>reserveStock</code>/<code>releaseStock</code>. Aggregator + alerts + adjust/set/count routes hỗ trợ cả 2 level.</small>
+      </div>
+    </li>
+    <li>
+      <span class="ico add"><i class="fa-solid fa-plus"></i></span>
+      <div>
+        <b>RMA / Cancel-after-ship / Tracking</b> — endpoint mới + 2 model schema
+        <small>State machine 5 trạng thái: requested → inspecting → approved → refunded (hoặc rejected). Refund điểm thưởng tỉ lệ với phần trả. Restock optional. Tracking carrier + URL. <code>Order.cancelReason</code>, <code>returnedAt</code>, <code>OrderReturn</code>, <code>OrderReturnItem</code>.</small>
+      </div>
+    </li>
+    <li>
+      <span class="ico add"><i class="fa-solid fa-plus"></i></span>
+      <div>
+        <b>17 bridge functions FE↔BE</b> trong <code>assets/admin-api.js</code>
+        <small>Orders 7 fn (adminCreate, setTracking, cancelAfterShip, createReturn, updateReturn, listReturns, validateVoucher) · Customers 11 fn (recomputeLoyalty, communications, consent, addresses CRUD, import, merge) · Inventory 5 fn (receive, receiveBulk, count, alerts, movements).</small>
+      </div>
+    </li>
+    <li>
+      <span class="ico add"><i class="fa-solid fa-plus"></i></span>
+      <div>
+        <b>RBAC FE</b> — file mới <code>assets/admin-rbac.js</code> + thuộc tính <code>data-perm</code>
+        <small>Tự gọi <code>/auth/me</code>, build permissions Set, xoá DOM (chống bypass F12), MutationObserver bắt row mới render. 22 button đã gắn perm trên 12 trang admin. BE vẫn là nguồn đúng (mọi route có <code>requirePermission</code>).</small>
+      </div>
+    </li>
+    <li>
+      <span class="ico"><i class="fa-solid fa-check"></i></span>
+      <div>
+        <b>Rich staging seed</b> — <code>api/prisma/seed-staging.ts</code>
+        <small>50 KH × 70 đơn × 18 SP × 6 voucher · refuse khi DB trông giống prod (regex check DATABASE_URL). Mọi segment KH đầy đủ: new_cus / active / vip / at_risk / churn / blacklist. Trạng thái đơn đa dạng để test UI.</small>
+      </div>
+    </li>
+    <li>
+      <span class="ico"><i class="fa-solid fa-check"></i></span>
+      <div>
+        <b>PRODUCTION-CHECKLIST.md</b> + <b>DEPLOY-GOOGLE.md</b> + <b>README-FOR-IT.md</b>
+        <small>Quy trình go-live 4 phase chi tiết · Rollback 24h · Monitoring (Sentry + alert rules) · Security checklist · 7 cách deploy cho mọi loại hosting (cPanel/IIS/Nginx/Firebase/Cloudflare/Vercel/Netlify).</small>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<!-- §4. PAGES -->
+<section id="s4">
+  <h2><span class="num">4</span> 47 trang HTML <small>Site map</small></h2>
+
+  <h3>27 trang public — giao diện người xem</h3>
+  <table>
+    <tr><th>Nhóm</th><th>Trang</th></tr>
+    <tr><td><b>Trang chủ &amp; tìm kiếm</b></td>
+      <td><code>index.html</code> · <code>category.html</code> · <code>search.html</code> · <code>sitemap.html</code></td></tr>
+    <tr><td><b>Sản phẩm &amp; mua sắm</b></td>
+      <td><code>product.html</code> · <code>checkout.html</code> · <code>wishlist.html</code> · <code>track.html</code> · <code>gift.html</code></td></tr>
+    <tr><td><b>Tài khoản KH</b></td>
+      <td><code>account.html</code> · <code>login.html</code></td></tr>
+    <tr><td><b>Nội dung</b></td>
+      <td><code>journal.html</code> · <code>article.html</code> · <code>article-niacinamide.html</code> · <code>science.html</code> · <code>ritual.html</code></td></tr>
+    <tr><td><b>Hỗ trợ</b></td>
+      <td><code>faq.html</code> · <code>contact.html</code> · <code>shipping.html</code> · <code>returns.html</code> · <code>safety.html</code></td></tr>
+    <tr><td><b>Pháp lý</b></td>
+      <td><code>privacy.html</code> · <code>terms.html</code> · <code>cookie.html</code></td></tr>
+    <tr><td><b>Công ty</b></td>
+      <td><code>about.html</code> · <code>careers.html</code> · <code>dealer.html</code></td></tr>
+  </table>
+
+  <h3>20 trang admin — quản trị</h3>
+  <table>
+    <tr><th>Module</th><th>Trang</th><th>Chức năng nổi bật</th></tr>
+    <tr><td><b>Bán hàng</b></td>
+      <td><code>admin-orders.html</code><br><code>admin-customers.html</code><br><code>admin-vouchers.html</code><br><code>admin-returns.html</code></td>
+      <td>POS create + RMA + tracking<br>RFM + Loyalty + 6-tab drawer<br>3 type + schedule<br>RMA list + state machine</td></tr>
+    <tr><td><b>Sản phẩm</b></td>
+      <td><code>admin-products.html</code><br><code>admin-product-edit.html</code><br><code>admin-collections.html</code><br><code>admin-inventory.html</code></td>
+      <td>Catalog 18+ SKU<br>Form sửa SP<br>Bộ sưu tập<br>PO + count + atomic</td></tr>
+    <tr><td><b>Nội dung</b></td>
+      <td><code>admin-articles.html</code><br><code>admin-pages.html</code><br><code>admin-reviews.html</code><br><code>admin-newsletter.html</code></td>
+      <td>Blog Markdown editor<br>Trang tĩnh (rebuild v1.0)<br>Duyệt review KH<br>Chiến dịch + audience seg</td></tr>
+    <tr><td><b>Hệ thống</b></td>
+      <td><code>admin.html</code><br><code>admin-reports.html</code><br><code>admin-audit.html</code><br><code>admin-users.html</code><br><code>admin-settings.html</code></td>
+      <td>Dashboard KPI<br>GMV/AOV/top SP<br>Audit log + hash chain<br>RBAC 5 role × 18 perm<br>Brand/SMTP/Payment config</td></tr>
+    <tr><td><b>Phụ trợ</b></td>
+      <td><code>admin-login.html</code><br><code>admin-coming-soon.html</code><br><code>admin-dev.html</code></td>
+      <td>Đăng nhập (UI ready)<br>Placeholder roadmap v1.1<br>Dev tools nội bộ</td></tr>
+  </table>
+</section>
+
+<!-- §5. BUGS -->
+<section id="s5">
+  <h2><span class="num">5</span> 5 bug critical đã fix <small>Bug log</small></h2>
+
+  <table>
+    <tr><th>#</th><th>Bug</th><th>Tác động</th><th>Fix</th></tr>
+    <tr>
+      <td>1</td>
+      <td><b>Race condition oversell</b><br><code>reserveStock</code> findUnique → update non-atomic</td>
+      <td>2 KH đặt cùng lúc 1 SKU cuối → cả 2 đều thành công → âm kho</td>
+      <td>Atomic <code>UPDATE products/variants SET reserved=reserved+qty WHERE (stock-reserved)≥qty</code> — Postgres row-lock đảm bảo</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><b>SP không có variant không trừ stock</b><br>Schema thiếu <code>Product.stock</code></td>
+      <td>SP đơn (không variant) commit/receive sẽ tồn ảo</td>
+      <td>Thêm field <code>Product.stock</code>. Update <code>commitStock</code>/<code>receiveStock</code>/aggregator/alerts/count để dùng product-level khi không có variant</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><b>Thiếu CSS modal-backdrop</b><br>0 rule cho <code>.modal-backdrop</code> + <code>.modal</code> base</td>
+      <td>10 trang admin click nút mở modal → giao diện vỡ → user nghĩ "không hoạt động"</td>
+      <td>Thêm ~140 dòng CSS: overlay, centered card, animations, header/footer/body, label/input styles, mobile responsive</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><b>Thiếu <code>.stat-grid</code> + <code>.stat-card</code></b></td>
+      <td>10 trang KPI cards bị stack vertical thay vì 4-up grid</td>
+      <td>Thêm CSS grid auto-fit minmax(180px) + card style</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><b><code>form.title.focus()</code></b><br>DOM gotcha: <code>form.title</code> trả về thuộc tính HTML title (string), không phải input named "title"</td>
+      <td>Click "Viết bài mới" → modal mở nhưng crash JS</td>
+      <td>Đổi sang <code>form.elements.title?.focus()</code></td>
+    </tr>
+  </table>
+
+  <p>Còn các fix nhỏ: env-detect cho Firebase host fallback local mode · Prisma schema thêm carrier/tracking/returnedAt fields · Pages hardcoded <code>href:'#'</code> chuyển thành stub thật hoặc trang coming-soon.</p>
+</section>
+
+<!-- §6. URL -->
+<section id="s6">
+  <h2><span class="num">6</span> Hợp nhất FE + Admin · URL routing <small>Same domain, clean URLs</small></h2>
+
+  <h3>Cấu trúc URL chốt</h3>
+<pre><code>https://detoxblanc.com/                    → Public homepage (index.html)
+https://detoxblanc.com/about               → about.html (clean URL)
+https://detoxblanc.com/checkout            → checkout.html
+https://detoxblanc.com/product             → product.html
+... (27 public URLs)
+
+https://detoxblanc.com/admin               → admin.html (dashboard)
+https://detoxblanc.com/admin/orders        → admin-orders.html (rewrite)
+https://detoxblanc.com/admin/customers     → admin-customers.html
+https://detoxblanc.com/admin/inventory     → admin-inventory.html
+... (19 admin URLs)
+
+https://detoxblanc.com/v1/auth/login       → reverse-proxy → BE Fastify
+https://detoxblanc.com/v1/orders           → reverse-proxy → BE Fastify
+... (40+ API endpoints)</code></pre>
+
+  <p>Rewrite được cấu hình ở 4 layer:</p>
+  <ul>
+    <li><b>Apache</b> (cPanel/Plesk Linux): file <code>.htaccess</code> với 19 RewriteRule</li>
+    <li><b>IIS</b> (Plesk Windows/Azure): file <code>web.config</code> với 19 rule</li>
+    <li><b>Nginx</b> (VPS): block <code>location ^~ /admin/</code> với rewrite directives</li>
+    <li><b>Firebase</b>: <code>firebase.json</code> rewrites array (cộng <code>cleanUrls: true</code>)</li>
+  </ul>
+
+  <h3>FE auto-detect API base</h3>
+  <p>File <code>assets/env-detect.js</code> chạy trước mọi script khác:</p>
+  <table>
+    <tr><th>Hostname</th><th>Mode</th><th>API base</th></tr>
+    <tr><td><code>localhost</code> / <code>127.x.x.x</code></td><td><span class="pill">local</span></td><td><code>/v1</code></td></tr>
+    <tr><td><code>*.web.app</code> / <code>*.firebaseapp.com</code> / <code>*.run.app</code></td><td><span class="pill">local</span> (demo, FE-only)</td><td><code>/v1</code></td></tr>
+    <tr><td><code>detoxblanc.com</code></td><td><span class="pill ok">remote</span></td><td><code>https://api.detoxblanc.com/v1</code></td></tr>
+    <tr><td>Khác (default)</td><td><span class="pill ok">remote</span></td><td><code>/v1</code> (qua reverse proxy)</td></tr>
+  </table>
+  <p>Override bằng <code>&lt;meta name="dtx-api-base" content="..."&gt;</code> hoặc <code>localStorage.setItem('DTX_API_BASE_OVERRIDE', '...')</code>.</p>
+</section>
+
+<!-- §7. GOOGLE -->
+<section id="s7">
+  <h2><span class="num">7</span> Deploy lên Google Cloud <small>3 path A/B/C</small></h2>
+
+  <table>
+    <tr><th>Path</th><th>Phù hợp khi</th><th>Chi phí ước tính</th><th>Setup</th></tr>
+    <tr>
+      <td><b>A. Cloud Run × 2 services</b><br>(recommend)</td>
+      <td>Production thật, scale auto, custom domain</td>
+      <td>~$15-30/tháng</td>
+      <td>30 phút<br><code>./scripts/deploy-google.sh</code></td>
+    </tr>
+    <tr>
+      <td><b>B. Firebase Hosting + Cloud Run API</b></td>
+      <td>Cần CDN edge global, FE static</td>
+      <td>~$10-25/tháng</td>
+      <td>45 phút<br><code>MODE=firebase ./scripts/deploy-google.sh</code></td>
+    </tr>
+    <tr>
+      <td><b>C. Cloud Run single-container</b></td>
+      <td>Demo, staging, MVP</td>
+      <td>~$5-15/tháng</td>
+      <td>15 phút<br>Cần customize Dockerfile gộp</td>
+    </tr>
+  </table>
+
+  <h3>Lệnh chạy 1 dòng (Path A — production)</h3>
+<pre><code># Sau khi đã setup project + secrets (xem DEPLOY-GOOGLE.md mục 0)
+PROJECT_ID=detoxblanc-prod ./scripts/deploy-google.sh</code></pre>
+
+  <p>Script sẽ:</p>
+  <ol>
+    <li>Build &amp; push API image, deploy <code>detoxblanc-api</code> (internal, no public access)</li>
+    <li>Build &amp; push Web image, deploy <code>detoxblanc-web</code> (public)</li>
+    <li>Cấp quyền Web invoke API (IAM <code>run.invoker</code>)</li>
+    <li>Set <code>API_UPSTREAM</code> env trên Web → Web nginx tự reverse-proxy</li>
+  </ol>
+
+  <h3>Resource cần chuẩn bị (xem DEPLOY-GOOGLE.md chi tiết)</h3>
+  <ul>
+    <li><b>Cloud SQL Postgres 16</b> (db-f1-micro tiết kiệm cho start) — <code>detoxblanc-db</code></li>
+    <li><b>Memorystore Redis</b> (BASIC 1GB) — <code>detoxblanc-redis</code></li>
+    <li><b>Secret Manager</b>: 5 secrets (DATABASE_URL, REDIS_URL, JWT_SECRET, JWT_REFRESH_SECRET, COOKIE_SECRET)</li>
+    <li><b>Service account</b>: <code>detoxblanc-api</code> với role <code>cloudsql.client</code> + <code>secretmanager.secretAccessor</code></li>
+    <li><b>Artifact Registry</b>: repo <code>detoxblanc</code> ở region <code>asia-southeast1</code></li>
+  </ul>
+
+  <h3>Custom domain</h3>
+<pre><code>gcloud run domain-mappings create \
+  --service=detoxblanc-web \
+  --domain=detoxblanc.com \
+  --region=asia-southeast1
+# DNS ở registrar: copy bản ghi A/AAAA mà gcloud trả về</code></pre>
+
+  <div class="callout">📖 Hướng dẫn đầy đủ 385 dòng (preparation, secrets, custom domain, CI/CD, monitoring, rollback) ở file <code>DEPLOY-GOOGLE.md</code>.</div>
+</section>
+
+<!-- §8. HOSTING -->
+<section id="s8">
+  <h2><span class="num">8</span> Deploy hosting truyền thống <small>cPanel · Plesk · Nginx · Firebase · Cloudflare · Vercel · Netlify</small></h2>
+
+  <h3>File zip bàn giao IT đã có sẵn config cho 3 server type</h3>
+  <table>
+    <tr><th>File</th><th>Dùng cho</th><th>Tự động</th></tr>
+    <tr><td><code>.htaccess</code></td><td>Apache (cPanel, Plesk Linux, shared hosting)</td><td>✓ Đặt vào public_html → tự apply</td></tr>
+    <tr><td><code>web.config</code></td><td>IIS (Plesk Windows, Azure App Service)</td><td>✓ Đặt vào wwwroot → tự apply</td></tr>
+    <tr><td><code>firebase.json</code></td><td>Firebase Hosting</td><td>✓ Chạy <code>firebase deploy --only hosting</code></td></tr>
+  </table>
+
+  <h3>Quy trình IT 3 bước</h3>
+  <ol>
+    <li><b>Tải zip</b> <code>~/Desktop/detoxblanc-fe-20260504.zip</code> (395 KB, 75 file, MD5 <code>3dcc4c146e2eb6705e0cd8d45319c331</code>)</li>
+    <li><b>Upload + Extract</b> vào web root (<code>public_html</code> hoặc <code>wwwroot</code>) — đảm bảo file <code>.htaccess</code> được giải nén (bật "Show Hidden Files" trong File Manager)</li>
+    <li><b>Đọc <code>README-FOR-IT.md</code></b> trong zip — chọn 1 trong 7 cách deploy phù hợp với hosting đang có</li>
+  </ol>
+
+  <h3>Smoke test sau upload</h3>
+<pre><code>DOMAIN="https://your-domain.com"
+
+# Public pages
+curl -sI "$DOMAIN/"            | head -1   # phải 200
+curl -sI "$DOMAIN/about"       | head -1   # phải 200 (clean URL)
+curl -sI "$DOMAIN/about.html"  | head -1   # phải 200 (direct file)
+
+# Admin pages
+curl -sI "$DOMAIN/admin"       | head -1   # phải 200
+curl -sI "$DOMAIN/admin/orders" | head -1  # phải 200 (rewrite)
+
+# Security headers admin
+curl -sI "$DOMAIN/admin/orders" | grep -iE "x-frame|x-robots|cache-control"
+# phải có: X-Frame-Options: DENY, X-Robots-Tag: noindex, Cache-Control: no-store</code></pre>
+
+  <h3>Bảo mật sau khi upload</h3>
+  <ul>
+    <li>Test SSL hoạt động (<code>https://...</code> không phải http)</li>
+    <li>Block public access các file <code>.md</code>, <code>.firebaserc</code>, <code>Dockerfile</code> (đã có trong <code>.htaccess</code>/<code>web.config</code>)</li>
+    <li>Tắt directory listing (<code>Options -Indexes</code> trong <code>.htaccess</code>)</li>
+    <li>Setup HTTPS redirect (force https) — có sẵn snippet trong README-FOR-IT</li>
+  </ul>
+</section>
+
+<!-- §9. GO-LIVE -->
+<section id="s9">
+  <h2><span class="num">9</span> Go-live · 4 phase <small>Production rollout</small></h2>
+
+  <div class="card">
+    <div class="phase">
+      <div class="day">D-7→D-3</div>
+      <div>
+        <h4>Chuẩn bị</h4>
+        <p style="margin:0">Chạy <code>pnpm prisma migrate dev --name oms_v1_returns_tracking</code>, review SQL, setup staging env vars (DATABASE_URL, REDIS_URL, 3 JWT secrets), install Sentry + alert rules, check toàn bộ secrets ở Secret Manager. Backup DB hiện tại.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="day">D-3→D-0</div>
+      <div>
+        <h4>UAT</h4>
+        <p style="margin:0">Deploy staging, chạy <code>prisma:seed:staging</code> (50 KH × 70 đơn × 18 SP × 6 voucher), ban vận hành test 7 kịch bản KB1-KB7 (orders flow / RMA / cancel-after-ship / inventory PO / count / customer drawer / voucher). Fix bug nếu có. Đo response time + error rate.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="day">W1→W2</div>
+      <div>
+        <h4>Pilot</h4>
+        <p style="margin:0">Rollout 1 chi nhánh hoặc 1 nhóm KOL. Monitor (Sentry + Cloud Logging + alert rules). So sánh metric với baseline cũ: GMV, AOV, fill-rate, response time, error rate. Daily standup 5 phút trong tuần đầu.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="day">W3+</div>
+      <div>
+        <h4>Full go-live</h4>
+        <p style="margin:0">Rollout toàn hệ thống. <b>Suggested date: 2026-05-15</b>. Truyền thông nội bộ + đào tạo ops 1 buổi 2h. Standby on-call 24/7 trong tuần đầu.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>7 kịch bản UAT (KB1-KB7)</h3>
+  <ol>
+    <li><b>Orders flow</b>: tạo đơn từ POS → confirm → packing → shipping (gắn tracking) → delivered</li>
+    <li><b>RMA partial</b>: KH trả 2/5 sản phẩm sau delivered → approve → restock + refund pro-rata</li>
+    <li><b>Cancel-after-ship</b>: đơn shipping bị từ chối → cancel-after-ship với reason → tự sinh case RMA approved</li>
+    <li><b>Inventory PO</b>: nhập 50 SKU từ PO với cost khác → moving-average tính đúng → audit movement</li>
+    <li><b>Physical count</b>: kiểm kê lệch ±10 → tạo movement count → audit có hash</li>
+    <li><b>Customer drawer</b>: open KH VIP → 6 tab (info, addresses, orders, communication, loyalty, consent) → CRUD address + log communication</li>
+    <li><b>Voucher</b>: tạo SUMMER25 25%, FREESHIP 100%, GIFT100K 100k → validate trong checkout → apply đúng + tăng usedCount</li>
+  </ol>
+</section>
+
+<!-- §10. ROLLBACK -->
+<section id="s10">
+  <h2><span class="num">10</span> Rollback + Monitoring <small>Safety net</small></h2>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3 style="color:var(--bad)"><i class="fa-solid fa-rotate-left"></i> Rollback 24h an toàn</h3>
+      <ul>
+        <li>FE: đặt env <code>DTX_API_MODE=local</code> → quay về localStorage seed (mất tính năng API nhưng không downtime)</li>
+        <li>API: rollback Cloud Run revision: <code>gcloud run services update-traffic detoxblanc-api --to-revisions=detoxblanc-api-NNNN-xxx=100</code></li>
+        <li>DB: nếu schema migration phá vỡ → <code>prisma migrate resolve --rolled-back</code> + <code>pg_restore</code> từ backup</li>
+        <li>Tất cả deploy đều giữ revision cũ → 1 lệnh rollback &lt; 30s</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 style="color:var(--primary)"><i class="fa-solid fa-eye"></i> Monitoring</h3>
+      <ul>
+        <li><b>Sentry</b> cho FE + BE error tracking</li>
+        <li><b>Cloud Logging</b> filter <code>severity≥ERROR</code> + auto alert qua Slack/Email</li>
+        <li><b>Cloud Monitoring</b> uptime check mỗi 60s</li>
+        <li>Alert rules: response time p95 > 1s · error rate > 1% · DB connection > 80% · memory > 90%</li>
+        <li>Dashboard tổng hợp ở Cloud Console</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Real-time logs lệnh thường dùng</h3>
+<pre><code>gcloud run services logs tail detoxblanc-api --region=asia-southeast1
+gcloud run services logs tail detoxblanc-web --region=asia-southeast1
+gcloud run services logs read detoxblanc-api --region=asia-southeast1 \
+  --filter="severity>=ERROR" --limit=50</code></pre>
+</section>
+
+<!-- §11. ROADMAP -->
+<section id="s11">
+  <h2><span class="num">11</span> Roadmap v1.1 <small>Sắp ra mắt</small></h2>
+
+  <div class="grid grid-3">
+    <div class="mod-card">
+      <h3><i class="fa-solid fa-chart-line"></i> Phân tích nâng cao</h3>
+      <p class="lead">Funnel checkout · Cohort retention · RFM heatmap. Bản v1.0 đã có Báo cáo cơ bản đáp ứng vận hành thường nhật.</p>
+      <div class="pill-row"><span class="pill fix">Soon · Q3/2026</span></div>
+      <ul>
+        <li>Funnel: view → cart → checkout → paid (theo nguồn traffic)</li>
+        <li>Cohort retention 30/60/90 ngày theo tháng đăng ký</li>
+        <li>RFM heatmap 5×5 (Recency × Frequency)</li>
+        <li>Custom dashboard / role (BOD / Ops / Marketing)</li>
+        <li>Drilldown SKU → variant → batch</li>
+      </ul>
+    </div>
+
+    <div class="mod-card">
+      <h3><i class="fa-solid fa-qrcode"></i> QR chính hãng</h3>
+      <p class="lead">Sinh QR unique cho mỗi đơn vị SP · Verify chống hàng giả · Trace batch sản xuất · Tích hợp máy in nhãn.</p>
+      <div class="pill-row"><span class="pill fix">Soon · Q4/2026</span></div>
+      <ul>
+        <li>Sinh QR unique mỗi unit (UUID + signed)</li>
+        <li>Endpoint public verify <code>/qr/:code</code></li>
+        <li>Counter quét lần đầu / repeat</li>
+        <li>Tích hợp máy in nhãn (Zebra / Brother)</li>
+      </ul>
+    </div>
+
+    <div class="mod-card">
+      <h3><i class="fa-solid fa-plug"></i> Tích hợp ngoài</h3>
+      <p class="lead">API key marketplace · Webhook outbound · GA / FB Pixel / TikTok · Slack / Telegram bot · Audit từng call.</p>
+      <div class="pill-row"><span class="pill fix">Soon · Q3/2026</span></div>
+      <ul>
+        <li>API key: VNPAY / MoMo / GHN / GHTK / VTP / J&amp;T</li>
+        <li>Webhook outbound order.* (HMAC sign + retry)</li>
+        <li>OAuth: Google Analytics / FB Pixel / TikTok Ads</li>
+        <li>Slack / Telegram bot cho alert đơn hàng</li>
+        <li>Logs audit cho mỗi integration call</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- §12. BAN GIAO -->
+<section id="s12">
+  <h2><span class="num">12</span> Bàn giao · Files &amp; Links <small>Handover package</small></h2>
+
+  <h3>Tài liệu đã chốt</h3>
+  <table>
+    <tr><th>File</th><th>Nội dung</th><th>Đối tượng đọc</th></tr>
+    <tr><td><b>BAN-GIAO.html</b><br>(file này)</td><td>Tổng hợp toàn bộ — biên bản chính thức</td><td>BOD, PM, IT, Ops</td></tr>
+    <tr><td><code>PRODUCTION-CHECKLIST.md</code></td><td>Quy trình go-live 4 phase + rollback + monitoring + security</td><td>DevOps, PM</td></tr>
+    <tr><td><code>DEPLOY-GOOGLE.md</code></td><td>3 path deploy lên Google Cloud (A/B/C) chi tiết</td><td>DevOps</td></tr>
+    <tr><td><code>README-FOR-IT.md</code></td><td>Hướng dẫn IT upload lên 7 loại hosting</td><td>IT</td></tr>
+    <tr><td><code>demo-handover.html</code></td><td>Hub link 14 module + 3 roadmap card</td><td>Stakeholder demo</td></tr>
+  </table>
+
+  <h3>Code &amp; assets</h3>
+  <table>
+    <tr><th>Đường dẫn</th><th>Mô tả</th></tr>
+    <tr><td><code>/Users/tranquy/Desktop/detoxblanc-fe-20260504.zip</code></td><td>Gói FE đầy đủ cho IT (395 KB · 75 file · MD5 3dcc4c1...)</td></tr>
+    <tr><td><code>detoxblanc-clone/</code></td><td>Source code root (gồm api/ + assets/ + 47 HTML)</td></tr>
+    <tr><td><code>detoxblanc-clone/api/</code></td><td>Backend Fastify + Prisma + Dockerfile + docker-compose</td></tr>
+    <tr><td><code>detoxblanc-clone/assets/</code></td><td>CSS, JS, data seed, partials (~380 KB)</td></tr>
+    <tr><td><code>detoxblanc-clone/scripts/deploy-google.sh</code></td><td>One-command deploy script</td></tr>
+    <tr><td><code>detoxblanc-clone/cloudbuild.yaml</code></td><td>CI/CD pipeline cho Cloud Build</td></tr>
+  </table>
+
+  <h3>Demo public hiện tại (Cloudflare Tunnel — tạm thời)</h3>
+  <div class="card">
+    <p><b>URL gốc:</b> <code>https://museum-calm-released-presently.trycloudflare.com</code></p>
+    <p>Tunnel chạy từ máy local. Tự đóng khi máy tắt. Production cần deploy thật theo §7.</p>
+    <ul>
+      <li>Hub: <code>/demo-handover.html</code></li>
+      <li>Admin: <code>/admin</code> (hoặc <code>/admin.html</code>)</li>
+      <li>Public: <code>/index.html</code></li>
+    </ul>
+  </div>
+
+  <h3>Tóm tắt files trong zip bàn giao IT</h3>
+  <div class="grid grid-4">
+    <div class="stat"><div class="lbl">HTML</div><strong>49</strong></div>
+    <div class="stat"><div class="lbl">JS</div><strong>9</strong></div>
+    <div class="stat"><div class="lbl">CSS</div><strong>3</strong></div>
+    <div class="stat"><div class="lbl">Configs</div><strong>3</strong></div>
+    <div class="stat"><div class="lbl">Tools</div><strong>6</strong></div>
+    <div class="stat"><div class="lbl">README</div><strong>1</strong></div>
+    <div class="stat"><div class="lbl">Tổng file</div><strong>75</strong></div>
+    <div class="stat"><div class="lbl">Kích thước</div><strong>395 KB</strong></div>
+  </div>
+
+  <div class="callout warn"><strong>Lưu ý quan trọng cho team</strong>:
+    <ul>
+      <li>FE-only mode chạy được ngay với data seed — phù hợp UAT, training nhân viên, demo stakeholder</li>
+      <li>Khi BE deploy lên Cloud Run, chỉ cần thêm <code>&lt;meta name="dtx-api-base"&gt;</code> hoặc đổi 1 chữ trong env-detect.js là FE auto kết nối API thật — không cần rebuild FE</li>
+      <li>Mọi route BE đã có <code>requirePermission(...)</code> guard — bypass FE không bypass được BE</li>
+      <li>Atomic anti-oversell qua Postgres row-lock — đã chuẩn cho production scale</li>
+    </ul>
+  </div>
+</section>
+
+</div><!-- /.wrap -->
+
+<footer>
+  <div class="wrap">
+    <p><b>Detoxblanc OMS v1.0</b> — Biên bản bàn giao chốt &middot; 2026-05-05</p>
+    <p>Mã dự án: <code>detoxblanc-clone</code> &middot; 47 trang HTML &middot; 9 JS modules &middot; 3 CSS &middot; 40+ API endpoint &middot; 20+ Prisma model</p>
+    <p>Liên hệ: dev team Detoxblanc · email <code>tech@detoxblanc.com</code></p>
+  </div>
+</footer>
+
+</body>
+</html>

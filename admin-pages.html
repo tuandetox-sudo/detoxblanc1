@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trang tĩnh — Detoxblanc Admin</title>
+<meta name="description" content="Quản lý Trang tĩnh: Về chúng tôi, Chính sách, Điều khoản, Vận chuyển, FAQ." />
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css?v=2" />
+<style>
+  .pg-toolbar{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    background:var(--a-card); padding:12px 14px;
+    border:1px solid var(--a-line); border-radius:10px; margin-bottom:14px;
+  }
+  .pg-toolbar .field{ flex:1; min-width:200px }
+  .pg-toolbar input, .pg-toolbar select{
+    width:100%; padding:8px 10px; border:1px solid var(--a-line);
+    border-radius:7px; background:var(--a-surface); color:var(--a-ink);
+    font:inherit; font-size:13.5px;
+  }
+
+  .pg-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(310px, 1fr)); gap:14px }
+  .pg-item{
+    background:var(--a-card); border:1px solid var(--a-line); border-radius:12px;
+    padding:14px 16px; display:flex; flex-direction:column; gap:8px;
+    transition:border-color .12s, box-shadow .12s;
+    min-height:180px;
+  }
+  .pg-item:hover{ border-color:var(--a-brand); box-shadow:0 2px 8px rgba(0,0,0,.04) }
+  .pg-item .head{
+    display:flex; align-items:center; gap:10px;
+  }
+  .pg-item .head .ico{
+    width:36px; height:36px; border-radius:8px;
+    background:var(--a-brand-soft); color:var(--a-brand-2);
+    display:grid; place-items:center; flex:0 0 36px; font-size:15px;
+  }
+  .pg-item .head strong{
+    font-size:14.5px; flex:1; min-width:0;
+    word-break:break-word; overflow-wrap:break-word; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .pg-item .slug{
+    font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11.5px;
+    color:var(--a-ink-3); padding:3px 8px; background:var(--a-n100); border-radius:5px;
+    align-self:flex-start; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  html[data-theme="dark"] .pg-item .slug{ background:rgba(255,255,255,.05) }
+  .pg-item .meta{ display:flex; gap:6px; flex-wrap:wrap; font-size:11.5px; color:var(--a-ink-3) }
+  .pg-item .meta .badge{ padding:2px 8px; border-radius:5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em }
+  .pg-item .meta .badge.published{ background:#DCFCE7; color:#166534 }
+  .pg-item .meta .badge.draft{     background:#FEF3C7; color:#92400E }
+  .pg-item .foot{
+    margin-top:auto; padding-top:10px; border-top:1px dashed var(--a-line);
+    display:flex; gap:6px;
+  }
+  .pg-item .foot button, .pg-item .foot a{
+    flex:1; padding:7px 10px; border-radius:7px; border:1px solid var(--a-line);
+    background:var(--a-surface); color:var(--a-ink); cursor:pointer; font-size:12.5px;
+    text-align:center; text-decoration:none; font-weight:500;
+    display:inline-flex; align-items:center; justify-content:center; gap:5px;
+    transition:all .1s;
+  }
+  .pg-item .foot button:hover, .pg-item .foot a:hover{
+    background:var(--a-brand-soft); color:var(--a-brand); border-color:var(--a-brand);
+  }
+  .pg-item .foot button.danger:hover{ background:#FEE2E2; color:#991B1B; border-color:#FCA5A5 }
+
+  /* Editor */
+  .pe-grid{ display:grid; grid-template-columns:1fr 320px; gap:18px }
+  @media (max-width:880px){ .pe-grid{ grid-template-columns:1fr } }
+  .pe-grid .field{ margin-bottom:12px }
+  .pe-grid label.lbl{ display:block; font-size:12.5px; font-weight:500; color:var(--a-ink-2); margin-bottom:5px }
+  .pe-grid input, .pe-grid select, .pe-grid textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--a-line); border-radius:7px;
+    background:var(--a-surface); color:var(--a-ink); font:inherit; font-size:13.5px;
+    transition:border-color .12s;
+  }
+  .pe-grid input:focus, .pe-grid select:focus, .pe-grid textarea:focus{
+    outline:0; border-color:var(--a-brand); box-shadow:0 0 0 3px var(--a-brand-soft);
+  }
+  .pe-grid textarea{ resize:vertical; min-height:80px; font-family:inherit }
+  .pe-grid textarea.mono{ font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12.5px; line-height:1.55; min-height:340px }
+  .pe-grid .hint{ font-size:11.5px; color:var(--a-ink-3); margin-top:3px }
+  .pe-grid .ck{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--a-ink); cursor:pointer; padding:6px 0 }
+  .pe-grid .ck input{ width:auto; margin:0 }
+
+  /* Empty state */
+  .pg-empty{
+    text-align:center; padding:60px 24px; color:var(--a-ink-3);
+    background:var(--a-card); border:1px dashed var(--a-line); border-radius:12px;
+  }
+  .pg-empty i{ font-size:38px; display:block; margin-bottom:12px; color:var(--a-ink-4) }
+  .pg-empty h3{ margin:0 0 6px; color:var(--a-ink); font-size:16px }
+  .pg-empty p{ margin:0 0 14px; font-size:13.5px }
+</style>
+</head>
+
+<body data-adm-page="pages">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Nội dung"},{"label":"Trang tĩnh"}]'
+       data-title="Trang tĩnh"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Trang tĩnh</h1>
+          <p>Nội dung không thay đổi thường xuyên: Về chúng tôi, Chính sách, Điều khoản, Vận chuyển, FAQ. <strong id="pgCount">—</strong> trang đang quản lý.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnPgReset" data-perm="articles:write"><i class="fa-solid fa-rotate-left"></i> Đặt lại seed</button>
+          <button class="adm-btn primary" id="btnPgNew" data-perm="articles:write"><i class="fa-solid fa-plus"></i> Tạo trang mới</button>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="lbl">Tổng trang</span><strong id="statTotal">0</strong></div>
+        <div class="stat-card"><span class="lbl">Đã publish</span><strong id="statPub" style="color:#16A34A">0</strong></div>
+        <div class="stat-card"><span class="lbl">Bản nháp</span><strong id="statDraft" style="color:#D97706">0</strong></div>
+        <div class="stat-card"><span class="lbl">Hiển thị footer</span><strong id="statFooter">0</strong></div>
+        <div class="stat-card"><span class="lbl">Lượt xem 30 ngày</span><strong id="statViews">—</strong></div>
+      </div>
+
+      <div class="pg-toolbar">
+        <div class="field">
+          <input type="search" id="pgQ" placeholder="🔎 Tiêu đề, slug…" />
+        </div>
+        <div class="field" style="max-width:170px">
+          <select id="pgStatus">
+            <option value="">Tất cả trạng thái</option>
+            <option value="published">Đã publish</option>
+            <option value="draft">Bản nháp</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:170px">
+          <select id="pgFooter">
+            <option value="">Cả footer + ẩn</option>
+            <option value="footer">Chỉ footer</option>
+            <option value="hidden">Chỉ ẩn footer</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="pgGrid" class="pg-grid"></div>
+      <div id="pgEmpty" class="pg-empty" hidden>
+        <i class="fa-solid fa-file-lines"></i>
+        <h3>Không có trang khớp lọc</h3>
+        <p>Thử thay đổi từ khoá hoặc trạng thái.</p>
+        <button class="adm-btn primary" id="btnEmptyNew" data-perm="articles:write"><i class="fa-solid fa-plus"></i> Tạo trang mới</button>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Editor modal — modern .adm-modal -->
+<div class="adm-modal" id="pgEditor" hidden role="dialog" aria-modal="true" aria-labelledby="pgEditorTitle">
+  <div class="adm-modal-card" style="max-width:1080px">
+    <div class="adm-modal-head">
+      <strong id="pgEditorTitle">Tạo trang mới</strong>
+      <button class="iconbtn" data-close>&times;</button>
+    </div>
+    <div class="adm-modal-body">
+      <form id="pgForm" onsubmit="return false">
+        <input type="hidden" name="id" />
+        <div class="pe-grid">
+          <div>
+            <div class="field">
+              <label class="lbl" for="peTitle">Tiêu đề <span style="color:#C0392B">*</span></label>
+              <input id="peTitle" name="title" required maxlength="200" placeholder="Ví dụ: Về chúng tôi" />
+            </div>
+            <div class="field">
+              <label class="lbl" for="peBody">Nội dung (Markdown / HTML)</label>
+              <textarea id="peBody" name="body" class="mono" rows="14" placeholder="# Tiêu đề&#10;&#10;Đoạn mở..."></textarea>
+              <div class="hint">Hỗ trợ Markdown cơ bản (heading, **bold**, *italic*). Bấm "Xem trước" để render thử.</div>
+            </div>
+          </div>
+          <aside>
+            <div class="field">
+              <label class="lbl" for="peStatus">Trạng thái</label>
+              <select id="peStatus" name="status">
+                <option value="draft">Bản nháp</option>
+                <option value="published">Đã publish</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl" for="peSlug">Slug (URL) <span style="color:#C0632B">*</span></label>
+              <input id="peSlug" name="slug" class="mono" pattern="^[a-z0-9-]+$" placeholder="ve-chung-toi" required />
+              <div class="hint">Chỉ a-z, 0-9, dấu gạch ngang.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="peIcon">Icon (Font Awesome)</label>
+              <input id="peIcon" name="icon" class="mono" placeholder="building / shield-halved / file-lines" />
+              <div class="hint">Mặc định = file-lines.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="peSeoTitle">SEO title</label>
+              <input id="peSeoTitle" name="seoTitle" maxlength="70" />
+              <div class="hint">Tối đa 70 ký tự.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="peSeoDesc">SEO description</label>
+              <textarea id="peSeoDesc" name="seoDesc" maxlength="160" rows="3"></textarea>
+              <div class="hint">Tối đa 160 ký tự.</div>
+            </div>
+            <div class="field">
+              <label class="lbl" for="pePos">Vị trí trong footer</label>
+              <input id="pePos" name="pos" type="number" min="0" max="100" value="0" />
+              <div class="hint">Số nhỏ hơn = đứng trước.</div>
+            </div>
+            <div class="field">
+              <label class="ck">
+                <input type="checkbox" id="peShowFooter" name="showFooter" />
+                <span>Hiển thị link ở footer trang public</span>
+              </label>
+            </div>
+          </aside>
+        </div>
+      </form>
+    </div>
+    <div class="adm-modal-foot">
+      <button class="adm-btn" data-close>Huỷ</button>
+      <button class="adm-btn" id="pePreview"><i class="fa-solid fa-eye"></i> Xem trước</button>
+      <button class="adm-btn primary" id="peSave" data-perm="articles:write"><i class="fa-solid fa-check"></i> Lưu trang</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js"></script>
+<script src="assets/admin-rbac.js"></script>
+
+<script>
+(function(){
+  const KEY = 'dtx_admin_static_pages';
+  const $   = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const SEED = [
+    { id:'p-1', title:'Về chúng tôi',         slug:'ve-chung-toi',         status:'published', icon:'building',         body:'# Về Detoxblanc\n\nDetoxblanc là thương hiệu skincare dược mỹ phẩm Việt Nam — sứ mệnh làm da khoẻ chuẩn khoa học.\n\n## Sứ mệnh\n\nMang đến công thức **đơn giản**, *minh bạch* và an toàn cho da nhạy cảm.', seoTitle:'Về Detoxblanc', seoDesc:'Câu chuyện và sứ mệnh của Detoxblanc.', pos:1, showFooter:true,  views:1240, updatedAt:Date.now()-3*86400000 },
+    { id:'p-2', title:'Chính sách bảo mật',   slug:'chinh-sach-bao-mat',   status:'published', icon:'shield-halved',    body:'# Chính sách bảo mật\n\nDetoxblanc cam kết bảo vệ dữ liệu cá nhân của khách hàng theo Nghị định 13/2023/NĐ-CP.\n\n## 1. Thông tin thu thập\n\n- Tên, email, số điện thoại\n- Địa chỉ giao hàng\n- Lịch sử đơn hàng', seoTitle:'Chính sách bảo mật', seoDesc:'Cách Detoxblanc bảo vệ dữ liệu cá nhân.', pos:5, showFooter:true,  views:560, updatedAt:Date.now()-12*86400000 },
+    { id:'p-3', title:'Điều khoản sử dụng',   slug:'dieu-khoan-su-dung',   status:'published', icon:'file-contract',    body:'# Điều khoản sử dụng\n\nKhi mua hàng tại Detoxblanc, bạn đồng ý với các điều khoản sau...', seoTitle:'Điều khoản sử dụng', seoDesc:'Điều khoản dịch vụ áp dụng cho khách hàng.', pos:6, showFooter:true,  views:340, updatedAt:Date.now()-30*86400000 },
+    { id:'p-4', title:'Chính sách vận chuyển',slug:'chinh-sach-van-chuyen',status:'published', icon:'truck',            body:'# Vận chuyển\n\n- Nội thành HN/HCM: 1-2 ngày\n- Tỉnh: 2-5 ngày\n- Phí 30k, miễn phí đơn ≥500k', seoTitle:'Vận chuyển', seoDesc:'Phí ship và thời gian giao hàng.', pos:2, showFooter:true,  views:980, updatedAt:Date.now()-7*86400000 },
+    { id:'p-5', title:'Chính sách đổi trả',   slug:'chinh-sach-doi-tra',   status:'published', icon:'arrow-rotate-left',body:'# Đổi trả\n\nKhách hàng có thể đổi trả trong vòng **7 ngày** kể từ ngày nhận hàng.', seoTitle:'Đổi trả', seoDesc:'Quy trình đổi trả 7 ngày.', pos:3, showFooter:true,  views:870, updatedAt:Date.now()-9*86400000 },
+    { id:'p-6', title:'FAQ — Câu hỏi thường gặp', slug:'faq', status:'published', icon:'circle-question', body:'# FAQ\n\n## Sản phẩm có an toàn cho bà bầu?\n\nVitamin C, BHA, AHA: hạn chế. Vitamin B5, Niacinamide: an toàn.\n\n## Bao lâu thấy hiệu quả?\n\nThông thường 4-8 tuần với điều trị thâm, 2 tuần với cấp ẩm.', seoTitle:'FAQ Detoxblanc', seoDesc:'Giải đáp câu hỏi thường gặp.', pos:7, showFooter:true,  views:2300, updatedAt:Date.now()-2*86400000 },
+    { id:'p-7', title:'Tuyển dụng',           slug:'tuyen-dung',           status:'draft',     icon:'user-tie',         body:'# Tuyển dụng\n\nDetoxblanc đang tìm kiếm các vị trí Marketing, Sale, R&D...', seoTitle:'', seoDesc:'', pos:0, showFooter:false, views:0, updatedAt:Date.now()-1*86400000 },
+  ];
+
+  function load(){
+    try { const arr = JSON.parse(localStorage.getItem(KEY) || 'null'); return Array.isArray(arr) && arr.length ? arr : (save(SEED), SEED.slice()); }
+    catch(_){ return (save(SEED), SEED.slice()); }
+  }
+  function save(arr){ try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch(_){} }
+  let pages = load();
+
+  const fmtAgo = ms => {
+    if (!ms) return '—';
+    const d = (Date.now() - ms) / 86400000;
+    return d < 1 ? 'hôm nay' : d < 7 ? Math.floor(d) + ' ngày trước' : d < 30 ? Math.floor(d/7) + ' tuần trước' : Math.floor(d/30) + ' tháng trước';
+  };
+
+  function render(){
+    $('pgCount').textContent     = pages.length;
+    $('statTotal').textContent   = pages.length;
+    $('statPub').textContent     = pages.filter(p => p.status==='published').length;
+    $('statDraft').textContent   = pages.filter(p => p.status==='draft').length;
+    $('statFooter').textContent  = pages.filter(p => p.showFooter).length;
+    $('statViews').textContent   = pages.reduce((s,p)=>s+(p.views||0),0).toLocaleString('vi-VN');
+
+    const q = ($('pgQ').value || '').toLowerCase();
+    const st = $('pgStatus').value;
+    const ftr = $('pgFooter').value;
+    let rows = pages.filter(p =>
+      (!q || (p.title||'').toLowerCase().includes(q) || (p.slug||'').includes(q))
+      && (!st || p.status === st)
+      && (!ftr || (ftr === 'footer' ? p.showFooter : !p.showFooter))
+    );
+    rows.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+
+    if (!rows.length) { $('pgGrid').innerHTML = ''; $('pgEmpty').hidden = false; return; }
+    $('pgEmpty').hidden = true;
+
+    $('pgGrid').innerHTML = rows.map(p => `
+      <div class="pg-item" data-id="${esc(p.id)}">
+        <div class="head">
+          <div class="ico"><i class="fa-solid fa-${esc(p.icon || 'file-lines')}"></i></div>
+          <strong title="${esc(p.title)}">${esc(p.title)}</strong>
+        </div>
+        <span class="slug" title="/${esc(p.slug)}">/${esc(p.slug)}</span>
+        <div class="meta">
+          <span class="badge ${p.status}">${p.status === 'published' ? 'Publish' : 'Nháp'}</span>
+          ${p.showFooter ? '<span style="color:var(--a-ink-3)"><i class="fa-solid fa-circle-check" style="color:#16A34A"></i> Footer</span>' : ''}
+          <span><i class="fa-solid fa-eye"></i> ${(p.views||0).toLocaleString('vi-VN')}</span>
+          <span>· ${fmtAgo(p.updatedAt)}</span>
+        </div>
+        <div class="foot">
+          <button data-act="edit" data-perm="articles:write"><i class="fa-solid fa-pen"></i> Sửa</button>
+          <button data-act="dup" data-perm="articles:write" title="Nhân bản"><i class="fa-solid fa-copy"></i></button>
+          <button data-act="del" class="danger" data-perm="articles:write" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    `).join('');
+
+    // Bind row actions
+    $('pgGrid').querySelectorAll('.pg-item').forEach(el => {
+      const id = el.dataset.id;
+      el.querySelector('[data-act="edit"]')?.addEventListener('click', () => openEditor(pages.find(p => p.id === id)));
+      el.querySelector('[data-act="dup"]')?.addEventListener('click', () => {
+        if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+        const src = pages.find(p => p.id === id); if (!src) return;
+        const copy = { ...src, id:'p-' + Date.now(), title:src.title + ' (bản sao)', slug:src.slug + '-copy', status:'draft', updatedAt:Date.now(), views:0 };
+        pages.unshift(copy); save(pages); render();
+        window.admToast?.('Đã nhân bản', 'ok');
+      });
+      el.querySelector('[data-act="del"]')?.addEventListener('click', () => {
+        if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+        const p = pages.find(x => x.id === id); if (!p) return;
+        if (confirm(`Xoá trang "${p.title}"?`)) {
+          pages = pages.filter(x => x.id !== id); save(pages); render();
+          window.admToast?.('Đã xoá trang', 'ok');
+        }
+      });
+    });
+  }
+
+  function slugify(s){
+    return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/đ/g,'d').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80);
+  }
+
+  function openEditor(p){
+    if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+    const isNew = !p;
+    const data = p || { id:'', title:'', slug:'', status:'draft', body:'', seoTitle:'', seoDesc:'', pos:0, showFooter:false, icon:'file-lines' };
+    $('pgEditorTitle').textContent = isNew ? 'Tạo trang mới' : `Sửa: ${data.title}`;
+    $('pgForm').elements.id.value = data.id || '';
+    $('peTitle').value      = data.title || '';
+    $('peSlug').value       = data.slug || '';
+    $('peStatus').value     = data.status || 'draft';
+    $('peBody').value       = data.body || '';
+    $('peSeoTitle').value   = data.seoTitle || '';
+    $('peSeoDesc').value    = data.seoDesc || '';
+    $('pePos').value        = data.pos ?? 0;
+    $('peIcon').value       = data.icon || 'file-lines';
+    $('peShowFooter').checked = !!data.showFooter;
+
+    $('pgEditor').hidden = false;
+    setTimeout(() => $('peTitle').focus(), 60);
+  }
+
+  function closeEditor(){ $('pgEditor').hidden = true; }
+
+  function save_(){
+    if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+    const title = $('peTitle').value.trim();
+    if (!title) { window.admToast?.('Thiếu tiêu đề', 'bad'); $('peTitle').focus(); return; }
+    let slug = $('peSlug').value.trim() || slugify(title);
+    slug = slug.toLowerCase().replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'');
+    if (!slug) { window.admToast?.('Slug không hợp lệ', 'bad'); $('peSlug').focus(); return; }
+
+    const id = $('pgForm').elements.id.value;
+    if (pages.some(p => p.slug === slug && p.id !== id)) {
+      window.admToast?.(`Slug "/${slug}" đã tồn tại`, 'bad'); $('peSlug').focus(); return;
+    }
+
+    const next = {
+      id: id || ('p-' + Date.now()),
+      title, slug,
+      status:    $('peStatus').value,
+      body:      $('peBody').value,
+      seoTitle:  $('peSeoTitle').value.trim(),
+      seoDesc:   $('peSeoDesc').value.trim(),
+      pos:       parseInt($('pePos').value) || 0,
+      icon:      ($('peIcon').value.trim() || 'file-lines'),
+      showFooter:$('peShowFooter').checked,
+      views:     id ? (pages.find(p => p.id === id)?.views ?? 0) : 0,
+      updatedAt: Date.now(),
+    };
+    if (id) pages = pages.map(p => p.id === id ? next : p);
+    else    pages.unshift(next);
+    save(pages); render(); closeEditor();
+    window.admToast?.(id ? 'Đã lưu trang' : 'Đã tạo trang mới', 'ok');
+  }
+
+  function preview(){
+    const title = $('peTitle').value.trim() || 'Bản xem trước';
+    const body  = $('peBody').value || '';
+    const html = body
+      .replace(/[<>]/g, c => ({'<':'&lt;','>':'&gt;'}[c]))
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm,  '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm,   '<h1>$1</h1>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g,    '<em>$1</em>')
+      .replace(/\n\n+/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    const w = window.open('', '_blank');
+    if (!w) { window.admToast?.('Trình duyệt chặn popup', 'warn'); return; }
+    w.document.write(`<!doctype html><meta charset="utf-8">
+<base href="/"><title>${esc(title)} — Preview</title>
+      <body style="max-width:780px;margin:40px auto;padding:0 20px;font:15px/1.7 system-ui">
+        <div style="padding:8px 12px;background:#FEF3C7;color:#92400E;border-radius:8px;margin-bottom:16px;font-size:13px">
+          ⚠ Bản xem trước nội bộ — chưa publish.
+        </div>
+        <h1>${esc(title)}</h1>
+        <p>${html}</p>
+      </body>`);
+  }
+
+  // Bind
+  $('btnPgNew').addEventListener('click', () => openEditor(null));
+  $('btnPgReset').addEventListener('click', () => {
+    if (window.DTX_ADMIN_PERMS && !window.DTX_ADMIN_PERMS.requireOrToast?.('articles:write')) return;
+    if (confirm('Đặt lại danh sách trang về seed gốc?')) {
+      pages = SEED.slice(); save(pages); render();
+      window.admToast?.('Đã reset seed', 'ok');
+    }
+  });
+  $('btnEmptyNew')?.addEventListener('click', () => openEditor(null));
+  $('peSave').addEventListener('click', save_);
+  $('pePreview').addEventListener('click', preview);
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeEditor));
+  $('pgEditor').addEventListener('click', e => { if (e.target.id === 'pgEditor') closeEditor(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pgEditor').hidden) closeEditor(); });
+
+  $('peTitle').addEventListener('input', () => {
+    if (!$('peSlug').value.trim()) $('peSlug').placeholder = slugify($('peTitle').value) || 've-chung-toi';
+  });
+
+  $('pgQ').addEventListener('input', render);
+  $('pgStatus').addEventListener('change', render);
+  $('pgFooter').addEventListener('change', render);
+
+  render();
+})();
+</script>
+</body>
+</html>
