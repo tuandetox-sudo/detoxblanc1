@@ -46,8 +46,9 @@
     } catch(err){ console.warn('Partial load failed:', err); }
   }
 
-  // ======== 1.5) OVERRIDE FOOTER NỘI DUNG TỪ FIRESTORE (nếu có) ========
+  // ======== 1.5) OVERRIDE FOOTER + CONTACT NỘI DUNG TỪ FIRESTORE ========
   applyFooterConfig();
+  if (document.querySelector('.ct-hero')) applyContactConfig();
 
   // Convert Firestore REST document value to plain JS
   function _fsVal(v){
@@ -93,6 +94,98 @@
       }
       if (cfg) applyFooterToDOM(cfg);
     } catch(err){ console.warn('Footer config load failed:', err); }
+  }
+
+  async function applyContactConfig(){
+    try {
+      let cfg = null;
+      if (location.protocol !== 'file:'){
+        try {
+          const initR = await fetch('/__/firebase/init.json');
+          if (initR.ok){
+            const init = await initR.json();
+            const url = `https://firestore.googleapis.com/v1/projects/${init.projectId}/databases/(default)/documents/settings/contact?key=${init.apiKey}`;
+            const docR = await fetch(url);
+            if (docR.ok){
+              const doc = await docR.json();
+              if (doc.fields) cfg = _fsDoc(doc.fields);
+            }
+          }
+        } catch(_){}
+      }
+      if (!cfg){
+        const ls = localStorage.getItem('dtx_contact_config');
+        if (ls) cfg = JSON.parse(ls);
+      }
+      if (cfg) applyContactToDOM(cfg);
+    } catch(err){ console.warn('Contact config load failed:', err); }
+  }
+
+  function applyContactToDOM(c){
+    const esc = s => String(s||'').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    // Hero
+    if (c.hero){
+      const hero = document.querySelector('.ct-hero .container');
+      if (hero){
+        hero.innerHTML = `
+          <span class="eyebrow">${esc(c.hero.eyebrow||'')}</span>
+          <h1>${esc(c.hero.title||'')} <span class="hl">${esc(c.hero.titleHl||'')}</span></h1>
+          <p>${esc(c.hero.description||'')}</p>`;
+      }
+    }
+
+    // Quick cards
+    if (Array.isArray(c.quickCards)){
+      const grid = document.querySelector('.ct-quick-grid');
+      if (grid){
+        grid.innerHTML = c.quickCards.map(q => `
+          <div class="ct-quick-card">
+            <div class="ct-quick-icon"><i class="${esc(q.icon||'fa-solid fa-link')}"></i></div>
+            <div>
+              <strong>${esc(q.title||'')}</strong>
+              <span>${esc(q.subtitle||'')}</span>
+              <a href="${esc(q.href||'#')}">${esc(q.linkText||'')}</a>
+            </div>
+          </div>`).join('');
+      }
+    }
+
+    // Info column cards (HQ, Hours, Social)
+    const infoCards = document.querySelectorAll('.ct-info .ct-info-card');
+    if (c.hq && infoCards[0]){
+      infoCards[0].innerHTML = `
+        <h3><i class="fa-solid fa-building"></i> Trụ sở chính</h3>
+        <p><strong>${esc(c.hq.companyName||'')}</strong></p>
+        <p>${esc(c.hq.addressLine1||'')}<br/>${esc(c.hq.addressLine2||'')}</p>
+        <p><small>MST: ${esc(c.hq.mst||'')} · GCN ĐKKD: ${esc(c.hq.gcn||'')}</small></p>`;
+    }
+    if (Array.isArray(c.hours) && infoCards[1]){
+      infoCards[1].innerHTML = `
+        <h3><i class="fa-solid fa-clock"></i> Giờ làm việc</h3>
+        <div class="ct-hours">
+          ${c.hours.map(h => `<div><strong>${esc(h.label||'')}</strong><span>${esc(h.value||'')}</span></div>`).join('')}
+        </div>`;
+    }
+    if (c.social && infoCards[2]){
+      infoCards[2].innerHTML = `
+        <h3><i class="fa-brands fa-facebook"></i> Kết nối Detoxblanc</h3>
+        <p>${esc(c.social.description||'')}</p>
+        <div class="socials" style="margin-top:14px">
+          ${(c.social.links||[]).map(s => `<a href="${esc(s.url||'#')}" target="_blank" rel="noopener" style="background:var(--bg-mint);border-color:var(--g-100);color:var(--brand)"><i class="${esc(s.icon||'fa-solid fa-link')}"></i></a>`).join('')}
+        </div>`;
+    }
+
+    // Map badge
+    if (c.map){
+      const badge = document.querySelector('.ct-map-badge');
+      if (badge){
+        badge.innerHTML = `
+          <strong>${esc(c.map.badgeTitle||'')}</strong>
+          <p>${esc(c.map.address||'')}</p>
+          <a href="${esc(c.map.directionsUrl||'#')}" target="_blank" rel="noopener"><i class="fa-solid fa-diamond-turn-right"></i> Chỉ đường Google Maps</a>`;
+      }
+    }
   }
 
   function applyFooterToDOM(c){

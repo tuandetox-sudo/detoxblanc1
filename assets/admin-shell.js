@@ -47,6 +47,7 @@
       { key:'articles',  href:'admin-articles.html',    icon:'newspaper',     label:'Bài viết' },
       { key:'pages',     href:'admin-pages.html',       icon:'file-lines',    label:'Trang tĩnh' },
       { key:'footer',    href:'admin-footer.html',      icon:'pen-to-square', label:'Sửa thông tin' },
+      { key:'contact',   href:'admin-contact.html',     icon:'address-card', label:'Trang Liên hệ' },
       { key:'reviews',   href:'admin-reviews.html',     icon:'comments',      label:'Đánh giá',    dynamicCount:'reviews' },
       { key:'newsletter',href:'admin-newsletter.html',  icon:'envelope-open-text', label:'Newsletter' },
     ]},

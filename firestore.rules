@@ -41,8 +41,8 @@ service cloud.firestore {
     match /audit/{id}      { allow read: if isStaff(); allow write: if isAdmin(); }
     match /users/{id}      { allow read, write: if isAdmin(); }
     match /settings/{id}   {
-      // Footer cần public read để hiển thị trên trang ngoài
-      allow read: if id == 'footer' || isStaff();
+      // Footer & contact cần public read để hiển thị trên trang ngoài
+      allow read: if id == 'footer' || id == 'contact' || isStaff();
       allow write: if isAdmin();
     }
 

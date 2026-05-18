@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trang Liên hệ — Detoxblanc Admin</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+<style>
+  .ct-section { margin-bottom:24px; padding:20px 22px; background:var(--a-card,#fff); border:1px solid var(--a-line,#e8e4dc); border-radius:14px; }
+  .ct-section h2 { margin:0 0 14px; font-size:16px; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .ct-section h2 i { width:28px; height:28px; border-radius:8px; background:var(--a-soft,#E8EFF9); color:var(--a-primary,#2D5DA1); display:grid; place-items:center; font-size:12px; }
+  .ct-section .lead { color:var(--a-ink-3,#6B7280); margin:0 0 12px; font-size:13.5px; }
+  .ct-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .ct-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:720px){ .ct-grid-2,.ct-grid-3{grid-template-columns:1fr} }
+  .ct-field { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+  .ct-field label { font-size:12.5px; font-weight:500; color:var(--a-ink-2,#374151); }
+  .ct-field input, .ct-field textarea, .ct-field select { padding:9px 12px; border:1px solid var(--a-line,#e8e4dc); border-radius:8px; font:14px Inter,sans-serif; background:#fff; }
+  .ct-field textarea { resize:vertical; min-height:60px; }
+  .ct-field input:focus, .ct-field textarea:focus, .ct-field select:focus { outline:none; border-color:var(--a-primary,#2D5DA1); box-shadow:0 0 0 3px rgba(45,93,161,.12); }
+  .ct-card-edit { background:var(--a-soft-bg,#FAF8F4); padding:14px; border-radius:10px; margin-bottom:10px; }
+  .ct-card-edit h4 { margin:0 0 8px; font-size:13.5px; color:#374151; }
+  .ct-hours-row { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-bottom:6px; }
+  .ct-hours-row input { padding:7px 10px; border:1px solid #e8e4dc; border-radius:6px; font:13px Inter; }
+  .ct-hours-row .btn-del { background:#fee2e2; color:#991b1b; border:none; width:34px; border-radius:6px; cursor:pointer; }
+  .ct-btn-add { padding:8px 14px; background:var(--a-soft,#E8EFF9); color:var(--a-primary,#2D5DA1); border:1px dashed var(--a-primary,#2D5DA1); border-radius:8px; cursor:pointer; font:500 13px Inter; margin-top:8px; }
+  .ct-social-row { display:grid; grid-template-columns:200px 1fr auto; gap:8px; margin-bottom:6px; align-items:center; }
+  .ct-social-row .btn-del { background:#fee2e2; color:#991b1b; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; }
+</style>
+</head>
+<body data-adm-page="contact">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Nội dung"},{"label":"Trang Liên hệ"}]'
+       data-title="Trang Liên hệ"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Trang Liên hệ (contact.html)</h1>
+          <p>Chỉnh sửa toàn bộ nội dung trang Liên hệ hiển thị cho khách hàng.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnCtReload"><i class="fa-solid fa-rotate"></i> Tải lại</button>
+          <button class="adm-btn" id="btnCtReset" data-perm="settings:write"><i class="fa-solid fa-rotate-left"></i> Khôi phục mặc định</button>
+          <button class="adm-btn primary" id="btnCtSave" data-perm="settings:write"><i class="fa-solid fa-check"></i> Lưu &amp; áp dụng</button>
+        </div>
+      </div>
+
+      <!-- 1. Hero -->
+      <section class="ct-section">
+        <h2><i class="fa-solid fa-heading"></i> Tiêu đề trang</h2>
+        <div class="ct-field"><label>Eyebrow (chữ nhỏ phía trên)</label><input id="c-eyebrow" placeholder="CHÚNG TÔI LUÔN LẮNG NGHE"/></div>
+        <div class="ct-grid-2">
+          <div class="ct-field"><label>Tiêu đề chính (phần trước)</label><input id="c-title" placeholder="Liên hệ"/></div>
+          <div class="ct-field"><label>Tiêu đề (phần highlight xanh)</label><input id="c-title-hl" placeholder="Detoxblanc"/></div>
+        </div>
+        <div class="ct-field"><label>Mô tả dưới tiêu đề</label><textarea id="c-desc" rows="2"></textarea></div>
+      </section>
+
+      <!-- 2. 4 Thẻ liên hệ nhanh -->
+      <section class="ct-section">
+        <h2><i class="fa-solid fa-grip"></i> 4 thẻ liên hệ nhanh</h2>
+        <p class="lead">Hiển thị ngay dưới tiêu đề (Hotline · Email · Zalo · Đại lý).</p>
+        <div id="quickList"></div>
+      </section>
+
+      <!-- 3. Trụ sở chính -->
+      <section class="ct-section">
+        <h2><i class="fa-solid fa-building"></i> Trụ sở chính</h2>
+        <div class="ct-field"><label>Tên công ty</label><input id="c-hq-name"/></div>
+        <div class="ct-grid-2">
+          <div class="ct-field"><label>Địa chỉ (dòng 1)</label><input id="c-hq-addr1"/></div>
+          <div class="ct-field"><label>Địa chỉ (dòng 2)</label><input id="c-hq-addr2"/></div>
+        </div>
+        <div class="ct-grid-2">
+          <div class="ct-field"><label>Mã số thuế (MST)</label><input id="c-hq-mst"/></div>
+          <div class="ct-field"><label>GCN ĐKKD</label><input id="c-hq-gcn"/></div>
+        </div>
+      </section>
+
+      <!-- 4. Giờ làm việc -->
+      <section class="ct-section">
+        <h2><i class="fa-solid fa-clock"></i> Giờ làm việc</h2>
+        <p class="lead">Mỗi dòng gồm Nhãn và Giờ.</p>
+        <div id="hoursList"></div>
+        <button type="button" class="ct-btn-add" id="btnAddHours"><i class="fa-solid fa-plus"></i> Thêm dòng</button>
+      </section>
+
+      <!-- 5. Social -->
+      <section class="ct-section">
+        <h2><i class="fa-solid fa-share-nodes"></i> Kết nối Detoxblanc (Social)</h2>
+        <div class="ct-field"><label>Mô tả phía trên icon</label><textarea id="c-social-desc" rows="2"></textarea></div>
+        <div id="socialsList"></div>
+        <button type="button" class="ct-btn-add" id="btnAddSocial"><i class="fa-solid fa-plus"></i> Thêm mạng xã hội</button>
+      </section>
+
+      <!-- 6. Map -->
+      <section class="ct-section">
+        <h2><i class="fa-solid fa-map-location-dot"></i> Bản đồ</h2>
+        <div class="ct-field"><label>Tên hiển thị trên bản đồ</label><input id="c-map-title" placeholder="Detoxblanc HQ · Q.1"/></div>
+        <div class="ct-field"><label>Địa chỉ hiển thị trên bản đồ</label><input id="c-map-addr"/></div>
+        <div class="ct-field"><label>Link Google Maps (chỉ đường)</label><input id="c-map-url" type="url" placeholder="https://maps.google.com/?q=..."/></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js?v=4"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  const DEFAULT_CONTACT = {
+    hero: {
+      eyebrow: 'CHÚNG TÔI LUÔN LẮNG NGHE',
+      title: 'Liên hệ',
+      titleHl: 'Detoxblanc',
+      description: 'Tư vấn sản phẩm · hợp tác đại lý · góp ý cải thiện — mọi câu hỏi của bạn sẽ được dược sĩ Detoxblanc phản hồi trong vòng 24 giờ.'
+    },
+    quickCards: [
+      { icon:'fa-solid fa-phone',        title:'Tổng đài CSKH',  subtitle:'8:00 – 21:00 · 7 ngày / tuần', linkText:'1900 6750',            href:'tel:19006750' },
+      { icon:'fa-solid fa-envelope',     title:'Email CSKH',      subtitle:'Phản hồi trong 24 giờ',        linkText:'cskh@detoxblanc.com',  href:'mailto:cskh@detoxblanc.com' },
+      { icon:'fa-solid fa-comment-dots', title:'Zalo Official',   subtitle:'Tư vấn nhanh 24/7',            linkText:'zalo.me/detoxblanc',   href:'https://zalo.me/detoxblanc' },
+      { icon:'fa-solid fa-handshake',    title:'Hợp tác đại lý',  subtitle:'Chính sách chiết khấu hấp dẫn', linkText:'Nhánh 1 · 1900 6750',  href:'tel:19006750,1' }
+    ],
+    hq: {
+      companyName: 'CÔNG TY TNHH TMSX XNK VIỆT MỸ COSMETICS',
+      addressLine1: '193 Nguyễn Thị Minh Khai, P. Bến Thành,',
+      addressLine2: 'Quận 1, TP. Hồ Chí Minh',
+      mst: '0315678912',
+      gcn: '41C8015983'
+    },
+    hours: [
+      { label:'Thứ 2 – Thứ 6',    value:'8:00 – 18:00' },
+      { label:'Thứ 7',             value:'8:00 – 17:00' },
+      { label:'Chủ nhật',          value:'9:00 – 16:00' },
+      { label:'Tổng đài CSKH',    value:'7 ngày · 8:00 – 21:00' }
+    ],
+    social: {
+      description: 'Theo dõi chúng tôi để cập nhật sản phẩm mới, bí quyết chăm sóc da và ưu đãi dành riêng cho người theo dõi.',
+      links: [
+        { icon:'fa-brands fa-facebook-f',  url:'https://facebook.com/detoxblanc' },
+        { icon:'fa-brands fa-instagram',   url:'https://instagram.com/detoxblanc' },
+        { icon:'fa-brands fa-tiktok',      url:'https://tiktok.com/@detoxblanc' },
+        { icon:'fa-brands fa-youtube',     url:'https://youtube.com/@detoxblanc' },
+        { icon:'fa-solid fa-comment-dots', url:'https://zalo.me/detoxblanc' }
+      ]
+    },
+    map: {
+      badgeTitle: 'Detoxblanc HQ · Q.1',
+      address: '193 Nguyễn Thị Minh Khai, P. Bến Thành, Q.1, TP. Hồ Chí Minh',
+      directionsUrl: 'https://maps.google.com/?q=193+Nguyen+Thi+Minh+Khai+Q1+HCM'
+    }
+  };
+
+  let state = JSON.parse(JSON.stringify(DEFAULT_CONTACT));
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function toast(msg, type='ok'){
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;background:${type==='ok'?'#16A34A':'#C0392B'};color:#fff;padding:12px 20px;border-radius:8px;z-index:9999;font:500 14px Inter;box-shadow:0 4px 12px rgba(0,0,0,.15)`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), 2800);
+  }
+
+  const ICON_OPTIONS = [
+    'fa-solid fa-phone','fa-solid fa-envelope','fa-solid fa-comment-dots','fa-solid fa-handshake',
+    'fa-solid fa-headset','fa-solid fa-message','fa-solid fa-circle-info','fa-solid fa-user-doctor',
+    'fa-brands fa-facebook-f','fa-brands fa-instagram','fa-brands fa-tiktok','fa-brands fa-youtube',
+    'fa-brands fa-linkedin-in','fa-brands fa-twitter','fa-brands fa-x-twitter','fa-brands fa-whatsapp',
+    'fa-brands fa-telegram','fa-brands fa-pinterest','fa-solid fa-link'
+  ];
+
+  function render(){
+    // Hero
+    $('c-eyebrow').value  = state.hero.eyebrow;
+    $('c-title').value    = state.hero.title;
+    $('c-title-hl').value = state.hero.titleHl;
+    $('c-desc').value     = state.hero.description;
+
+    // Quick cards
+    $('quickList').innerHTML = state.quickCards.map((q,i) => `
+      <div class="ct-card-edit">
+        <h4>Thẻ ${i+1}</h4>
+        <div class="ct-grid-2">
+          <div class="ct-field"><label>Icon</label>
+            <select data-quick-i="${i}" data-field="icon">
+              ${ICON_OPTIONS.map(ic => `<option value="${ic}" ${q.icon===ic?'selected':''}>${ic.replace('fa-solid fa-','').replace('fa-brands fa-','')}</option>`).join('')}
+            </select>
+          </div>
+          <div class="ct-field"><label>Tiêu đề</label><input data-quick-i="${i}" data-field="title" value="${esc(q.title)}"/></div>
+        </div>
+        <div class="ct-field"><label>Mô tả nhỏ</label><input data-quick-i="${i}" data-field="subtitle" value="${esc(q.subtitle)}"/></div>
+        <div class="ct-grid-2">
+          <div class="ct-field"><label>Text link</label><input data-quick-i="${i}" data-field="linkText" value="${esc(q.linkText)}"/></div>
+          <div class="ct-field"><label>URL link (href)</label><input data-quick-i="${i}" data-field="href" value="${esc(q.href)}"/></div>
+        </div>
+      </div>
+    `).join('');
+
+    // HQ
+    $('c-hq-name').value  = state.hq.companyName;
+    $('c-hq-addr1').value = state.hq.addressLine1;
+    $('c-hq-addr2').value = state.hq.addressLine2;
+    $('c-hq-mst').value   = state.hq.mst;
+    $('c-hq-gcn').value   = state.hq.gcn;
+
+    // Hours
+    $('hoursList').innerHTML = state.hours.map((h,i) => `
+      <div class="ct-hours-row">
+        <input data-hours-i="${i}" data-field="label" value="${esc(h.label)}" placeholder="Nhãn (Thứ 2 - Thứ 6)"/>
+        <input data-hours-i="${i}" data-field="value" value="${esc(h.value)}" placeholder="Giờ (8:00 - 18:00)"/>
+        <button type="button" class="btn-del" data-del-hours="${i}"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `).join('');
+
+    // Social
+    $('c-social-desc').value = state.social.description;
+    $('socialsList').innerHTML = state.social.links.map((s,i) => `
+      <div class="ct-social-row">
+        <select data-soc-i="${i}" data-field="icon">
+          ${ICON_OPTIONS.filter(ic => ic.includes('fa-brands')||ic.includes('comment-dots')).map(ic => `<option value="${ic}" ${s.icon===ic?'selected':''}>${ic.replace('fa-brands fa-','').replace('fa-solid fa-','')}</option>`).join('')}
+        </select>
+        <input data-soc-i="${i}" data-field="url" value="${esc(s.url)}" placeholder="URL"/>
+        <button type="button" class="btn-del" data-del-soc="${i}"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `).join('');
+
+    // Map
+    $('c-map-title').value = state.map.badgeTitle;
+    $('c-map-addr').value  = state.map.address;
+    $('c-map-url').value   = state.map.directionsUrl;
+  }
+
+  function syncFromInputs(){
+    state.hero = { eyebrow:$('c-eyebrow').value, title:$('c-title').value, titleHl:$('c-title-hl').value, description:$('c-desc').value };
+    state.hq = { companyName:$('c-hq-name').value, addressLine1:$('c-hq-addr1').value, addressLine2:$('c-hq-addr2').value, mst:$('c-hq-mst').value, gcn:$('c-hq-gcn').value };
+    state.social.description = $('c-social-desc').value;
+    state.map = { badgeTitle:$('c-map-title').value, address:$('c-map-addr').value, directionsUrl:$('c-map-url').value };
+    // quickCards, hours, social.links đã sync qua input event
+  }
+
+  document.addEventListener('input', e => {
+    const t = e.target;
+    if (t.dataset.quickI != null)      state.quickCards[+t.dataset.quickI][t.dataset.field] = t.value;
+    else if (t.dataset.hoursI != null) state.hours[+t.dataset.hoursI][t.dataset.field] = t.value;
+    else if (t.dataset.socI != null)   state.social.links[+t.dataset.socI][t.dataset.field] = t.value;
+  });
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.quickI != null && t.dataset.field === 'icon') state.quickCards[+t.dataset.quickI].icon = t.value;
+    else if (t.dataset.socI != null && t.dataset.field === 'icon') state.social.links[+t.dataset.socI].icon = t.value;
+  });
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button');
+    if (!t) return;
+    if (t.dataset.delHours != null){ state.hours.splice(+t.dataset.delHours,1); render(); }
+    else if (t.dataset.delSoc != null){ state.social.links.splice(+t.dataset.delSoc,1); render(); }
+  });
+
+  $('btnAddHours').onclick  = () => { state.hours.push({label:'Mới', value:''}); render(); };
+  $('btnAddSocial').onclick = () => { state.social.links.push({icon:'fa-solid fa-link', url:'https://'}); render(); };
+
+  async function saveContact(){
+    syncFromInputs();
+    try {
+      if (window.DTX_FIREBASE?.enabled){
+        const fb = window.DTX_FIREBASE;
+        await fb.dbMethods.setDoc(fb.dbMethods.doc(fb.db,'settings','contact'), { ...state, updatedAt: fb.dbMethods.serverTimestamp() });
+        toast('✓ Đã lưu — áp dụng ngay cho trang Liên hệ');
+      } else {
+        localStorage.setItem('dtx_contact_config', JSON.stringify(state));
+        toast('✓ Đã lưu vào localStorage (local mode)');
+      }
+    } catch(err){ console.error(err); toast('Lỗi: '+err.message, 'err'); }
+  }
+
+  async function loadContact(){
+    try {
+      if (window.DTX_FIREBASE?.enabled){
+        const fb = window.DTX_FIREBASE;
+        const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db,'settings','contact'));
+        if (snap.exists()){
+          const d = snap.data(); delete d.updatedAt;
+          state = { ...JSON.parse(JSON.stringify(DEFAULT_CONTACT)), ...d };
+          toast('✓ Đã tải cấu hình từ Firestore');
+        } else {
+          state = JSON.parse(JSON.stringify(DEFAULT_CONTACT));
+          toast('Dùng cấu hình mặc định');
+        }
+      } else {
+        const ls = localStorage.getItem('dtx_contact_config');
+        state = ls ? JSON.parse(ls) : JSON.parse(JSON.stringify(DEFAULT_CONTACT));
+      }
+      render();
+    } catch(err){ console.error(err); state = JSON.parse(JSON.stringify(DEFAULT_CONTACT)); render(); }
+  }
+
+  $('btnCtSave').onclick   = saveContact;
+  $('btnCtReload').onclick = loadContact;
+  $('btnCtReset').onclick  = () => {
+    if (confirm('Khôi phục về cấu hình mặc định? Các thay đổi chưa lưu sẽ mất.')){
+      state = JSON.parse(JSON.stringify(DEFAULT_CONTACT)); render();
+    }
+  };
+
+  render();
+  if (window.DTX_FIREBASE?.enabled) loadContact();
+  else { window.addEventListener('dtx:firebase-ready', loadContact, {once:true}); setTimeout(loadContact, 100); }
+})();
+</script>
+</body>
+</html>
