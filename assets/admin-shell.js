@@ -46,7 +46,7 @@
     { group: 'Nội dung', items: [
       { key:'articles',  href:'admin-articles.html',    icon:'newspaper',     label:'Bài viết' },
       { key:'pages',     href:'admin-pages.html',       icon:'file-lines',    label:'Trang tĩnh' },
-      { key:'footer',    href:'admin-footer.html',      icon:'window-minimize', label:'Chân trang' },
+      { key:'footer',    href:'admin-footer.html',      icon:'pen-to-square', label:'Sửa thông tin' },
       { key:'reviews',   href:'admin-reviews.html',     icon:'comments',      label:'Đánh giá',    dynamicCount:'reviews' },
       { key:'newsletter',href:'admin-newsletter.html',  icon:'envelope-open-text', label:'Newsletter' },
     ]},
