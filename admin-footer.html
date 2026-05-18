@@ -136,7 +136,39 @@
         <div id="paymentsList" class="ftr-pay-tags"></div>
       </section>
 
-      <!-- 6. Copyright -->
+      <!-- 6. Nút liên hệ nổi -->
+      <section class="ftr-section">
+        <h2><i class="fa-solid fa-phone-volume"></i> Nút liên hệ nổi</h2>
+        <p class="lead">3 nút tròn cố định góc phải màn hình (Hotline · Zalo · Messenger).</p>
+        <div class="ftr-grid-3">
+          <div class="ftr-field">
+            <label><i class="fa-solid fa-phone" style="color:#10b981"></i> Số hotline</label>
+            <input id="f-float-phone" placeholder="19006750"/>
+            <small style="color:var(--a-ink-3,#6B7280);font-size:11.5px">Nhập số không dấu cách (dùng cho href="tel:")</small>
+          </div>
+          <div class="ftr-field">
+            <label><span style="color:#0068ff;font-weight:700;font-size:11px">Zalo</span> URL Zalo OA</label>
+            <input id="f-float-zalo" type="url" placeholder="https://zalo.me/..."/>
+          </div>
+          <div class="ftr-field">
+            <label><i class="fa-brands fa-facebook-messenger" style="color:#0084ff"></i> URL Messenger</label>
+            <input id="f-float-messenger" type="url" placeholder="https://m.me/..."/>
+          </div>
+        </div>
+        <div style="display:flex;gap:20px;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="f-float-show-phone"> Hiển thị nút Hotline
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="f-float-show-zalo"> Hiển thị nút Zalo
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="f-float-show-messenger"> Hiển thị nút Messenger
+          </label>
+        </div>
+      </section>
+
+      <!-- 7. Copyright -->
       <section class="ftr-section">
         <h2><i class="fa-solid fa-copyright"></i> Bản quyền &amp; pháp lý</h2>
         <div class="ftr-field"><label>Dòng copyright</label><input id="f-copyright" placeholder="© 2018–2026 Detoxblanc.com..."/></div>
@@ -217,6 +249,14 @@
       androidUrl: 'https://play.google.com/store/apps/details?id=com.detoxblanc.vmapp'
     },
     payments: ['VISA','MC','JCB','AMEX','MOMO','VNP','COD'],
+    floating: {
+      phone: '19006750',
+      zaloUrl: 'https://zalo.me/19006750',
+      messengerUrl: 'https://m.me/detoxblanc',
+      showPhone: true,
+      showZalo: true,
+      showMessenger: true
+    },
     copyright: {
       text: '© 2018–2026 Detoxblanc.com · All rights reserved · MST 0315678912',
       links: [
@@ -293,6 +333,15 @@
     $('paymentsList').innerHTML = state.payments.map((p,i) =>
       `<span class="ftr-pay-tag">${esc(p)} <button type="button" data-del-pay="${i}">×</button></span>`).join('');
 
+    // Floating
+    const fl = state.floating || {};
+    $('f-float-phone').value          = fl.phone || '';
+    $('f-float-zalo').value           = fl.zaloUrl || '';
+    $('f-float-messenger').value      = fl.messengerUrl || '';
+    $('f-float-show-phone').checked   = fl.showPhone !== false;
+    $('f-float-show-zalo').checked    = fl.showZalo !== false;
+    $('f-float-show-messenger').checked = fl.showMessenger !== false;
+
     // Copyright
     $('f-copyright').value = state.copyright.text;
     $('legalList').innerHTML = state.copyright.links.map((l,i) => `
@@ -321,6 +370,14 @@
       description: $('f-app-desc').value,
       iosUrl: $('f-app-ios').value,
       androidUrl: $('f-app-android').value
+    };
+    state.floating = {
+      phone:         $('f-float-phone').value.trim(),
+      zaloUrl:       $('f-float-zalo').value.trim(),
+      messengerUrl:  $('f-float-messenger').value.trim(),
+      showPhone:     $('f-float-show-phone').checked,
+      showZalo:      $('f-float-show-zalo').checked,
+      showMessenger: $('f-float-show-messenger').checked
     };
     state.copyright.text = $('f-copyright').value;
     // Socials, columns, legal đã sync trực tiếp qua delegated events
@@ -383,7 +440,7 @@
     } else if (t.dataset.legalI != null){
       state.copyright.links[+t.dataset.legalI][t.dataset.field] = t.value;
       renderPreview();
-    } else if (['f-brand','f-slogan','f-desc','f-address','f-phone','f-email','f-app-title','f-app-desc','f-app-ios','f-app-android','f-copyright'].includes(t.id)){
+    } else if (['f-brand','f-slogan','f-desc','f-address','f-phone','f-email','f-app-title','f-app-desc','f-app-ios','f-app-android','f-copyright','f-float-phone','f-float-zalo','f-float-messenger'].includes(t.id)){
       renderPreview();
     }
   });

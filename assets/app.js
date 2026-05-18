@@ -148,6 +148,26 @@
         `;
       }
     }
+
+    // Floating buttons
+    if (c.floating){
+      const fl = c.floating;
+      const fabCall = document.querySelector('.fab-call');
+      if (fabCall){
+        fabCall.href = `tel:${(fl.phone||'').replace(/\s+/g,'')}`;
+        fabCall.style.display = fl.showPhone === false ? 'none' : '';
+      }
+      const fabZalo = document.querySelector('.fab-zalo');
+      if (fabZalo){
+        fabZalo.href = fl.zaloUrl || fabZalo.href;
+        fabZalo.style.display = fl.showZalo === false ? 'none' : '';
+      }
+      const fabFb = document.querySelector('.fab-fb');
+      if (fabFb){
+        fabFb.href = fl.messengerUrl || fabFb.href;
+        fabFb.style.display = fl.showMessenger === false ? 'none' : '';
+      }
+    }
   }
 
   // ======== 2) MARK ACTIVE NAV ITEM ========
