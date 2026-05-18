@@ -4,13 +4,6 @@
 
 (async function(){
 
-  // ======== 0) LOAD FIREBASE (nếu chưa có) ========
-  if (!window.DTX_FIREBASE && location.protocol !== 'file:') {
-    const s = document.createElement('script');
-    s.src = 'assets/firebase-config.js';
-    document.head.appendChild(s);
-  }
-
   // ======== 1) SWAP HEADER + FOOTER PARTIALS (đồng nhất mọi trang) ========
   if (location.protocol !== 'file:') {
     try {
@@ -56,44 +49,49 @@
   // ======== 1.5) OVERRIDE FOOTER NỘI DUNG TỪ FIRESTORE (nếu có) ========
   applyFooterConfig();
 
-  async function waitForFirebase(timeoutMs){
-    if (window.DTX_FIREBASE?.enabled) return true;
-    if (window.DTX_FIREBASE && window.DTX_FIREBASE.enabled === false && !window.DTX_FIREBASE.error) {
-      // explicitly disabled (e.g., file:// or non-firebase host)
-      return false;
+  // Convert Firestore REST document value to plain JS
+  function _fsVal(v){
+    if (!v) return null;
+    if ('stringValue'  in v) return v.stringValue;
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('integerValue' in v) return +v.integerValue;
+    if ('doubleValue'  in v) return +v.doubleValue;
+    if ('nullValue'    in v) return null;
+    if ('arrayValue'   in v) return (v.arrayValue.values||[]).map(_fsVal);
+    if ('mapValue'     in v){
+      const obj={};
+      for (const [k,w] of Object.entries(v.mapValue.fields||{})) obj[k]=_fsVal(w);
+      return obj;
     }
-    return new Promise(resolve => {
-      let done = false;
-      const finish = (ok) => { if (done) return; done = true; cleanup(); resolve(ok); };
-      const onReady = () => finish(true);
-      const timer = setTimeout(() => finish(false), timeoutMs);
-      const poll = setInterval(() => {
-        if (window.DTX_FIREBASE?.enabled) finish(true);
-      }, 120);
-      const cleanup = () => {
-        window.removeEventListener('dtx:firebase-ready', onReady);
-        clearTimeout(timer);
-        clearInterval(poll);
-      };
-      window.addEventListener('dtx:firebase-ready', onReady);
-    });
+    return null;
   }
+  function _fsDoc(fields){ const o={}; for(const [k,v] of Object.entries(fields||{})) o[k]=_fsVal(v); return o; }
 
   async function applyFooterConfig(){
     try {
       let cfg = null;
-      const ok = await waitForFirebase(4000);
-      if (ok && window.DTX_FIREBASE?.enabled){
-        const fb = window.DTX_FIREBASE;
-        const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db, 'settings', 'footer'));
-        if (snap.exists()) cfg = snap.data();
+      if (location.protocol !== 'file:'){
+        try {
+          // Step 1: get project config from Firebase Hosting (auto-served at this path)
+          const initR = await fetch('/__/firebase/init.json');
+          if (initR.ok){
+            const init = await initR.json();
+            // Step 2: fetch footer doc via Firestore REST — no SDK, no race conditions
+            const url = `https://firestore.googleapis.com/v1/projects/${init.projectId}/databases/(default)/documents/settings/footer?key=${init.apiKey}`;
+            const docR = await fetch(url);
+            if (docR.ok){
+              const doc = await docR.json();
+              if (doc.fields) cfg = _fsDoc(doc.fields);
+            }
+          }
+        } catch(_){}
       }
+      // Fallback: localStorage (local dev / offline)
       if (!cfg){
         const ls = localStorage.getItem('dtx_footer_config');
         if (ls) cfg = JSON.parse(ls);
       }
-      if (!cfg) return;
-      applyFooterToDOM(cfg);
+      if (cfg) applyFooterToDOM(cfg);
     } catch(err){ console.warn('Footer config load failed:', err); }
   }
 
