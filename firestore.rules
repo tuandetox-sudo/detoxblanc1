@@ -40,7 +40,11 @@ service cloud.firestore {
     // ─── Admin-only ─────────────────────────────────────────
     match /audit/{id}      { allow read: if isStaff(); allow write: if isAdmin(); }
     match /users/{id}      { allow read, write: if isAdmin(); }
-    match /settings/{id}   { allow read: if isStaff(); allow write: if isAdmin(); }
+    match /settings/{id}   {
+      // Footer cần public read để hiển thị trên trang ngoài
+      allow read: if id == 'footer' || isStaff();
+      allow write: if isAdmin();
+    }
 
     // ─── Newsletter (subscribe public, read staff) ──────────
     match /subscribers/{id} {
