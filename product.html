@@ -692,6 +692,28 @@
       const p = items.find(it => it && it.code === codeParam);
       if (!p) return;
 
+      // If image data is not inline in the catalog doc (new split storage),
+      // fetch it from catalog-images/{safeCode}.
+      const hasInlineImg = p.imageUrl || (Array.isArray(p.gallery) && p.gallery.some(Boolean));
+      const needImages = !hasInlineImg && (p.hasImg || (Array.isArray(p.hasGallery) && p.hasGallery.some(Boolean)));
+      if (needImages) {
+        try {
+          const safeCode = String(p.code||'').replace(/[^a-zA-Z0-9._-]/g, '_') || '_blank';
+          const imgUrl = 'https://firestore.googleapis.com/v1/projects/' + init.projectId
+            + '/databases/(default)/documents/catalog-images/' + encodeURIComponent(safeCode)
+            + '?key=' + init.apiKey;
+          const imgR = await fetch(imgUrl);
+          if (imgR.ok) {
+            const imgDoc = await imgR.json();
+            if (imgDoc.fields) {
+              const imgData = _fsDoc(imgDoc.fields);
+              p.imageUrl = imgData.imageUrl || '';
+              p.gallery  = imgData.gallery  || ['','','',''];
+            }
+          }
+        } catch(_){}
+      }
+
       // Main image
       const main = document.querySelector('.pdp-main');
       if (main) {
@@ -701,6 +723,9 @@
             const img = document.createElement('img');
             img.src = p.imageUrl;
             img.alt = p.name || '';
+            img.decoding = 'async';
+            // Main hero image: fetchpriority high so it shows fast
+            img.setAttribute('fetchpriority', 'high');
             img.setAttribute('style','width:100%;height:100%;object-fit:contain;display:block;padding:20px');
             mainSvg.replaceWith(img);
           }
@@ -729,6 +754,8 @@
             const img = document.createElement('img');
             img.src = url;
             img.alt = '';
+            img.loading = 'lazy';
+            img.decoding = 'async';
             img.setAttribute('style','width:100%;height:100%;object-fit:contain');
             svg.replaceWith(img);
           }

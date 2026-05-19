@@ -46,6 +46,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ─── Catalog images per-product (split để né giới hạn 1MB / doc) ──
+    match /catalog-images/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ─── Newsletter (subscribe public, read staff) ──────────
     match /subscribers/{id} {
       allow read: if isStaff();

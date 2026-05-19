@@ -495,20 +495,37 @@
     }
   });
 
+  // ===== WebP support detection (browser-side) =====
+  let _webpSupport = null;
+  function supportsWebP(){
+    if (_webpSupport !== null) return Promise.resolve(_webpSupport);
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = img.onerror = () => { _webpSupport = (img.width === 1); resolve(_webpSupport); };
+      img.src = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
+    });
+  }
+
+  // ===== Gallery upload: ảnh phụ — 1000px / WebP 0.82 (~80-130KB) =====
   async function handleGalleryUpload(file, idx, slot){
     if (!file.type.startsWith('image/')){ toast('Vui lòng chọn file ảnh', 'err'); return; }
-    toast('Đang nén ảnh gallery ' + (slot+1) + '...');
+    toast('Đang xử lý ảnh gallery ' + (slot+1) + '...');
     try {
-      let dataUrl = await compressImage(file, 720, 0.7);
-      let q = 0.7;
-      while (dataUrl.length > 70000 && q > 0.3){
-        q -= 0.1;
-        dataUrl = await compressImage(file, 640, q);
+      const useWebP = await supportsWebP();
+      const mime = useWebP ? 'image/webp' : 'image/jpeg';
+      // Target: 1000px, quality 0.82 — sharp on retina, fits Firestore inline budget
+      let dataUrl = await compressImage(file, 1000, 0.82, mime);
+      // If too big (>180KB), step down gracefully
+      let q = 0.82, side = 1000;
+      while (dataUrl.length > 240000 && q > 0.5){
+        q -= 0.08;
+        if (q < 0.7) side = 900;
+        dataUrl = await compressImage(file, side, q, mime);
       }
       if (!Array.isArray(state.items[idx].gallery)) state.items[idx].gallery = ['','','',''];
       state.items[idx].gallery[slot] = dataUrl;
       const sizeKB = Math.round(dataUrl.length / 1024);
-      toast('✓ Đã upload gallery ' + (slot+1) + ' (' + sizeKB + ' KB)');
+      toast('✓ Gallery ' + (slot+1) + ' · ' + sizeKB + ' KB · ' + (useWebP?'WebP':'JPEG'));
       state.openIdx = idx;
       render();
     } catch(err){
@@ -517,23 +534,25 @@
     }
   }
 
-  // ===== Image file upload (compress + inline base64) =====
+  // ===== Main image upload: ảnh chính — 1400px / WebP 0.85 (~120-200KB) =====
   async function handleImageUpload(file, idx){
     if (!file.type.startsWith('image/')){ toast('Vui lòng chọn file ảnh', 'err'); return; }
-    toast('Đang nén ảnh...');
+    toast('Đang xử lý ảnh...');
     try {
-      // Compress: resize max 800px, JPEG quality 0.7 (~25-50KB output)
-      let dataUrl = await compressImage(file, 800, 0.7);
-      // If still too big (>60KB), compress harder
-      let q = 0.7;
-      while (dataUrl.length > 80000 && q > 0.3){
-        q -= 0.1;
-        dataUrl = await compressImage(file, 720, q);
+      const useWebP = await supportsWebP();
+      const mime = useWebP ? 'image/webp' : 'image/jpeg';
+      // Target: 1400px (retina-ready), quality 0.85 — sharp khi zoom, không lag
+      let dataUrl = await compressImage(file, 1400, 0.85, mime);
+      let q = 0.85, side = 1400;
+      while (dataUrl.length > 320000 && q > 0.55){
+        q -= 0.07;
+        if (q < 0.75) side = 1200;
+        if (q < 0.65) side = 1000;
+        dataUrl = await compressImage(file, side, q, mime);
       }
-      // Set imageUrl in form input (so syncOpenForm picks it up) AND state
       state.items[idx].imageUrl = dataUrl;
       const sizeKB = Math.round(dataUrl.length / 1024);
-      toast('✓ Đã upload ảnh (' + sizeKB + ' KB)');
+      toast('✓ Ảnh chính · ' + sizeKB + ' KB · ' + (useWebP?'WebP':'JPEG'));
       state.openIdx = idx;
       render();
     } catch(err){
@@ -542,7 +561,8 @@
     }
   }
 
-  function compressImage(file, maxSide, quality){
+  function compressImage(file, maxSide, quality, mime){
+    mime = mime || 'image/jpeg';
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = e => {
@@ -554,10 +574,21 @@
           const canvas = document.createElement('canvas');
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, w, h);
+          // Use high-quality smoothing for downscale
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          if (mime === 'image/jpeg'){
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+          }
           ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', quality));
+          const out = canvas.toDataURL(mime, quality);
+          // Fallback if WebP encoding silently produced a PNG (some old browsers)
+          if (mime === 'image/webp' && !out.startsWith('data:image/webp')){
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          } else {
+            resolve(out);
+          }
         };
         img.onerror = () => reject(new Error('Không đọc được file ảnh'));
         img.src = e.target.result;
@@ -618,26 +649,73 @@
   });
 
   // ===== Save / Load =====
+  // Strategy: split images into per-product docs to bypass Firestore 1MB single-doc limit.
+  //   settings/catalog              → metadata only (rất nhỏ, ~30KB cho 100+ SP)
+  //   catalog-images/{safeCode}     → { imageUrl, gallery } cho từng SP (max 1MB / SP)
+  function safeDocId(code){
+    return String(code||'').replace(/[^a-zA-Z0-9._-]/g, '_') || '_blank';
+  }
+
   async function saveCatalog(){
     syncOpenForm();
-    // Guard against Firestore 1MB doc limit (esp. with inline base64 images)
-    const totalBytes = JSON.stringify(state.items).length;
-    if (totalBytes > 900000){
-      const sizeKB = Math.round(totalBytes / 1024);
-      if (!confirm('Tổng dữ liệu catalog là ' + sizeKB + ' KB — gần vượt giới hạn 1024 KB của Firestore. Nếu lưu có thể bị lỗi. Tiếp tục?')) return;
+    if (!window.DTX_FIREBASE?.enabled){
+      localStorage.setItem('dtx_catalog', JSON.stringify(state.items));
+      toast('Đã lưu vào localStorage (local mode)');
+      return;
     }
+    const fb = window.DTX_FIREBASE;
     try {
-      if (window.DTX_FIREBASE?.enabled){
-        const fb = window.DTX_FIREBASE;
-        await fb.dbMethods.setDoc(
-          fb.dbMethods.doc(fb.db, 'settings', 'catalog'),
-          { items: state.items, updatedAt: fb.dbMethods.serverTimestamp() }
-        );
-        toast('Đã lưu catalog lên Firestore (' + state.items.length + ' sản phẩm · ' + Math.round(totalBytes/1024) + ' KB)');
-      } else {
-        localStorage.setItem('dtx_catalog', JSON.stringify(state.items));
-        toast('Đã lưu vào localStorage (local mode)');
+      // 1. Split items: metadata stays in catalog doc, images go to per-product docs
+      const meta = state.items.map(p => {
+        const { imageUrl, gallery, ...rest } = p;
+        return {
+          ...rest,
+          hasImg: !!imageUrl,
+          hasGallery: Array.isArray(gallery) ? gallery.map(g => !!g) : [false,false,false,false]
+        };
+      });
+
+      // 2. Save metadata doc (small)
+      const metaBytes = JSON.stringify(meta).length;
+      if (metaBytes > 900000){
+        toast('Metadata vượt 900KB (' + Math.round(metaBytes/1024) + ' KB) — quá nhiều SP. Tách thành 2 catalog.', 'err');
+        return;
       }
+      await fb.dbMethods.setDoc(
+        fb.dbMethods.doc(fb.db, 'settings', 'catalog'),
+        { items: meta, updatedAt: fb.dbMethods.serverTimestamp() }
+      );
+
+      // 3. Save image docs in parallel (skip ones without images)
+      const imageOps = [];
+      let imageDocCount = 0;
+      for (const p of state.items){
+        const hasMain = !!p.imageUrl;
+        const hasAnyGallery = Array.isArray(p.gallery) && p.gallery.some(Boolean);
+        if (!hasMain && !hasAnyGallery) continue;
+        const docId = safeDocId(p.code);
+        const payload = {
+          code: p.code || '',
+          imageUrl: p.imageUrl || '',
+          gallery: Array.isArray(p.gallery) ? p.gallery.slice(0,4) : ['','','',''],
+          updatedAt: fb.dbMethods.serverTimestamp()
+        };
+        const docBytes = JSON.stringify(payload).length;
+        if (docBytes > 950000){
+          toast('SP "' + (p.code||'?') + '" ảnh quá lớn (' + Math.round(docBytes/1024) + ' KB > 950KB) — bỏ qua', 'err');
+          continue;
+        }
+        imageOps.push(
+          fb.dbMethods.setDoc(
+            fb.dbMethods.doc(fb.db, 'catalog-images', docId),
+            payload
+          )
+        );
+        imageDocCount++;
+      }
+      await Promise.all(imageOps);
+
+      toast('✓ Đã lưu ' + state.items.length + ' SP (' + Math.round(metaBytes/1024) + ' KB meta · ' + imageDocCount + ' SP có ảnh)');
     } catch(err){
       console.error(err);
       toast('Lỗi khi lưu: ' + err.message, 'err');
@@ -646,20 +724,46 @@
 
   async function loadCatalog(){
     try {
-      if (window.DTX_FIREBASE?.enabled){
-        const fb = window.DTX_FIREBASE;
-        const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db, 'settings', 'catalog'));
-        if (snap.exists()){
-          const d = snap.data();
-          state.items = d.items || [];
-          toast('Đã tải catalog từ Firestore (' + state.items.length + ' sản phẩm)');
-        } else {
-          state.items = JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
-        }
-      } else {
+      if (!window.DTX_FIREBASE?.enabled){
         const ls = localStorage.getItem('dtx_catalog');
         state.items = ls ? JSON.parse(ls) : JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
+        state.openIdx = null;
+        render();
+        return;
       }
+      const fb = window.DTX_FIREBASE;
+      const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db, 'settings', 'catalog'));
+      if (!snap.exists()){
+        state.items = JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
+        state.openIdx = null;
+        render();
+        return;
+      }
+      const d = snap.data();
+      const meta = d.items || [];
+
+      // Back-compat: nếu doc cũ còn nhúng imageUrl/gallery trực tiếp, dùng luôn.
+      // Ngược lại fetch ảnh từ catalog-images/{code} (chỉ cho SP có hasImg/hasGallery=true)
+      const imageOps = meta.map(async (p) => {
+        if (p.imageUrl || (Array.isArray(p.gallery) && p.gallery.some(Boolean))){
+          return p; // legacy inline
+        }
+        const need = p.hasImg || (Array.isArray(p.hasGallery) && p.hasGallery.some(Boolean));
+        if (!need) return p;
+        try {
+          const imgSnap = await fb.dbMethods.getDoc(
+            fb.dbMethods.doc(fb.db, 'catalog-images', safeDocId(p.code))
+          );
+          if (imgSnap.exists()){
+            const ii = imgSnap.data();
+            return { ...p, imageUrl: ii.imageUrl||'', gallery: ii.gallery||['','','',''] };
+          }
+        } catch(_){}
+        return p;
+      });
+
+      state.items = await Promise.all(imageOps);
+      toast('Đã tải ' + state.items.length + ' SP từ Firestore');
       state.openIdx = null;
       render();
     } catch(err){
@@ -667,6 +771,7 @@
       state.items = JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
       state.openIdx = null;
       render();
+      toast('Lỗi tải Firestore — đang dùng mặc định', 'err');
     }
   }
 
