@@ -647,5 +647,179 @@
 
 <script src="assets/app.js?v=4"></script>
 <script src="assets/pages.js"></script>
+<script>
+(function(){
+  function _fsVal(v){
+    if (!v) return null;
+    if ('stringValue'  in v) return v.stringValue;
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('integerValue' in v) return +v.integerValue;
+    if ('doubleValue'  in v) return +v.doubleValue;
+    if ('nullValue'    in v) return null;
+    if ('arrayValue'   in v) return (v.arrayValue.values||[]).map(_fsVal);
+    if ('mapValue'     in v){
+      const obj={};
+      for (const [k,w] of Object.entries(v.mapValue.fields||{})) obj[k]=_fsVal(w);
+      return obj;
+    }
+    return null;
+  }
+  function _fsDoc(fields){ const o={}; for(const [k,v] of Object.entries(fields||{})) o[k]=_fsVal(v); return o; }
+  function esc(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function VND(n){ return n ? Number(n).toLocaleString('vi-VN')+'₫' : ''; }
+
+  async function loadProduct(){
+    try {
+      const params = new URLSearchParams(location.search);
+      const codeRaw = params.get('code');
+      if (!codeRaw) return;
+      const codeParam = decodeURIComponent(codeRaw);
+      if (location.protocol === 'file:') return;
+
+      const initR = await fetch('/__/firebase/init.json');
+      if (!initR.ok) return;
+      const init = await initR.json();
+      if (!init.projectId || !init.apiKey) return;
+
+      const url = 'https://firestore.googleapis.com/v1/projects/' + init.projectId
+        + '/databases/(default)/documents/settings/catalog?key=' + init.apiKey;
+      const r = await fetch(url);
+      if (!r.ok) return;
+      const doc = await r.json();
+      if (!doc.fields) return;
+      const data = _fsDoc(doc.fields);
+      const items = Array.isArray(data.items) ? data.items : [];
+      const p = items.find(it => it && it.code === codeParam);
+      if (!p) return;
+
+      // Main image
+      const main = document.querySelector('.pdp-main');
+      if (main) {
+        if (p.imageUrl) {
+          const mainSvg = main.querySelector('svg.bottle-svg');
+          if (mainSvg) {
+            const img = document.createElement('img');
+            img.src = p.imageUrl;
+            img.alt = p.name || '';
+            img.setAttribute('style','width:100%;height:100%;object-fit:contain;display:block;padding:20px');
+            mainSvg.replaceWith(img);
+          }
+        }
+        // Tag badge inside main
+        const tagEl = main.querySelector('.tag');
+        if (tagEl) {
+          if (p.tag) {
+            tagEl.className = 'tag ' + (p.cls || 'tag-green');
+            tagEl.textContent = p.tag;
+            tagEl.style.display = '';
+          } else {
+            tagEl.style.display = 'none';
+          }
+        }
+      }
+
+      // Gallery thumbnails
+      if (Array.isArray(p.gallery)) {
+        const thumbs = document.querySelectorAll('.pdp-thumbs .pdp-thumb');
+        for (let i = 0; i < thumbs.length; i++) {
+          const url = p.gallery[i];
+          if (!url) continue;
+          const svg = thumbs[i].querySelector('svg.bottle-svg');
+          if (svg) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = '';
+            img.setAttribute('style','width:100%;height:100%;object-fit:contain');
+            svg.replaceWith(img);
+          }
+        }
+      }
+
+      const info = document.querySelector('.pdp-info');
+      if (info) {
+        // Title
+        const h1 = info.querySelector('h1');
+        if (h1 && p.name) h1.textContent = p.name;
+
+        // Breadcrumb / category line
+        const cat = info.querySelector('.pdp-cat');
+        if (cat) {
+          const parts = [];
+          if (p.category) parts.push(p.category);
+          if (p.code) parts.push(p.code);
+          if (p.tag) parts.push(p.tag);
+          // Preserve leading icon if any
+          const icon = cat.querySelector('i');
+          cat.textContent = ' ' + parts.join(' · ');
+          if (icon) cat.prepend(icon, ' ');
+        }
+
+        // Ingredients line (pdp-sub)
+        const sub = info.querySelector('.pdp-sub');
+        if (sub) {
+          const ing = p.ingr || [p.b1, p.b2].filter(Boolean).join(' · ');
+          if (ing) sub.textContent = ing;
+        }
+
+        // Rating
+        const ratingBox = info.querySelector('.pdp-rating');
+        if (ratingBox) {
+          if (p.rating != null) {
+            const strong = ratingBox.querySelector('strong');
+            if (strong) strong.textContent = Number(p.rating).toFixed(1);
+          }
+          if (p.reviews != null) {
+            const reviewLink = ratingBox.querySelector('a[href="#reviews"]');
+            if (reviewLink) reviewLink.textContent = p.reviews + ' đánh giá';
+          }
+        }
+
+        // Price block
+        const priceBlock = info.querySelector('.pdp-price');
+        if (priceBlock) {
+          const priceEl = priceBlock.querySelector('.price');
+          if (priceEl) priceEl.textContent = VND(p.price);
+          const oldEl = priceBlock.querySelector('.price-old');
+          if (oldEl) {
+            if (p.old) {
+              oldEl.textContent = VND(p.old);
+              oldEl.style.display = '';
+            } else {
+              oldEl.style.display = 'none';
+            }
+          }
+          const saveEl = priceBlock.querySelector('.save');
+          if (saveEl) {
+            if (p.old && p.price && Number(p.old) > Number(p.price)) {
+              const pct = Math.round((1 - Number(p.price)/Number(p.old)) * 100);
+              saveEl.textContent = '-' + pct + '%';
+              saveEl.style.display = '';
+            } else {
+              saveEl.style.display = 'none';
+            }
+          }
+        }
+
+        // Stock
+        const stockEl = info.querySelector('.pdp-stock');
+        if (stockEl && p.stock != null) {
+          const icon = stockEl.querySelector('i');
+          const inStock = Number(p.stock) > 0;
+          stockEl.textContent = inStock ? 'Còn hàng · Giao từ kho HCM trong 24h' : 'Hết hàng';
+          if (icon) stockEl.prepend(icon);
+        }
+      }
+    } catch (e) {
+      console.warn('Product load failed:', e);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadProduct);
+  } else {
+    loadProduct();
+  }
+})();
+</script>
 </body>
 </html>

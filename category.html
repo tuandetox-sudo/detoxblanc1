@@ -1048,7 +1048,7 @@
         +'</svg>';
 
     return '<article class="product-card">'
-      +'<a href="product.html" class="product-media">'
+      +'<a href="product.html?code='+encodeURIComponent(p.code||'')+'" class="product-media">'
       +tagBadge
       +mediaInner
       +'<span class="active-ingr">'+esc(p.ingr||'')+'</span>'
