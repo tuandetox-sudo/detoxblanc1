@@ -74,6 +74,7 @@
       { "source": "/admin/pages",       "destination": "/admin-pages.html" },
       { "source": "/admin/footer",      "destination": "/admin-footer.html" },
       { "source": "/admin/contact",     "destination": "/admin-contact.html" },
+      { "source": "/admin/catalog",     "destination": "/admin-catalog.html" },
       { "source": "/admin/reviews",     "destination": "/admin-reviews.html" },
       { "source": "/admin/newsletter",  "destination": "/admin-newsletter.html" },
       { "source": "/admin/vouchers",    "destination": "/admin-vouchers.html" },

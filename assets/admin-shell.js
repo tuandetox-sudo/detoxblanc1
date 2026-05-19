@@ -38,7 +38,8 @@
       { key:'customers', href:'admin-customers.html',   icon:'users',         label:'Khách hàng' },
     ]},
     { group: 'Sản phẩm', items: [
-      { key:'products',  href:'admin-products.html',    icon:'box-archive',   label:'Catalog', dynamicCount:'products' },
+      { key:'products',  href:'admin-products.html',    icon:'box-archive',   label:'Danh sách SP', dynamicCount:'products' },
+      { key:'catalog',   href:'admin-catalog.html',     icon:'pen-to-square', label:'Sửa sản phẩm' },
       { key:'inventory', href:'admin-inventory.html',   icon:'warehouse',     label:'Kho hàng', dotNew:true },
       { key:'collections', href:'admin-collections.html', icon:'layer-group', label:'Bộ sưu tập' },
       { key:'qr',        href:'admin-coming-soon.html?feat=qr', icon:'qrcode', label:'QR chính hãng', soon:true },
