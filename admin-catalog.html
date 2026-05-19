@@ -375,14 +375,22 @@
                 <div class="ef"><label>Tồn kho (stock)</label><input data-f="stock" type="number" value="${p.stock||0}"/></div>
               </div>
               <div style="margin-top:14px;padding:14px;background:#F0F6FF;border:1px solid #2D5DA1;border-radius:10px">
-                <label style="font-size:12.5px;font-weight:600;color:#2D5DA1;display:block;margin-bottom:6px"><i class="fa-solid fa-image"></i> URL hình ảnh sản phẩm</label>
-                <div style="display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:start">
+                <label style="font-size:12.5px;font-weight:600;color:#2D5DA1;display:block;margin-bottom:10px"><i class="fa-solid fa-image"></i> Hình ảnh sản phẩm</label>
+                <div style="display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:start">
                   <div>
-                    <input data-f="imageUrl" type="url" value="${esc(p.imageUrl||'')}" placeholder="https://i.imgur.com/abc.jpg" style="width:100%;padding:9px 12px;border:1px solid #c5d8ee;border-radius:7px;font:13px Inter"/>
-                    <small style="display:block;margin-top:6px;color:#6B7280;font-size:11.5px">Dán URL ảnh từ Imgur · ImgBB · Google Drive (share link) · hoặc CDN bất kỳ. Để trống → dùng hình chai mặc định (theo màu gradient).</small>
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                      <label class="adm-btn primary sm" style="cursor:pointer;margin:0">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Chọn ảnh từ máy
+                        <input type="file" accept="image/*" data-upload-img="${idx}" style="display:none"/>
+                      </label>
+                      ${p.imageUrl ? `<button type="button" class="adm-btn sm" data-clear-img="${idx}" style="margin:0"><i class="fa-solid fa-xmark"></i> Xoá ảnh</button>` : ''}
+                      <span style="font-size:11px;color:#6B7280">hoặc</span>
+                    </div>
+                    <input data-f="imageUrl" type="url" value="${esc(p.imageUrl||'')}" placeholder="https://... (dán URL ảnh)" style="width:100%;padding:9px 12px;border:1px solid #c5d8ee;border-radius:7px;font:13px Inter"/>
+                    <small style="display:block;margin-top:6px;color:#6B7280;font-size:11.5px">Upload ảnh thẳng từ máy hoặc dán URL. Để trống → dùng hình chai mặc định.</small>
                   </div>
-                  <div style="width:90px;height:90px;border-radius:8px;background:#fff;border:1px dashed #c5d8ee;display:grid;place-items:center;overflow:hidden">
-                    ${p.imageUrl ? `<img src="${esc(p.imageUrl)}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:10px;color:#991b1b\\'>Không tải được</span>'"/>` : '<span style="font-size:10px;color:#9ca3af;text-align:center">Chưa có ảnh</span>'}
+                  <div style="width:120px;height:120px;border-radius:8px;background:#fff;border:1px dashed #c5d8ee;display:grid;place-items:center;overflow:hidden">
+                    ${p.imageUrl ? `<img src="${esc(p.imageUrl)}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:10px;color:#991b1b\\'>Lỗi tải ảnh</span>'"/>` : '<span style="font-size:10px;color:#9ca3af;text-align:center">Chưa có ảnh</span>'}
                   </div>
                 </div>
               </div>
@@ -451,6 +459,74 @@
     if (e.target.dataset.f === 'tag'){
       // visual cls preview not strictly needed here; will be set on syncOpenForm
     }
+    // ===== Image file upload =====
+    const fileInput = e.target.closest('input[data-upload-img]');
+    if (fileInput && fileInput.files && fileInput.files[0]){
+      const idx = +fileInput.dataset.uploadImg;
+      handleImageUpload(fileInput.files[0], idx);
+    }
+  });
+
+  // ===== Image file upload (compress + inline base64) =====
+  async function handleImageUpload(file, idx){
+    if (!file.type.startsWith('image/')){ toast('Vui lòng chọn file ảnh', 'err'); return; }
+    toast('Đang nén ảnh...');
+    try {
+      // Compress: resize max 800px, JPEG quality 0.7 (~25-50KB output)
+      let dataUrl = await compressImage(file, 800, 0.7);
+      // If still too big (>60KB), compress harder
+      let q = 0.7;
+      while (dataUrl.length > 80000 && q > 0.3){
+        q -= 0.1;
+        dataUrl = await compressImage(file, 720, q);
+      }
+      // Set imageUrl in form input (so syncOpenForm picks it up) AND state
+      state.items[idx].imageUrl = dataUrl;
+      const sizeKB = Math.round(dataUrl.length / 1024);
+      toast('✓ Đã upload ảnh (' + sizeKB + ' KB)');
+      state.openIdx = idx;
+      render();
+    } catch(err){
+      console.error(err);
+      toast('Lỗi xử lý ảnh: ' + err.message, 'err');
+    }
+  }
+
+  function compressImage(file, maxSide, quality){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const ratio = Math.min(maxSide / img.width, maxSide / img.height, 1);
+          const w = Math.round(img.width * ratio);
+          const h = Math.round(img.height * ratio);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => reject(new Error('Không đọc được file ảnh'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Không đọc được file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Clear image button
+  $('catBody').addEventListener('click', e => {
+    const clearBtn = e.target.closest('button[data-clear-img]');
+    if (clearBtn){
+      const idx = +clearBtn.dataset.clearImg;
+      state.items[idx].imageUrl = '';
+      state.openIdx = idx;
+      render();
+      toast('Đã xoá ảnh');
+    }
   });
 
   // Search
@@ -484,6 +560,12 @@
   // ===== Save / Load =====
   async function saveCatalog(){
     syncOpenForm();
+    // Guard against Firestore 1MB doc limit (esp. with inline base64 images)
+    const totalBytes = JSON.stringify(state.items).length;
+    if (totalBytes > 900000){
+      const sizeKB = Math.round(totalBytes / 1024);
+      if (!confirm('Tổng dữ liệu catalog là ' + sizeKB + ' KB — gần vượt giới hạn 1024 KB của Firestore. Nếu lưu có thể bị lỗi. Tiếp tục?')) return;
+    }
     try {
       if (window.DTX_FIREBASE?.enabled){
         const fb = window.DTX_FIREBASE;
@@ -491,7 +573,7 @@
           fb.dbMethods.doc(fb.db, 'settings', 'catalog'),
           { items: state.items, updatedAt: fb.dbMethods.serverTimestamp() }
         );
-        toast('Đã lưu catalog lên Firestore (' + state.items.length + ' sản phẩm)');
+        toast('Đã lưu catalog lên Firestore (' + state.items.length + ' sản phẩm · ' + Math.round(totalBytes/1024) + ' KB)');
       } else {
         localStorage.setItem('dtx_catalog', JSON.stringify(state.items));
         toast('Đã lưu vào localStorage (local mode)');
