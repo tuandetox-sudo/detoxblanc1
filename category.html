@@ -1022,20 +1022,35 @@
     const stars = Math.round(parseFloat(p.rating)||5);
     const starsHTML = Array(5).fill(0).map(function(_,i){ return '<i class="fa-'+(i < stars ? 'solid' : 'regular')+' fa-star"></i>'; }).join('');
 
+    const mediaInner = p.imageUrl
+      ? '<img src="'+esc(p.imageUrl)+'" alt="'+esc(p.name||'')+'" loading="lazy" style="width:100%;height:100%;object-fit:contain;display:block;padding:14px" onerror="this.outerHTML=this.dataset.fb" data-fb=\''
+        + '<svg class="bottle-svg" viewBox="0 0 120 200">'
+        + '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
+        + '<stop offset="0" stop-color="'+esc(g1)+'"/>'
+        + '<stop offset="1" stop-color="'+esc(g1)+'cc"/>'
+        + '</linearGradient></defs>'
+        + '<rect x="44" y="8" width="32" height="28" rx="3" fill="url(#'+gid+')"/>'
+        + '<rect x="40" y="32" width="40" height="10" rx="2" fill="'+esc(g1)+'"/>'
+        + '<rect x="22" y="46" width="76" height="146" rx="10" fill="#fff" stroke="#E0E4E2"/>'
+        + '<rect x="32" y="84" width="56" height="76" rx="2" fill="#F2FAF9"/>'
+        + (codeLabel ? '<text x="60" y="106" text-anchor="middle" font-family="Space Grotesk" font-size="7" letter-spacing="1" font-weight="700" fill="#1F6661">'+esc(codeLabel)+'</text>' : '')
+        + '</svg>\''
+      : '<svg class="bottle-svg" viewBox="0 0 120 200">'
+        +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
+        +'<stop offset="0" stop-color="'+esc(g1)+'"/>'
+        +'<stop offset="1" stop-color="'+esc(g1)+'cc"/>'
+        +'</linearGradient></defs>'
+        +'<rect x="44" y="8" width="32" height="28" rx="3" fill="url(#'+gid+')"/>'
+        +'<rect x="40" y="32" width="40" height="10" rx="2" fill="'+esc(g1)+'"/>'
+        +'<rect x="22" y="46" width="76" height="146" rx="10" fill="#fff" stroke="#E0E4E2"/>'
+        +'<rect x="32" y="84" width="56" height="76" rx="2" fill="#F2FAF9"/>'
+        +(codeLabel ? '<text x="60" y="106" text-anchor="middle" font-family="Space Grotesk" font-size="7" letter-spacing="1" font-weight="700" fill="#1F6661">'+esc(codeLabel)+'</text>' : '')
+        +'</svg>';
+
     return '<article class="product-card">'
       +'<a href="product.html" class="product-media">'
       +tagBadge
-      +'<svg class="bottle-svg" viewBox="0 0 120 200">'
-      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
-      +'<stop offset="0" stop-color="'+esc(g1)+'"/>'
-      +'<stop offset="1" stop-color="'+esc(g1)+'cc"/>'
-      +'</linearGradient></defs>'
-      +'<rect x="44" y="8" width="32" height="28" rx="3" fill="url(#'+gid+')"/>'
-      +'<rect x="40" y="32" width="40" height="10" rx="2" fill="'+esc(g1)+'"/>'
-      +'<rect x="22" y="46" width="76" height="146" rx="10" fill="#fff" stroke="#E0E4E2"/>'
-      +'<rect x="32" y="84" width="56" height="76" rx="2" fill="#F2FAF9"/>'
-      +(codeLabel ? '<text x="60" y="106" text-anchor="middle" font-family="Space Grotesk" font-size="7" letter-spacing="1" font-weight="700" fill="#1F6661">'+esc(codeLabel)+'</text>' : '')
-      +'</svg>'
+      +mediaInner
       +'<span class="active-ingr">'+esc(p.ingr||'')+'</span>'
       +'</a>'
       +'<div class="product-body">'

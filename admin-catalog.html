@@ -303,6 +303,7 @@
     p.price    = Number(fv('price')) || 0;
     p.old      = fv('old') ? Number(fv('old')) : null;
     p.grad     = fv('grad') || '#63C1BB';
+    p.imageUrl = fv('imageUrl') || '';
     p.rating   = fv('rating');
     p.reviews  = fv('reviews');
     p.stock    = Number(fv('stock')) || 0;
@@ -366,12 +367,24 @@
                 </div>
                 <div class="ef"><label>Giá hiện tại (VND)</label><input data-f="price" type="number" value="${p.price||0}"/></div>
                 <div class="ef"><label>Giá gốc / giá cũ (old, để trống nếu không có)</label><input data-f="old" type="number" value="${p.old||''}"/></div>
-                <div class="ef"><label>Màu gradient (grad)</label><input data-f="grad" type="color" value="${esc(p.grad||'#63C1BB')}"/></div>
+                <div class="ef"><label>Màu gradient (grad — dùng khi không có ảnh)</label><input data-f="grad" type="color" value="${esc(p.grad||'#63C1BB')}"/></div>
               </div>
               <div class="cat-edit-grid wide3" style="margin-top:10px">
                 <div class="ef"><label>Đánh giá (rating)</label><input data-f="rating" value="${esc(String(p.rating||'4.9'))}"/></div>
                 <div class="ef"><label>Số lượt đánh giá (reviews)</label><input data-f="reviews" value="${esc(String(p.reviews||'0'))}"/></div>
                 <div class="ef"><label>Tồn kho (stock)</label><input data-f="stock" type="number" value="${p.stock||0}"/></div>
+              </div>
+              <div style="margin-top:14px;padding:14px;background:#F0F6FF;border:1px solid #2D5DA1;border-radius:10px">
+                <label style="font-size:12.5px;font-weight:600;color:#2D5DA1;display:block;margin-bottom:6px"><i class="fa-solid fa-image"></i> URL hình ảnh sản phẩm</label>
+                <div style="display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:start">
+                  <div>
+                    <input data-f="imageUrl" type="url" value="${esc(p.imageUrl||'')}" placeholder="https://i.imgur.com/abc.jpg" style="width:100%;padding:9px 12px;border:1px solid #c5d8ee;border-radius:7px;font:13px Inter"/>
+                    <small style="display:block;margin-top:6px;color:#6B7280;font-size:11.5px">Dán URL ảnh từ Imgur · ImgBB · Google Drive (share link) · hoặc CDN bất kỳ. Để trống → dùng hình chai mặc định (theo màu gradient).</small>
+                  </div>
+                  <div style="width:90px;height:90px;border-radius:8px;background:#fff;border:1px dashed #c5d8ee;display:grid;place-items:center;overflow:hidden">
+                    ${p.imageUrl ? `<img src="${esc(p.imageUrl)}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:10px;color:#991b1b\\'>Không tải được</span>'"/>` : '<span style="font-size:10px;color:#9ca3af;text-align:center">Chưa có ảnh</span>'}
+                  </div>
+                </div>
               </div>
               <div class="cat-edit-actions">
                 <button class="adm-btn primary sm" data-save-row="${idx}"><i class="fa-solid fa-check"></i> Xác nhận</button>
