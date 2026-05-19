@@ -987,5 +987,97 @@
 
 <script src="assets/app.js?v=4"></script>
 <script src="assets/pages.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // Convert Firestore REST document value to plain JS
+  function _fsVal(v){
+    if (!v) return null;
+    if ('stringValue'  in v) return v.stringValue;
+    if ('booleanValue' in v) return v.booleanValue;
+    if ('integerValue' in v) return +v.integerValue;
+    if ('doubleValue'  in v) return +v.doubleValue;
+    if ('nullValue'    in v) return null;
+    if ('arrayValue'   in v) return (v.arrayValue.values||[]).map(_fsVal);
+    if ('mapValue'     in v){
+      const obj={};
+      for (const [k,w] of Object.entries(v.mapValue.fields||{})) obj[k]=_fsVal(w);
+      return obj;
+    }
+    return null;
+  }
+  function _fsDoc(fields){ const o={}; for(const [k,v] of Object.entries(fields||{})) o[k]=_fsVal(v); return o; }
+
+  function esc(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function VND(n){ return n ? Number(n).toLocaleString('vi-VN')+'₫' : ''; }
+
+  function productCardHTML(p, idx){
+    const gid = 'pg' + idx;
+    const g1 = p.grad || '#63C1BB';
+    const codeLabel = (p.code||'').replace('N°','');
+    const tagCls = p.cls || 'tag-green';
+    const tagBadge = p.tag ? '<span class="tag '+esc(tagCls)+'">'+esc(p.tag)+'</span>' : '';
+    const oldPriceHTML = p.old ? '<span class="price-old">'+VND(p.old)+'</span>' : '';
+    const stars = Math.round(parseFloat(p.rating)||5);
+    const starsHTML = Array(5).fill(0).map(function(_,i){ return '<i class="fa-'+(i < stars ? 'solid' : 'regular')+' fa-star"></i>'; }).join('');
+
+    return '<article class="product-card">'
+      +'<a href="product.html" class="product-media">'
+      +tagBadge
+      +'<svg class="bottle-svg" viewBox="0 0 120 200">'
+      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="'+esc(g1)+'"/>'
+      +'<stop offset="1" stop-color="'+esc(g1)+'cc"/>'
+      +'</linearGradient></defs>'
+      +'<rect x="44" y="8" width="32" height="28" rx="3" fill="url(#'+gid+')"/>'
+      +'<rect x="40" y="32" width="40" height="10" rx="2" fill="'+esc(g1)+'"/>'
+      +'<rect x="22" y="46" width="76" height="146" rx="10" fill="#fff" stroke="#E0E4E2"/>'
+      +'<rect x="32" y="84" width="56" height="76" rx="2" fill="#F2FAF9"/>'
+      +(codeLabel ? '<text x="60" y="106" text-anchor="middle" font-family="Space Grotesk" font-size="7" letter-spacing="1" font-weight="700" fill="#1F6661">'+esc(codeLabel)+'</text>' : '')
+      +'</svg>'
+      +'<span class="active-ingr">'+esc(p.ingr||'')+'</span>'
+      +'</a>'
+      +'<div class="product-body">'
+      +'<span class="cat"><i class="fa-solid fa-droplet"></i> '+esc(p.category||'')+' · '+esc(p.code||'')+'</span>'
+      +'<h3><a href="product.html" style="color:inherit">'+esc(p.name||'')+'</a></h3>'
+      +'<ul class="spec-bullets">'
+      +(p.b1 ? '<li><i class="fa-solid fa-check"></i> '+esc(p.b1)+'</li>' : '')
+      +(p.b2 ? '<li><i class="fa-solid fa-check"></i> '+esc(p.b2)+'</li>' : '')
+      +'</ul>'
+      +'<div class="stars">'+starsHTML+'<small>'+esc(String(p.rating||''))+' ('+esc(String(p.reviews||''))+')</small></div>'
+      +'<div class="price-row"><span class="price">'+VND(p.price)+'</span>'+oldPriceHTML+'</div>'
+      +'<a href="checkout.html" class="btn btn-dark btn-block">Thêm vào giỏ <i class="fa-solid fa-bag-shopping"></i></a>'
+      +'</div>'
+      +'</article>';
+  }
+
+  async function loadCatalogFromFirestore(){
+    if (location.protocol === 'file:') return;
+    try {
+      const initR = await fetch('/__/firebase/init.json');
+      if (!initR.ok) return;
+      const init = await initR.json();
+      const url = 'https://firestore.googleapis.com/v1/projects/'+init.projectId+'/databases/(default)/documents/settings/catalog?key='+init.apiKey;
+      const docR = await fetch(url);
+      if (!docR.ok) return;
+      const doc = await docR.json();
+      if (!doc.fields) return;
+      const data = _fsDoc(doc.fields);
+      const items = Array.isArray(data.items) ? data.items : [];
+      if (!items.length) return;
+
+      const grid = document.querySelector('.product-grid');
+      if (!grid) return;
+      grid.innerHTML = items.map(function(p, idx){ return productCardHTML(p, idx); }).join('');
+    } catch(err){
+      // Silently keep existing static HTML on any error
+      console.warn('Catalog load from Firestore failed (using static HTML):', err);
+    }
+  }
+
+  loadCatalogFromFirestore();
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Catalog sản phẩm — Detoxblanc Admin</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+<meta http-equiv="X-Frame-Options" content="DENY" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<link rel="stylesheet" href="assets/admin.css" />
+<style>
+  /* ===== Catalog table ===== */
+  .cat-table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .cat-table thead th {
+    text-align:left; padding:9px 12px; background:var(--a-soft,#E8EFF9);
+    border-bottom:2px solid var(--a-line,#e8e4dc); font-weight:600;
+    color:var(--a-ink-2,#374151); font-size:12px; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .cat-table tbody tr.cat-row { border-bottom:1px solid var(--a-line,#e8e4dc); }
+  .cat-table tbody tr.cat-row:hover { background:var(--a-soft-bg,#FAF8F4); }
+  .cat-table td { padding:9px 12px; vertical-align:middle; }
+
+  .grad-dot { width:18px; height:18px; border-radius:50%; border:2px solid rgba(0,0,0,.08); flex-shrink:0; }
+  .code-cell { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--a-ink-2,#374151); }
+  .name-cell { max-width:260px; }
+  .cat-badge { display:inline-block; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:600; background:var(--a-soft,#E8EFF9); color:var(--a-ink-2,#374151); }
+  .price-cell { font-family:'JetBrains Mono',monospace; font-size:12.5px; }
+  .tag-cell .tag-pill {
+    display:inline-block; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:700;
+    background:#e8f5e9; color:#2e7d32;
+  }
+  .tag-cell .tag-pill.tag-hot  { background:#fff3e0; color:#e65100; }
+  .tag-cell .tag-pill.tag-sale { background:#fce4ec; color:#880e4f; }
+  .tag-cell .tag-pill.tag-new  { background:#e3f2fd; color:#0d47a1; }
+  .tag-cell .tag-pill.tag-green { background:#e8f5e9; color:#2e7d32; }
+
+  /* ===== Edit accordion ===== */
+  tr.cat-edit-row td { padding:0; }
+  .cat-edit-panel {
+    background:var(--a-soft-bg,#FAF8F4); border-top:2px solid var(--a-primary,#2D5DA1);
+    border-bottom:2px solid var(--a-line,#e8e4dc); padding:20px 24px;
+  }
+  .cat-edit-panel h3 { margin:0 0 16px; font-size:14px; font-weight:700; color:var(--a-primary,#2D5DA1); }
+  .cat-edit-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .cat-edit-grid.wide2 { grid-template-columns:1fr 1fr; }
+  .cat-edit-grid.wide3 { grid-template-columns:1fr 1fr 1fr; }
+  @media (max-width:900px){ .cat-edit-grid { grid-template-columns:1fr 1fr; } }
+  @media (max-width:600px){ .cat-edit-grid { grid-template-columns:1fr; } }
+
+  .ef { display:flex; flex-direction:column; gap:4px; }
+  .ef label { font-size:11.5px; font-weight:600; color:var(--a-ink-2,#374151); }
+  .ef input, .ef select, .ef textarea {
+    padding:8px 10px; border:1px solid var(--a-line,#e8e4dc); border-radius:7px;
+    font:13px Inter,sans-serif; background:#fff; color:var(--a-ink,#1F2937);
+  }
+  .ef input:focus, .ef select:focus { outline:none; border-color:var(--a-primary,#2D5DA1); box-shadow:0 0 0 3px rgba(45,93,161,.12); }
+  .ef input[type="color"] { padding:3px 6px; height:36px; cursor:pointer; }
+
+  .cat-edit-actions { display:flex; gap:10px; margin-top:16px; align-items:center; }
+  .btn-del-product { background:#fee2e2; color:#991b1b; border:none; padding:8px 16px; border-radius:7px; font:500 13px Inter; cursor:pointer; }
+  .btn-del-product:hover { background:#fecaca; }
+
+  .adm-btn.sm { padding:6px 14px; font-size:13px; }
+
+  /* ===== Empty state ===== */
+  .cat-empty { text-align:center; padding:48px 24px; color:var(--a-ink-3,#6B7280); }
+  .cat-empty i { font-size:32px; margin-bottom:12px; display:block; opacity:.4; }
+
+  /* ===== Top toolbar ===== */
+  .cat-toolbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .cat-toolbar .cat-search {
+    flex:1; max-width:320px; padding:8px 12px; border:1px solid var(--a-line,#e8e4dc);
+    border-radius:8px; font:13.5px Inter,sans-serif;
+  }
+  .cat-toolbar .cat-search:focus { outline:none; border-color:var(--a-primary,#2D5DA1); }
+
+  .cat-count { font-size:13px; color:var(--a-ink-3,#6B7280); margin-left:auto; }
+</style>
+</head>
+
+<body data-adm-page="catalog">
+<a class="skip-link" href="#adm-content">Đi tới nội dung chính</a>
+
+<div class="adm-app">
+  <div data-adm-shell
+       data-crumbs='[{"label":"Admin","href":"admin.html"},{"label":"Sản phẩm"},{"label":"Catalog"}]'
+       data-title="Catalog sản phẩm"></div>
+
+  <div class="adm-canvas">
+    <main class="adm-page" id="adm-content">
+
+      <div class="adm-page-head">
+        <div>
+          <h1>Catalog sản phẩm</h1>
+          <p>Quản lý danh sách sản phẩm hiển thị trên trang category.html và toàn bộ trang public.</p>
+        </div>
+        <div class="adm-head-actions">
+          <button class="adm-btn" id="btnCatReload"><i class="fa-solid fa-rotate"></i> Tải lại</button>
+          <button class="adm-btn" id="btnCatReset"><i class="fa-solid fa-rotate-left"></i> Mặc định</button>
+          <button class="adm-btn primary" id="btnCatSave" data-perm="settings:write"><i class="fa-solid fa-check"></i> Lưu tất cả</button>
+          <button class="adm-btn primary" id="btnCatAdd" data-perm="settings:write"><i class="fa-solid fa-plus"></i> Thêm sản phẩm</button>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="cat-toolbar">
+        <input type="search" class="cat-search" id="catSearch" placeholder="Tìm theo tên, mã, thành phần..." />
+        <span class="cat-count" id="catCount"></span>
+      </div>
+
+      <!-- Table -->
+      <div style="background:var(--a-card,#fff);border:1px solid var(--a-line,#e8e4dc);border-radius:14px;overflow:hidden;">
+        <table class="cat-table" id="catTable">
+          <thead>
+            <tr>
+              <th style="width:28px"></th>
+              <th style="width:90px">Mã SKU</th>
+              <th>Tên sản phẩm</th>
+              <th style="width:130px">Danh mục</th>
+              <th style="width:110px">Giá</th>
+              <th style="width:70px">Badge</th>
+              <th style="width:60px">Kho</th>
+              <th style="width:60px"></th>
+            </tr>
+          </thead>
+          <tbody id="catBody">
+            <tr><td colspan="8" class="cat-empty"><i class="fa-solid fa-box-open"></i> Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="assets/env-detect.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/admin-data.js"></script>
+<script src="assets/admin-data-ext.js"></script>
+<script src="assets/firebase-bridge.js"></script>
+<script src="assets/admin-shell.js?v=4"></script>
+<script src="assets/admin-rbac.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // ===== Default catalog seed (copied from admin-data.js SEED) =====
+  const DEFAULT_CATALOG = { items: [
+    { code:'N°01', name:'Radiance Serum N°1 — Tinh chất dưỡng sáng · mờ nám', category:'Trị nám',
+      ingr:'Niacinamide 10%', b1:'Alpha Arbutin 2% + Niacinamide 10%', b2:'Hiệu quả rõ rệt sau 8 tuần',
+      tag:'HOT', cls:'tag-hot', rating:'4.9', reviews:'876', price:980000, old:null, stock:42, grad:'#63C1BB' },
+    { code:'N°02', name:'Melano Clear — Serum trị nám chuyên sâu', category:'Trị nám',
+      ingr:'Tranexamic 5%', b1:'Tranexamic Acid 5%', b2:'Giảm 70% nám sau 12 tuần',
+      tag:'-15%', cls:'tag-sale', rating:'4.8', reviews:'543', price:1050000, old:1235000, stock:128, grad:'#1F6661' },
+    { code:'N°03a', name:'Bright C+ Serum — Vitamin C 15%', category:'Dưỡng trắng',
+      ingr:'Vitamin C 15%', b1:'Ethyl Ascorbic + Ferulic', b2:'Làm sáng da sau 4 tuần',
+      tag:null, cls:'tag-green', rating:'4.7', reviews:'421', price:820000, old:null, stock:96, grad:'#F5C46B' },
+    { code:'N°09a', name:'Night Retinol — Retinol 0.3%', category:'Chống lão hoá',
+      ingr:'Retinol 0.3%', b1:'Mờ nếp nhăn + tái tạo da', b2:'Công thức microencap 8h',
+      tag:'NEW', cls:'tag-new', rating:'4.7', reviews:'389', price:1050000, old:null, stock:73, grad:'#1F6661' },
+    { code:'N°05a', name:'Azelaic Booster — Serum làm dịu', category:'Nhạy cảm',
+      ingr:'Azelaic 10%', b1:'Azelaic Acid 10%', b2:'Dịu nhẹ · giảm mẩn đỏ',
+      tag:null, cls:'tag-green', rating:'4.6', reviews:'287', price:720000, old:null, stock:54, grad:'#4FB2AD' },
+    { code:'MSK-00', name:'Soothing Sheet Mask — Centella + HA', category:'Mặt nạ',
+      ingr:'Centella + HA', b1:'Bio-cellulose · bám sát da', b2:'Làm dịu sau nắng',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'612', price:380000, old:null, stock:215, grad:'#63C1BB' },
+    { code:'PEP-00', name:'Peptide Renewal Cream — Kem phục hồi', category:'Chống lão hoá',
+      ingr:'Peptide complex', b1:'Matrixyl 3000 + HA', b2:'Tăng đàn hồi da',
+      tag:'BEST', cls:'tag-green', rating:'4.9', reviews:'734', price:1180000, old:null, stock:81, grad:'#3AA39C' },
+    { code:'SET-01', name:'Melano Expert Set — Liệu trình trị nám 4 bước', category:'Combo',
+      ingr:'Combo -18%', b1:'4 sản phẩm đầy đủ', b2:'Tiết kiệm 18%',
+      tag:'SET', cls:'tag-green', rating:'4.9', reviews:'523', price:1780000, old:2145000, stock:38, grad:'#1F6661' },
+    { code:'N°03', name:'Hydra Essence N°3 — Tinh chất cấp ẩm 5 tầng', category:'Phục hồi',
+      ingr:'HA 5-Weight', b1:'HA 3 tầng + Panthenol 5%', b2:'+42% độ ẩm sau 30 phút',
+      tag:'NEW', cls:'tag-new', rating:'4.8', reviews:'512', price:720000, old:null, stock:112, grad:'#8DDAD4' },
+    { code:'N°04', name:'Barrier Cream N°4 — Kem phục hồi hàng rào da', category:'Phục hồi',
+      ingr:'Ceramide 3%', b1:'Ceramide 3-type + Cholesterol', b2:'−60% mất nước',
+      tag:'BEST', cls:'tag-green', rating:'4.9', reviews:'1204', price:890000, old:null, stock:28, grad:'#63C1BB' },
+    { code:'N°05', name:'Calm Rescue Balm N°5 — Kem dịu cho da kích ứng', category:'Nhạy cảm',
+      ingr:'Madecassoside', b1:'TECA 0.2% + Bisabolol 1%', b2:'Dịu mẩn đỏ 15 phút',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'687', price:650000, old:null, stock:142, grad:'#4FB2AD' },
+    { code:'N°05A', name:'Youth Revive Serum — Retinal 0.1%', category:'Chống lão hoá',
+      ingr:'Retinal 0.1%', b1:'Mờ nếp nhăn 8 tuần', b2:'Không kích ứng',
+      tag:'-20%', cls:'tag-sale', rating:'4.7', reviews:'389', price:1180000, old:1475000, stock:47, grad:'#1F6661' },
+    { code:'N°06', name:'Gentle Exfoliator N°6 — Tinh chất tẩy tế bào chết AHA', category:'Tẩy tế bào chết',
+      ingr:'AHA 12%', b1:'Glycolic 7% + PHA 3% + Lactic 2%', b2:'Đều màu da',
+      tag:null, cls:'tag-green', rating:'4.7', reviews:'456', price:680000, old:null, stock:88, grad:'#63C1BB' },
+    { code:'N°07', name:'Bright C+ Serum N°7 — Vitamin C 15% ethyl ascorbic', category:'Dưỡng trắng',
+      ingr:'Vitamin C 15%', b1:'C 15% ổn định 18 tháng', b2:'Sáng da sau 4 tuần',
+      tag:'HOT', cls:'tag-hot', rating:'4.9', reviews:'932', price:820000, old:null, stock:18, grad:'#F5C46B' },
+    { code:'N°08', name:'Clarity Toner N°8 — Nước cân bằng làm dịu lỗ chân lông', category:'Làm sạch',
+      ingr:'Niacinamide 5%', b1:'pH 5.5 · không cồn', b2:'Se khít lỗ chân lông',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'734', price:420000, old:null, stock:234, grad:'#63C1BB' },
+    { code:'N°09', name:'Night Retinol N°9 — Kem retinol 0.3% ban đêm', category:'Chống lão hoá',
+      ingr:'Retinol 0.3%', b1:'Mờ nếp nhăn + tái tạo', b2:'Giải phóng chậm 8h',
+      tag:'NEW', cls:'tag-new', rating:'4.7', reviews:'421', price:1050000, old:null, stock:62, grad:'#1F6661' },
+    { code:'SPF-01', name:'Sun Shield Fluid SPF50+ PA++++ — Chống nắng mỏng nhẹ', category:'Chống nắng',
+      ingr:'SPF50+ PA++++', b1:'Kháng nước 80 phút', b2:'Finish lụa',
+      tag:'HOT', cls:'tag-hot', rating:'4.9', reviews:'2145', price:620000, old:null, stock:34, grad:'#F5C46B' },
+    { code:'SPF-02', name:'Sun Shield Tone-Up — Chống nắng nâng tông 3-trong-1', category:'Chống nắng',
+      ingr:'Tone-Up SPF50+', b1:'Nâng tông tự nhiên', b2:'Dưỡng sáng',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'1078', price:680000, old:null, stock:89, grad:'#F3C89A' },
+    { code:'SPF-03', name:'Sun Shield Stick — Thanh chống nắng dặm lại', category:'Chống nắng',
+      ingr:'SPF50+ Stick', b1:'15g · dùng trên makeup', b2:'Không bết rít',
+      tag:'-10%', cls:'tag-sale', rating:'4.6', reviews:'298', price:480000, old:540000, stock:156, grad:'#F5C46B' },
+    { code:'BDY-01', name:'AHA Body Milk — Sữa dưỡng thể tẩy tế bào chết', category:'Cơ thể',
+      ingr:'AHA 8%', b1:'300ml · mịn mượt', b2:'Giảm thâm cùi chỏ',
+      tag:null, cls:'tag-green', rating:'4.7', reviews:'543', price:520000, old:null, stock:187, grad:'#8DDAD4' },
+    { code:'BDY-02', name:'Niacinamide Body Lotion — Dưỡng thể sáng da 300ml', category:'Cơ thể',
+      ingr:'Niacinamide 4%', b1:'Làm sáng đều màu', b2:'Không gây mụn',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'812', price:480000, old:null, stock:203, grad:'#63C1BB' },
+    { code:'BDY-03', name:'Body Sun Milk SPF50 — Sữa chống nắng toàn thân', category:'Cơ thể',
+      ingr:'SPF50 Body', b1:'200ml · SPF50 · kháng nước', b2:'Thấm nhanh',
+      tag:'NEW', cls:'tag-new', rating:'4.7', reviews:'276', price:550000, old:null, stock:94, grad:'#F5C46B' },
+    { code:'CLS-01', name:'Micellar Water — Nước tẩy trang dịu nhẹ 500ml', category:'Làm sạch',
+      ingr:'Micellar Clean', b1:'Không cần rửa lại', b2:'An toàn da nhạy cảm',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'1432', price:340000, old:null, stock:312, grad:'#A6E0DB' },
+    { code:'CLS-02', name:'Gentle Gel Cleanser — Sữa rửa mặt dịu pH 5.5', category:'Làm sạch',
+      ingr:'pH 5.5', b1:'Không sulfate · paraben', b2:'Sạch sâu không khô',
+      tag:null, cls:'tag-green', rating:'4.9', reviews:'987', price:320000, old:null, stock:276, grad:'#63C1BB' },
+    { code:'CLS-03', name:'Cleansing Balm — Sáp tẩy trang sâu tầng kép', category:'Làm sạch',
+      ingr:'Balm Cleanser', b1:'Sạch makeup lì & SPF', b2:'Không bít tắc',
+      tag:null, cls:'tag-green', rating:'4.7', reviews:'654', price:420000, old:null, stock:121, grad:'#F3D999' },
+    { code:'MSK-01', name:'Cica Mask Sheet — Mặt nạ giấy phục hồi x10', category:'Mặt nạ',
+      ingr:'Centella Mask', b1:'Bio-cellulose', b2:'Làm dịu sau nắng',
+      tag:'HOT', cls:'tag-hot', rating:'4.8', reviews:'1098', price:380000, old:null, stock:245, grad:'#63C1BB' },
+    { code:'MSK-02', name:'Overnight Hydro Mask — Mặt nạ ngủ cấp ẩm sâu', category:'Mặt nạ',
+      ingr:'Hydro Overnight', b1:'100ml · căng mọng', b2:'Không bết rít',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'723', price:480000, old:null, stock:168, grad:'#8DDAD4' },
+    { code:'EYE-01', name:'Peptide Eye Serum — Tinh chất vùng mắt 15ml', category:'Đặc trị vùng',
+      ingr:'Eye Peptide', b1:'Giảm bọng mắt · quầng', b2:'Mịn chân chim',
+      tag:'-15%', cls:'tag-sale', rating:'4.7', reviews:'489', price:680000, old:800000, stock:67, grad:'#1F6661' },
+    { code:'EYE-02', name:'Bright Eye Patch — Mặt nạ mắt hydrogel x60', category:'Đặc trị vùng',
+      ingr:'Eye Patch x60', b1:'Cấp ẩm tức thì', b2:'60 miếng · 3 lần/tuần',
+      tag:'NEW', cls:'tag-new', rating:'4.6', reviews:'354', price:420000, old:null, stock:98, grad:'#F5C46B' },
+    { code:'LIP-01', name:'Lip Recovery Balm — Son dưỡng môi SPF15', category:'Đặc trị vùng',
+      ingr:'Lip SPF15', b1:'Làm mềm · chống UV', b2:'Không màu · mùi · paraben',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'601', price:180000, old:null, stock:189, grad:'#F3B7B7' },
+    { code:'HND-01', name:'Hand Repair Cream — Kem dưỡng tay phục hồi 60ml', category:'Đặc trị vùng',
+      ingr:'Hand Niacinamide', b1:'Làm sáng · mờ đốm tay', b2:'Thấm nhanh',
+      tag:null, cls:'tag-green', rating:'4.7', reviews:'287', price:260000, old:null, stock:143, grad:'#8DDAD4' },
+    { code:'ACN-01', name:'Pore Minimizer — Tinh chất BHA 2% se lỗ chân lông', category:'Trị mụn',
+      ingr:'BHA 2%', b1:'Giảm mụn đầu đen', b2:'Không làm mỏng da',
+      tag:'HOT', cls:'tag-hot', rating:'4.8', reviews:'821', price:520000, old:null, stock:56, grad:'#63C1BB' },
+    { code:'MLN-01', name:'Tone Corrector — Kem đồng đều màu da Tranexamic', category:'Dưỡng trắng',
+      ingr:'Tranexamic 5%', b1:'Mờ thâm sau mụn', b2:'An toàn thai kỳ',
+      tag:null, cls:'tag-green', rating:'4.8', reviews:'612', price:780000, old:null, stock:79, grad:'#1F6661' },
+    { code:'SET-04', name:'Clinical Routine Bundle — Bộ 4 bước căn bản', category:'Combo',
+      ingr:'Bundle 4pc', b1:'Toner + Serum + Cream + SPF', b2:'Tiết kiệm 22%',
+      tag:'SET', cls:'tag-green', rating:'4.9', reviews:'1876', price:1980000, old:2540000, stock:24, grad:'#1F6661' },
+  ]};
+
+  // ===== State =====
+  const state = { items: [], openIdx: null };
+
+  const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const VND = n => n ? Number(n).toLocaleString('vi-VN')+'₫' : '';
+  const $ = id => document.getElementById(id);
+
+  function toast(msg, type='ok'){
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;background:${type==='ok'?'#16A34A':'#C0392B'};color:#fff;padding:12px 20px;border-radius:8px;z-index:9999;font:500 14px Inter;box-shadow:0 4px 12px rgba(0,0,0,.15)`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), 2800);
+  }
+
+  // ===== Tag class auto-map =====
+  const TAG_CLS_MAP = {
+    'HOT': 'tag-hot',
+    'NEW': 'tag-new',
+    '-15%': 'tag-sale',
+    '-20%': 'tag-sale',
+    '-10%': 'tag-sale',
+    'SET': 'tag-green',
+    'BEST': 'tag-green',
+  };
+  function clsForTag(tag){
+    if (!tag) return 'tag-green';
+    return TAG_CLS_MAP[tag] || (tag.startsWith('-') ? 'tag-sale' : 'tag-green');
+  }
+
+  // ===== Sync open form into state =====
+  function syncOpenForm(){
+    if (state.openIdx === null) return;
+    const idx = state.openIdx;
+    const p = state.items[idx];
+    if (!p) return;
+    const panel = document.getElementById('edit-panel-' + idx);
+    if (!panel) return;
+    const g = f => panel.querySelector('[data-f="'+f+'"]');
+    const fv = f => { const el = g(f); return el ? el.value : ''; };
+    p.name     = fv('name');
+    p.code     = fv('code');
+    p.category = fv('category');
+    p.ingr     = fv('ingr');
+    p.b1       = fv('b1');
+    p.b2       = fv('b2');
+    p.tag      = fv('tag') || null;
+    p.cls      = clsForTag(p.tag);
+    p.price    = Number(fv('price')) || 0;
+    p.old      = fv('old') ? Number(fv('old')) : null;
+    p.grad     = fv('grad') || '#63C1BB';
+    p.rating   = fv('rating');
+    p.reviews  = fv('reviews');
+    p.stock    = Number(fv('stock')) || 0;
+  }
+
+  // ===== Render table =====
+  function render(){
+    const q = ($('catSearch').value || '').toLowerCase();
+    const body = $('catBody');
+    if (!state.items.length){
+      body.innerHTML = '<tr><td colspan="8" class="cat-empty"><i class="fa-solid fa-box-open"></i> Chưa có sản phẩm nào</td></tr>';
+      $('catCount').textContent = '0 sản phẩm';
+      return;
+    }
+    let rows = '';
+    let shown = 0;
+    state.items.forEach((p, idx) => {
+      const match = !q || (p.name||'').toLowerCase().includes(q) || (p.code||'').toLowerCase().includes(q) || (p.ingr||'').toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q);
+      if (!match) return;
+      shown++;
+      const isOpen = state.openIdx === idx;
+      const tagCls = p.cls || 'tag-green';
+      rows += `<tr class="cat-row" data-idx="${idx}">
+        <td><span class="grad-dot" style="background:${esc(p.grad||'#63C1BB')};display:inline-block"></span></td>
+        <td class="code-cell">${esc(p.code)}</td>
+        <td class="name-cell">${esc(p.name)}</td>
+        <td><span class="cat-badge">${esc(p.category)}</span></td>
+        <td class="price-cell">${VND(p.price)}</td>
+        <td class="tag-cell">${p.tag ? `<span class="tag-pill ${esc(tagCls)}">${esc(p.tag)}</span>` : '<span style="color:#ccc">—</span>'}</td>
+        <td style="text-align:center;font-size:12.5px">${p.stock}</td>
+        <td><button class="adm-btn sm" data-edit="${idx}"><i class="fa-solid fa-pen"></i> Sửa</button></td>
+      </tr>`;
+      if (isOpen){
+        rows += `<tr class="cat-edit-row" id="edit-row-${idx}">
+          <td colspan="8">
+            <div class="cat-edit-panel" id="edit-panel-${idx}">
+              <h3><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa: ${esc(p.code)} — ${esc(p.name)}</h3>
+              <div class="cat-edit-grid">
+                <div class="ef"><label>Tên sản phẩm</label><input data-f="name" value="${esc(p.name||'')}"/></div>
+                <div class="ef"><label>Mã SKU (code)</label><input data-f="code" value="${esc(p.code||'')}"/></div>
+                <div class="ef"><label>Danh mục</label><input data-f="category" value="${esc(p.category||'')}"/></div>
+                <div class="ef"><label>Thành phần chính (ingr)</label><input data-f="ingr" value="${esc(p.ingr||'')}"/></div>
+              </div>
+              <div class="cat-edit-grid wide2" style="margin-top:10px">
+                <div class="ef"><label>Bullet 1 (b1)</label><input data-f="b1" value="${esc(p.b1||'')}"/></div>
+                <div class="ef"><label>Bullet 2 (b2)</label><input data-f="b2" value="${esc(p.b2||'')}"/></div>
+              </div>
+              <div class="cat-edit-grid" style="margin-top:10px">
+                <div class="ef">
+                  <label>Badge (tag)</label>
+                  <select data-f="tag">
+                    <option value="" ${!p.tag?'selected':''}>— Không có —</option>
+                    <option value="HOT" ${p.tag==='HOT'?'selected':''}>HOT</option>
+                    <option value="NEW" ${p.tag==='NEW'?'selected':''}>NEW</option>
+                    <option value="-15%" ${p.tag==='-15%'?'selected':''}>&minus;15%</option>
+                    <option value="-20%" ${p.tag==='-20%'?'selected':''}>&minus;20%</option>
+                    <option value="-10%" ${p.tag==='-10%'?'selected':''}>&minus;10%</option>
+                    <option value="BEST" ${p.tag==='BEST'?'selected':''}>BEST</option>
+                    <option value="SET" ${p.tag==='SET'?'selected':''}>SET</option>
+                  </select>
+                </div>
+                <div class="ef"><label>Giá hiện tại (VND)</label><input data-f="price" type="number" value="${p.price||0}"/></div>
+                <div class="ef"><label>Giá gốc / giá cũ (old, để trống nếu không có)</label><input data-f="old" type="number" value="${p.old||''}"/></div>
+                <div class="ef"><label>Màu gradient (grad)</label><input data-f="grad" type="color" value="${esc(p.grad||'#63C1BB')}"/></div>
+              </div>
+              <div class="cat-edit-grid wide3" style="margin-top:10px">
+                <div class="ef"><label>Đánh giá (rating)</label><input data-f="rating" value="${esc(String(p.rating||'4.9'))}"/></div>
+                <div class="ef"><label>Số lượt đánh giá (reviews)</label><input data-f="reviews" value="${esc(String(p.reviews||'0'))}"/></div>
+                <div class="ef"><label>Tồn kho (stock)</label><input data-f="stock" type="number" value="${p.stock||0}"/></div>
+              </div>
+              <div class="cat-edit-actions">
+                <button class="adm-btn primary sm" data-save-row="${idx}"><i class="fa-solid fa-check"></i> Xác nhận</button>
+                <button class="adm-btn sm" data-close-row="${idx}"><i class="fa-solid fa-xmark"></i> Đóng</button>
+                <button class="btn-del-product" data-del-product="${idx}"><i class="fa-solid fa-trash"></i> Xoá sản phẩm này</button>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+      }
+    });
+    if (!shown && q){
+      rows = `<tr><td colspan="8" class="cat-empty"><i class="fa-solid fa-magnifying-glass"></i> Không tìm thấy sản phẩm nào phù hợp</td></tr>`;
+    }
+    body.innerHTML = rows;
+    $('catCount').textContent = shown + ' / ' + state.items.length + ' sản phẩm';
+  }
+
+  // ===== Event delegation =====
+  $('catBody').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-edit],button[data-save-row],button[data-close-row],button[data-del-product]');
+    if (!btn) return;
+
+    if (btn.dataset.edit != null){
+      const idx = +btn.dataset.edit;
+      syncOpenForm();
+      state.openIdx = (state.openIdx === idx) ? null : idx;
+      render();
+      if (state.openIdx !== null){
+        const row = document.getElementById('edit-row-' + state.openIdx);
+        if (row) row.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      }
+    }
+
+    else if (btn.dataset.saveRow != null){
+      syncOpenForm();
+      state.openIdx = null;
+      render();
+      toast('Đã cập nhật sản phẩm — nhớ nhấn "Lưu tất cả" để lưu lên Firestore');
+    }
+
+    else if (btn.dataset.closeRow != null){
+      syncOpenForm();
+      state.openIdx = null;
+      render();
+    }
+
+    else if (btn.dataset.delProduct != null){
+      const idx = +btn.dataset.delProduct;
+      const p = state.items[idx];
+      if (!p) return;
+      if (!confirm('Xoá sản phẩm "' + p.name + '"?\nHành động này không thể hoàn tác cho đến khi bạn tải lại trang.')){
+        return;
+      }
+      state.items.splice(idx, 1);
+      state.openIdx = null;
+      render();
+      toast('Đã xoá sản phẩm — nhớ nhấn "Lưu tất cả"');
+    }
+  });
+
+  // Tag auto-set cls when tag select changes inside an open panel
+  $('catBody').addEventListener('change', e => {
+    if (e.target.dataset.f === 'tag'){
+      // visual cls preview not strictly needed here; will be set on syncOpenForm
+    }
+  });
+
+  // Search
+  $('catSearch').addEventListener('input', () => render());
+
+  // ===== Add new product =====
+  $('btnCatAdd').addEventListener('click', () => {
+    syncOpenForm();
+    const newProduct = {
+      code: 'SKU-' + (state.items.length + 1),
+      name: 'Sản phẩm mới',
+      category: 'Chưa phân loại',
+      ingr: '',
+      b1: '',
+      b2: '',
+      tag: null,
+      cls: 'tag-green',
+      rating: '4.8',
+      reviews: '0',
+      price: 0,
+      old: null,
+      stock: 0,
+      grad: '#63C1BB',
+    };
+    state.items.unshift(newProduct);
+    state.openIdx = 0;
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ===== Save / Load =====
+  async function saveCatalog(){
+    syncOpenForm();
+    try {
+      if (window.DTX_FIREBASE?.enabled){
+        const fb = window.DTX_FIREBASE;
+        await fb.dbMethods.setDoc(
+          fb.dbMethods.doc(fb.db, 'settings', 'catalog'),
+          { items: state.items, updatedAt: fb.dbMethods.serverTimestamp() }
+        );
+        toast('Đã lưu catalog lên Firestore (' + state.items.length + ' sản phẩm)');
+      } else {
+        localStorage.setItem('dtx_catalog', JSON.stringify(state.items));
+        toast('Đã lưu vào localStorage (local mode)');
+      }
+    } catch(err){
+      console.error(err);
+      toast('Lỗi khi lưu: ' + err.message, 'err');
+    }
+  }
+
+  async function loadCatalog(){
+    try {
+      if (window.DTX_FIREBASE?.enabled){
+        const fb = window.DTX_FIREBASE;
+        const snap = await fb.dbMethods.getDoc(fb.dbMethods.doc(fb.db, 'settings', 'catalog'));
+        if (snap.exists()){
+          const d = snap.data();
+          state.items = d.items || [];
+          toast('Đã tải catalog từ Firestore (' + state.items.length + ' sản phẩm)');
+        } else {
+          state.items = JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
+        }
+      } else {
+        const ls = localStorage.getItem('dtx_catalog');
+        state.items = ls ? JSON.parse(ls) : JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
+      }
+      state.openIdx = null;
+      render();
+    } catch(err){
+      console.error(err);
+      state.items = JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
+      state.openIdx = null;
+      render();
+    }
+  }
+
+  $('btnCatSave').addEventListener('click', saveCatalog);
+  $('btnCatReload').addEventListener('click', loadCatalog);
+  $('btnCatReset').addEventListener('click', () => {
+    if (confirm('Khôi phục về danh sách sản phẩm mặc định (34 SKUs)?\nCác thay đổi chưa lưu sẽ mất.')){
+      state.items = JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
+      state.openIdx = null;
+      render();
+    }
+  });
+
+  // ===== Initial load =====
+  state.items = JSON.parse(JSON.stringify(DEFAULT_CATALOG.items));
+  render();
+  if (window.DTX_FIREBASE?.enabled){
+    loadCatalog();
+  } else {
+    window.addEventListener('dtx:firebase-ready', loadCatalog, { once: true });
+    setTimeout(loadCatalog, 100);
+  }
+})();
+</script>
+</body>
+</html>
